@@ -1,0 +1,39 @@
+#seat-map {
+  max-width: 400px;
+  margin: auto;
+}
+
+.bus-seating div {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.bus-seating .seat {
+  width: 45px;
+  height: 45px;
+  border-radius: 5px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  background-color: #90ee90;
+}
+
+.bus-seating .aisle {
+  width: 30px;
+}
+
+.bus-seating .seat.selected {
+  background-color: orange;
+}
+
+.bus-seating .seat.booked-female {
+  background-color: #ffb6c1;
+}
+
+.bus-seating .seat.booked-male {
+  background-color: #add8e6;
+}
+
+.bus-seating .seat.booked-undisclosed {
+  background-color: #d3d3d3;
+}
