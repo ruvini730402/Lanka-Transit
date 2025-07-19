@@ -27,4 +27,8 @@ Thumbs.db
 cache/
 temp/
 
-
+README.md
+SETUP.md
+test.php
+database/
+src/
