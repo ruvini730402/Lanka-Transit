@@ -24,9 +24,9 @@
             position: relative;
             z-index: 10;
         }
-        .logo {
-            max-height: 60px;
-        }
+        /*.logo {*/
+        /*    max-height: 60px;*/
+        /*}*/
         .btn-search {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -48,7 +48,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="index.php>
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
                 <span class="fw-bold text-primary">Transit</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -91,14 +91,15 @@
                                 </label>
                                 <select class="form-select" id="origin" name="origin" required>
                                     <option value="">Select Origin</option>
-                                    <option value="Colombo">Colombo</option>
-                                    <option value="Kandy">Kandy</option>
-                                    <option value="Galle">Galle</option>
-                                    <option value="Jaffna">Jaffna</option>
-                                    <option value="Anuradhapura">Anuradhapura</option>
-                                    <option value="Batticaloa">Batticaloa</option>
-                                    <option value="Ratnapura">Ratnapura</option>
-                                    <option value="Kurunegala">Kurunegala</option>
+                                    <option value="Badulla">Badulla</option>
+                                    <option value="Ella">Ella</option>
+                                    <option value="Wellawaya">Wellawaya</option>
+                                    <option value="Thanamalvila">Thanamalvila</option>
+                                    <option value="Lunugamvehera">Lunugamvehera</option>
+                                    <option value="Tangalle">Tangalle</option>
+                                    <option value="Dickwella">Dickwella</option>
+                                    <option value="Devinuwara">Devinuwara</option>
+                                    <option value="Matara">Matara</option>
                                 </select>
                             </div>
                             <div class="col-md-6 col-lg-3">
@@ -107,14 +108,15 @@
                                 </label>
                                 <select class="form-select" id="destination" name="destination" required>
                                     <option value="">Select Destination</option>
-                                    <option value="Colombo">Colombo</option>
-                                    <option value="Kandy">Kandy</option>
-                                    <option value="Galle">Galle</option>
-                                    <option value="Jaffna">Jaffna</option>
-                                    <option value="Anuradhapura">Anuradhapura</option>
-                                    <option value="Batticaloa">Batticaloa</option>
-                                    <option value="Ratnapura">Ratnapura</option>
-                                    <option value="Kurunegala">Kurunegala</option>
+                                    <option value="Badulla">Badulla</option>
+                                    <option value="Ella">Ella</option>
+                                    <option value="Wellawaya">Wellawaya</option>
+                                    <option value="Thanamalvila">Thanamalvila</option>
+                                    <option value="Lunugamvehera">Lunugamvehera</option>
+                                    <option value="Tangalle">Tangalle</option>
+                                    <option value="Dickwella">Dickwella</option>
+                                    <option value="Devinuwara">Devinuwara</option>
+                                    <option value="Matara">Matara</option>
                                 </select>
                             </div>
                             <div class="col-md-6 col-lg-2">
@@ -193,14 +195,13 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>    <script>
         // Form validation and XSS prevention
         document.getElementById('searchForm').addEventListener('submit', function(e) {
             const origin = document.getElementById('origin').value;
             const destination = document.getElementById('destination').value;
             const travelDate = document.getElementById('travel_date').value;
-            
+
             // Basic validation
             if (origin === destination && origin !== '') {
                 e.preventDefault();
