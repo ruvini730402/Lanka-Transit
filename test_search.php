@@ -41,8 +41,8 @@ echo "<h3>Test 3: Search Functionality</h3>";
 $bus = new Bus($db);
 
 // Test search: Badulla to Matara
-echo "<strong>Search: Badulla to Matara on 2024-07-19</strong><br>";
-$result = $bus->searchBuses('Badulla', 'Matara', '2024-07-19');
+echo "<strong>Search: Badulla to Matara on 2025-07-20</strong><br>";
+$result = $bus->searchBuses('Badulla', 'Matara', '2025-07-20');
 
 if (isset($result['error'])) {
     echo "❌ Search failed: " . $result['error'] . "<br>";
@@ -56,8 +56,8 @@ if (isset($result['error'])) {
 echo "<br>";
 
 // Test search: Matara to Badulla
-echo "<strong>Search: Matara to Badulla on 2024-07-19</strong><br>";
-$result2 = $bus->searchBuses('Matara', 'Badulla', '2024-07-19');
+echo "<strong>Search: Matara to Badulla on 2025-07-20</strong><br>";
+$result2 = $bus->searchBuses('Matara', 'Badulla', '2025-07-20');
 
 if (isset($result2['error'])) {
     echo "❌ Search failed: " . $result2['error'] . "<br>";
@@ -72,7 +72,7 @@ echo "<br>";
 
 // Test search with fare filter
 echo "<strong>Search: Badulla to Matara with max fare Rs. 380</strong><br>";
-$result3 = $bus->searchBuses('Badulla', 'Matara', '2024-07-19', 380);
+$result3 = $bus->searchBuses('Badulla', 'Matara', '2025-07-20', 380);
 
 if (isset($result3['error'])) {
     echo "❌ Search with fare filter failed: " . $result3['error'] . "<br>";
