@@ -4,8 +4,8 @@
  * This script tests database connectivity and search operations
  */
 
-require_once 'config/database.php';
-require_once 'classes/Bus.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../classes/Bus.php';
 
 echo "<h2>Lanka Transit - Search Functionality Test</h2>";
 echo "<hr>";
