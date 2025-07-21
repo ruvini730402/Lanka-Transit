@@ -1,0 +1,141 @@
+/* Settings page specific styles */
+
+/* Styles for individual settings sections (Profile, Privacy, Account Management) */
+.settings-section {
+  background-color: var(--card-background); /* Uses a variable for background */
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Soft shadow */
+  margin-bottom: 30px;
+}
+
+/* Heading styles for each settings section */
+.settings-section h2 {
+  color: var(--secondary-color);
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+/* Label styling for form fields */
+.settings-section label {
+  display: block; /* Makes labels stack vertically */
+  margin: 10px 0 6px 0;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+/* Styles for various input types within settings sections */
+.settings-section input[type="text"],
+.settings-section input[type="email"],
+.settings-section input[type="password"], /* Included for completeness, though not in current HTML */
+.settings-section input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 1em;
+  box-sizing: border-box; /* Ensures padding doesn't add to total width */
+}
+
+/* Styling for radio button inputs */
+.settings-section input[type="radio"] {
+  margin-right: 8px;
+}
+
+/* Primary button styling (e.g., Save Changes, Update Privacy) */
+.btn-primary {
+  background-color: var(--primary-color); /* Uses a variable for main color */
+  color: #fff;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.btn-primary:hover {
+  background-color: #d13a45; /* Darker shade on hover */
+}
+
+/* Danger button styling (e.g., Confirm Account Action) */
+/* Adjusted to match the maroon color used in the HTML for this button */
+.btn-danger {
+  background-color: #800000; /* Maroon color for danger actions */
+  color: white;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-danger:hover {
+  background-color: #6a0000; /* Darker maroon on hover */
+}
+
+/* --- Custom Confirmation Dialog Styles --- */
+.custom-dialog {
+  position: fixed; /* Fixed position relative to the viewport */
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  background-color: #fff;
+  border: 2px solid #060725; /* Dark border */
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 20px;
+  z-index: 9999; /* Ensures it's on top of other content */
+  display: none; /* Hidden by default, shown by JavaScript */
+  animation: slideIn 0.3s ease-out forwards; /* Animation for showing */
+}
+
+.custom-dialog.show {
+  display: block; /* Class added by JS to make dialog visible */
+}
+
+/* Paragraph styling within the dialog box */
+.dialog-box p {
+  margin: 0 0 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Styling for strong text within the dialog message (e.g., DELETE) */
+.dialog-box strong {
+  color: #d12b3e; /* Distinct red for emphasis */
+}
+
+/* Alignment for dialog action buttons */
+.dialog-actions {
+  text-align: right;
+}
+
+/* General styling for buttons within dialog actions */
+.dialog-actions button {
+  margin-left: 10px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Secondary button styling within the dialog (e.g., Cancel) */
+.btn-secondary {
+  background-color: #ccc;
+  color: #000;
+}
+
+/* Keyframe animation for the dialog to slide in from the top */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
