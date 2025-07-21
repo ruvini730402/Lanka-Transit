@@ -1,0 +1,77 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.popup-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.popup-box {
+  background: white;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+  max-width: 500px;
+  width: 100%;
+}
+
+.popup-box h2 {
+  font-size: 28px;
+  color: #060725;
+  margin-bottom: 15px;
+}
+
+.popup-box p {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 25px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #060725;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #101540;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🔽 Mobile Responsive Styles */
+@media screen and (max-width: 480px) {
+  .popup-box {
+    padding: 20px 25px;
+    border-radius: 10px;
+  }
+
+  .popup-box h2 {
+    font-size: 22px;
+  }
+
+  .popup-box p {
+    font-size: 16px;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
