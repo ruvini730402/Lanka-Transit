@@ -7,7 +7,7 @@
 class Database {
     private $host = 'localhost';
     private $db_name = 'transit';
-    private $username = 'transuser';
+    private $username = 'dbuser';
     private $password = 'pass';
     private $conn;
     
