@@ -225,10 +225,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <i class="fas fa-chair me-1"></i>
                                             <?php echo $bus['available_seats']; ?> seats available
                                         </span>
-                                        <a href="bus-details.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>" 
-                                           class="btn btn-primary">
-                                            <i class="fas fa-eye me-2"></i>View Details
-                                        </a>
+                                        <div>
+                                            <a href="booking.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>&origin=<?php echo urlencode($origin); ?>&destination=<?php echo urlencode($destination); ?>" 
+                                               class="btn btn-success me-2">
+                                                <i class="fas fa-ticket-alt me-1"></i>Book Now
+                                            </a>
+                                            <a href="bus-details.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>Details
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

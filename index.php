@@ -61,6 +61,11 @@
                         <a class="nav-link" href="index.php">Home</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="pages/booking.php">
+                            <i class="fas fa-ticket-alt me-1"></i>Book Ticket
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="auth/login.php">Login</a>
                     </li>
                     <li class="nav-item">
