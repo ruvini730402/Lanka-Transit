@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
     <style>
         .search-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
             color: white;
             padding: 40px 0;
         }
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
         }
         .fare-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
             color: white;
             font-size: 1.2rem;
             font-weight: bold;
@@ -92,14 +92,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             z-index: 10;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        .btn-primary {
+            background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+        }
+        .btn-outline-primary {
+            border-color: #800000;
+            color: #800000;
+            border-radius: 25px;
+        }
+        .btn-outline-primary:hover {
+            background-color: #800000;
+            border-color: #800000;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+        }
     </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="index.php">
-                <span class="fw-bold text-primary">Transit</span>
+            <a class="navbar-brand d-flex align-items-center" href="../index.php">
+                <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -107,13 +128,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php">Home</a>
+                        <a class="nav-link" href="../index.php">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="auth/login.php">Login</a>
+                        <a class="nav-link" href="booking.php">
+                            <i class="fas fa-ticket-alt me-1"></i>Book Ticket
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="auth/register.php">Register</a>
+                        <a class="nav-link" href="../auth/login.php">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../auth/register.php">Register</a>
                     </li>
                 </ul>
             </div>
@@ -225,16 +251,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <i class="fas fa-chair me-1"></i>
                                             <?php echo $bus['available_seats']; ?> seats available
                                         </span>
-                                        <div>
-                                            <a href="booking.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>&origin=<?php echo urlencode($origin); ?>&destination=<?php echo urlencode($destination); ?>" 
-                                               class="btn btn-success me-2">
-                                                <i class="fas fa-ticket-alt me-1"></i>Book Now
-                                            </a>
-                                            <a href="bus-details.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>" 
-                                               class="btn btn-outline-primary">
-                                                <i class="fas fa-eye me-1"></i>Details
-                                            </a>
-                                        </div>
+                                        <a href="booking.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>&origin=<?php echo urlencode($origin); ?>&destination=<?php echo urlencode($destination); ?>" 
+                                           class="btn btn-success">
+                                            <i class="fas fa-ticket-alt me-1"></i>Book Now
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -246,10 +266,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-4 mt-5">
+    <footer class="text-white py-4 mt-5" style="background-color: #800000;">
         <div class="container">
             <div class="row">
-                <p>&copy; 2025 Transit. All rights reserved.</p>
+                <p>&copy; 2025 Lanka Transit. All rights reserved.</p>
             </div>
         </div>
     </footer>
