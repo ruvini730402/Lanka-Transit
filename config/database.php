@@ -6,9 +6,9 @@
 
 class Database {
     private $host = 'localhost';
-    private $db_name = 'transit';
-    private $username = 'root';
-    private $password = '';
+    private $db_name = 'codebay_transit';
+    private $username = 'codebay_transit';
+    private $password = 'pass1234';
     private $conn;
     
     /**
