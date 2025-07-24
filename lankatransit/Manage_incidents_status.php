@@ -10,8 +10,19 @@ if (!$conn) {
     die("Connection failed: Unable to connect to database");
 }
 
-$statusFilter = $_GET['status'] ?? '';
-$bookingIdFilter = $_GET['booking_id'] ?? '';
+$statusFilter = trim($_GET['status'] ?? '');
+$bookingIdFilter = trim($_GET['booking_id'] ?? '');
+
+// Validate status filter
+$allowedStatuses = ['', 'submitted', 'Submitted', 'In Progress', 'Resolved', 'Pending'];
+if (!in_array($statusFilter, $allowedStatuses)) {
+    $statusFilter = '';
+}
+
+// Sanitize booking ID filter (allow only alphanumeric and basic characters)
+if (!empty($bookingIdFilter) && !preg_match('/^[A-Za-z0-9\-_]+$/', $bookingIdFilter)) {
+    $bookingIdFilter = '';
+}
 
 $where = [];
 $params = [];
@@ -41,6 +52,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --accent: #f1424f;
@@ -97,7 +109,30 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
 </head>
 <body>
-<?php include 'Header.php'; ?>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../index.php">
+                <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.php">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Logout.php">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
 
 <div class="page-wrapper">
     <div class="welcome-card">
@@ -149,7 +184,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php else:
                         $i = 1;
                         foreach ($result as $row):
-                            $statusClass = strtolower(str_replace(' ', '', $row['Status']));
+                            $statusClass = strtolower(str_replace(' ', '', htmlspecialchars($row['Status'], ENT_QUOTES, 'UTF-8')));
                             $resolvedDate = $row['ResolvedDate'] ?? '-';
                     ?>
                         <tr>
@@ -161,14 +196,14 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= $row['ResolvedDate'] ? htmlspecialchars(date('Y-m-d', strtotime($row['ResolvedDate']))) : '-' ?></td>
 
                             <td>
-                                <input type="hidden" name="booking_ids[]" value="<?= $row['BookingId'] ?>">
+                                <input type="hidden" name="booking_ids[]" value="<?= htmlspecialchars($row['BookingId'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="d-flex justify-content-center align-items-center gap-2">
                                     <select name="new_statuses[]" class="form-select form-select-sm">
                                         <option <?= $row['Status'] === "submitted" ? "selected" : "" ?>>Submitted</option>
                                         <option <?= $row['Status'] === "In Progress" ? "selected" : "" ?>>In Progress</option>
                                         <option <?= $row['Status'] === "Resolved" ? "selected" : "" ?>>Resolved</option>
                                     </select>
-                                    <button type="submit" name="update_single" value="<?= $row['BookingId'] ?>" class="btn btn-sm" style="background-color: #800000; color: white;">Update</button>
+                                    <button type="submit" name="update_single" value="<?= htmlspecialchars($row['BookingId'], ENT_QUOTES, 'UTF-8') ?>" class="btn btn-sm" style="background-color: #800000; color: white;">Update</button>
                                 </div>
                             </td>
                         </tr>
@@ -179,6 +214,15 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-<?php include 'Footer.php'; ?>
+<!-- Footer -->
+<footer class="text-white py-4 mt-5" style="background-color: #800000;">
+  <div class="container">
+    <div class="row">
+      <p>&copy; 2025 Transit. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

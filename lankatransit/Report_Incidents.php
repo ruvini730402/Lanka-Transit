@@ -13,7 +13,7 @@ if (!$conn) {
 // --- Fetching Incident Records ---
 $incidentRows = [];
 
-$stmt = $conn->prepare("SELECT ID, BookingId, Description, Status, ReportedDate, ResolvedDate FROM Incident ORDER BY ReportedDate DESC");
+$stmt = $conn->prepare("SELECT ID, BookingId, Description, Status, ReportedDate, ResolvedDate FROM Incident ORDER BY ID DESC");
 $stmt->execute();
 $incidentRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -136,11 +136,6 @@ $database->closeConnection();
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="Report_Incidents.php">
-                            <i class="fas fa-exclamation-triangle me-1"></i>Report Incident
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="Logout.php">
                             <i class="fas fa-sign-out-alt me-1"></i>Logout
                         </a>
@@ -195,16 +190,21 @@ $database->closeConnection();
           } else {
               $i = 1;
               foreach ($incidentRows as $incident) {
-                  $statusClass = strtolower(str_replace(' ', '', $incident['Status']));
-                  $resolved = $incident['ResolvedDate'] ?: 'N/A';
-                  $bookingId = $incident['BookingId'] ?: 'N/A';
+                  $statusClass = strtolower(str_replace(' ', '', htmlspecialchars($incident['Status'], ENT_QUOTES, 'UTF-8')));
+                  $resolved = $incident['ResolvedDate'] ? htmlspecialchars($incident['ResolvedDate'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                  $bookingId = $incident['BookingId'] ? htmlspecialchars($incident['BookingId'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                  $description = htmlspecialchars($incident['Description'], ENT_QUOTES, 'UTF-8');
+                  $status = htmlspecialchars($incident['Status'], ENT_QUOTES, 'UTF-8');
+                  $reportedDate = htmlspecialchars($incident['ReportedDate'], ENT_QUOTES, 'UTF-8');
+                  $incidentId = htmlspecialchars($incident['ID'], ENT_QUOTES, 'UTF-8');
+                  
                   echo "<tr>
                       <td>{$i}</td>
-                      <td>INC-{$incident['ID']}</td>
+                      <td>INC-{$incidentId}</td>
                       <td>{$bookingId}</td>
-                      <td>{$incident['Description']}</td>
-                      <td><span class='status-pill {$statusClass}'>{$incident['Status']}</span></td>
-                      <td>{$incident['ReportedDate']}</td>
+                      <td>{$description}</td>
+                      <td><span class='status-pill {$statusClass}'>{$status}</span></td>
+                      <td>{$reportedDate}</td>
                       <td>{$resolved}</td>
                     </tr>";
                   $i++;

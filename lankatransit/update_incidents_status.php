@@ -11,12 +11,27 @@ if (!$conn) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single'])) {
-    $bookingId = $_POST['update_single'];
+    $bookingId = trim($_POST['update_single']);
     $statuses = $_POST['new_statuses'] ?? [];
     $bookingIds = $_POST['booking_ids'] ?? [];
 
+    // Validate booking ID
+    if (empty($bookingId)) {
+        error_log("Invalid booking ID provided");
+        header("Location: Manage_incidents_status.php");
+        exit;
+    }
+
     $index = array_search($bookingId, $bookingIds);
-    $newStatus = $statuses[$index] ?? 'Pending';
+    $newStatus = trim($statuses[$index] ?? 'Pending');
+    
+    // Validate status
+    $allowedStatuses = ['submitted', 'Submitted', 'In Progress', 'Resolved', 'Pending'];
+    if (!in_array($newStatus, $allowedStatuses)) {
+        error_log("Invalid status provided: " . $newStatus);
+        header("Location: Manage_incidents_status.php");
+        exit;
+    }
 
     $currentTime = date("Y-m-d H:i:s");
 

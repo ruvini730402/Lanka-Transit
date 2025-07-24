@@ -53,11 +53,6 @@ $busResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="UserFeedbackForm.php">
-                            <i class="fas fa-comment-alt me-1"></i>Feedback
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="Report_Incidents.php">
                             <i class="fas fa-exclamation-triangle me-1"></i>Report Incident
                         </a>

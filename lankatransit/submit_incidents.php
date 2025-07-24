@@ -104,8 +104,8 @@ $database->closeConnection();
 <body>
 
 <!-- Flash message container -->
-<div id="flashMessage" class="flash-message alert alert-<?php echo $statusClass; ?>">
-    <?php echo $response; ?>
+<div id="flashMessage" class="flash-message alert alert-<?php echo htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php echo htmlspecialchars($response, ENT_QUOTES, 'UTF-8'); ?>
 </div>
 
 <script>
@@ -120,7 +120,7 @@ $database->closeConnection();
 
     // Redirect to Report_Incidents.php after 3.5 seconds
     setTimeout(() => {
-        window.location.href = 'UserDashboard.php';
+        window.location.href = 'Report_Incidents.php';
     }, 3500);
 </script>
 

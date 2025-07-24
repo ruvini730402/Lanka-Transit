@@ -12,13 +12,22 @@ if (!$conn) {
 
 // Get form data
 $userId   = $_POST['user_id'] ?? null;
-$busId    = $_POST['bus_id'] ?? null;
+$busId    = filter_var($_POST['bus_id'] ?? null, FILTER_VALIDATE_INT);
 $comment  = trim($_POST['comment'] ?? '');
-$rating   = $_POST['rating'] ?? null;
+$rating   = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
 $createdDate = date("Y-m-d");
 
+// Additional validation
+if ($userId !== null && !is_numeric($userId)) {
+    $userId = null;
+}
+
+if ($rating !== false && ($rating < 1 || $rating > 5)) {
+    $rating = null;
+}
+
 // Validation
-if (empty($busId) || empty($rating)) {
+if ($busId === false || $busId === null || $rating === false || $rating === null) {
     $response = "❌ Missing required fields. Please fill out the form completely.";
     $statusClass = "danger";
 } else {
@@ -71,8 +80,8 @@ $database->closeConnection();
 <body>
 
 <!-- Flash Message Output -->
-<div id="flashMessage" class="flash-message alert alert-<?php echo $statusClass; ?>">
-    <?php echo $response; ?>
+<div id="flashMessage" class="flash-message alert alert-<?php echo htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php echo htmlspecialchars($response, ENT_QUOTES, 'UTF-8'); ?>
 </div>
 
 <script>
