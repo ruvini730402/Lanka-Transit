@@ -44,7 +44,8 @@ if (!empty($errors)) {
     $statusClass = "danger";
 } else {
     // 5. Prepare incident data
-    $bookingId = str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);  // e.g. "0003", "1223"
+    // Since BookingId is optional and refers to actual bookings, set it to NULL for general incidents
+    $bookingId = NULL;  // Will be NULL for general incidents not related to specific bookings
 
     // Fixed initial status
     $status = 'submitted';
@@ -54,14 +55,24 @@ if (!empty($errors)) {
     $resolvedDate = NULL;
 
     // 6. Insert into database
-    $stmt = $conn->prepare("INSERT INTO Incident (BookingId, Description, Status, ReportedDate, ResolvedDate) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO Incident (UserId, AdminId, BookingId, Description, Status, ReportedDate, ResolvedDate) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
     try {
-        $stmt->execute([$bookingId, $description, $status, $reportedDate, $resolvedDate]);
-        $response = "✅ Incident reported successfully. Your Booking ID is: <strong>$bookingId</strong><br>Status: <strong>$status</strong>";
+        // Include phone number in description for reference
+        $fullDescription = "Phone: $phoneNumber\n\n$description";
+        
+        // Insert with NULL values for UserId, AdminId, and BookingId since this is a general incident report
+        $stmt->execute([NULL, NULL, $bookingId, $fullDescription, $status, $reportedDate, $resolvedDate]);
+        
+        // Get the inserted incident ID for reference
+        $incidentId = $conn->lastInsertId();
+        
+        $response = "✅ Incident reported successfully. Your Incident ID is: <strong>INC-$incidentId</strong><br>Status: <strong>$status</strong><br>Phone: <strong>$phoneNumber</strong>";
         $statusClass = "success";
     } catch (PDOException $e) {
-        $response = "❌ Failed to submit incident. Please try again.";
+        // Log the actual error for debugging
+        error_log("Incident submission error: " . $e->getMessage());
+        $response = "❌ Failed to submit incident. Database error: " . $e->getMessage();
         $statusClass = "danger";
     }
 }

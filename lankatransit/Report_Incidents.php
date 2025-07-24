@@ -13,7 +13,7 @@ if (!$conn) {
 // --- Fetching Incident Records ---
 $incidentRows = [];
 
-$stmt = $conn->prepare("SELECT BookingId, Description, Status, ReportedDate, ResolvedDate FROM Incident ORDER BY ReportedDate DESC");
+$stmt = $conn->prepare("SELECT ID, BookingId, Description, Status, ReportedDate, ResolvedDate FROM Incident ORDER BY ReportedDate DESC");
 $stmt->execute();
 $incidentRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -32,7 +32,7 @@ $database->closeConnection();
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <style>
     body {
-        background-color: #800000;
+        background-color: #ffffff;
         font-family: 'Segoe UI', sans-serif;
     }
     .container {
@@ -180,6 +180,7 @@ $database->closeConnection();
         <thead class="table-light">
           <tr>
             <th>#</th>
+            <th>Incident ID</th>
             <th>Booking ID</th>
             <th>Description</th>
             <th>Status</th>
@@ -190,15 +191,17 @@ $database->closeConnection();
         <tbody>
           <?php
           if (count($incidentRows) === 0) {
-              echo "<tr><td colspan='6' class='text-center'>No incidents reported yet.</td></tr>";
+              echo "<tr><td colspan='7' class='text-center'>No incidents reported yet.</td></tr>";
           } else {
               $i = 1;
               foreach ($incidentRows as $incident) {
                   $statusClass = strtolower(str_replace(' ', '', $incident['Status']));
                   $resolved = $incident['ResolvedDate'] ?: 'N/A';
+                  $bookingId = $incident['BookingId'] ?: 'N/A';
                   echo "<tr>
                       <td>{$i}</td>
-                      <td>{$incident['BookingId']}</td>
+                      <td>INC-{$incident['ID']}</td>
+                      <td>{$bookingId}</td>
                       <td>{$incident['Description']}</td>
                       <td><span class='status-pill {$statusClass}'>{$incident['Status']}</span></td>
                       <td>{$incident['ReportedDate']}</td>

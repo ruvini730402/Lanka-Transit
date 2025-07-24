@@ -9,7 +9,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--primary-dark); /* Sets the page background to dark maroon */
+  background-color: #ffffff; /* Sets the page background to white */
   font-family: 'Segoe UI', sans-serif;
   min-height: 100vh; /* Ensures body takes at least full viewport height */
   position: relative; /* Needed for absolute positioning of the back-icon */
