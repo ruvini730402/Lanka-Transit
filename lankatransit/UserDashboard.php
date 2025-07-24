@@ -41,14 +41,12 @@ $username = htmlspecialchars($_SESSION['username']);
           <li><a href="UserFeedbackForm.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
           <li><a href="Report_Incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
           <li><a href="#"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-          <li><a href="Setting.php"><i class="fas fa-cog"></i> Settings</a></li> 
         </ul>
       </nav>
       <div class="logout">
         <a href="Logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
       </div>
     </div>
-
     <div class="main-content">
       <div class="header-container">
         <div class="welcome-message">

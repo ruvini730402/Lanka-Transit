@@ -1,40 +1,39 @@
 <?php
-$connection = new mysqli("localhost", "root", "", "lankatrasit");
-if ($connection->connect_error) {
-    die("Connection failed");
+// Include database configuration
+require_once '../config/database.php';
+
+// Get database connection
+$database = new Database();
+$conn = $database->getConnection();
+
+if (!$conn) {
+    die("Connection failed: Unable to connect to database");
 }
 
-// Validate form
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single'])) {
-    $incidentIdToUpdate = intval($_POST['update_single']);
-    $incidentIds = $_POST['incident_ids'] ?? [];
-    $newStatuses = $_POST['new_statuses'] ?? [];
+    $bookingId = $_POST['update_single'];
+    $statuses = $_POST['new_statuses'] ?? [];
+    $bookingIds = $_POST['booking_ids'] ?? [];
 
-    // Find index of this incident ID
-    $index = array_search($incidentIdToUpdate, $incidentIds);
-    if ($index !== false && isset($newStatuses[$index])) {
-        $newStatus = $connection->real_escape_string($newStatuses[$index]);
+    $index = array_search($bookingId, $bookingIds);
+    $newStatus = $statuses[$index] ?? 'Pending';
 
-        // Update status in DB
-        $updateQuery = "UPDATE incidents SET status = ? WHERE id = ?";
-        $stmt = $connection->prepare($updateQuery);
-        $stmt->bind_param("si", $newStatus, $incidentIdToUpdate);
+    $currentTime = date("Y-m-d H:i:s");
 
-        if ($stmt->execute()) {
-            // Success - redirect silently
-            header("Location: manage_incident_status.php");
-            exit();
+    try {
+        if ($newStatus === "In Progress" || $newStatus === "Resolved") {
+            $stmt = $conn->prepare("UPDATE incident SET Status = ?, ResolvedDate = ? WHERE BookingId = ?");
+            $stmt->execute([$newStatus, $currentTime, $bookingId]);
         } else {
-            echo "Error updating status.";
+            $stmt = $conn->prepare("UPDATE incident SET Status = ?, ResolvedDate = NULL WHERE BookingId = ?");
+            $stmt->execute([$newStatus, $bookingId]);
         }
-
-        $stmt->close();
-    } else {
-        echo "Invalid incident ID or status.";
+    } catch (PDOException $e) {
+        error_log("Update error: " . $e->getMessage());
     }
-} else {
-    echo "Invalid request.";
 }
 
-$connection->close();
-?>
+// Close database connection
+$database->closeConnection();
+header("Location: Manage_incidents_status.php");
+exit;

@@ -1,45 +1,95 @@
 <?php
-session_start();
+// Include database configuration
+require_once '../config/database.php';
 
-// Allow only POST requests
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo "<script>alert('Access Denied'); window.location.href='userDashboard.php';</script>";
-    exit();
+// Get database connection
+$database = new Database();
+$conn = $database->getConnection();
+
+if (!$conn) {
+    die("Connection failed: Unable to connect to database");
 }
 
-// DB connection
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$db   = 'lankatrasit';
+// Get form data
+$userId   = $_POST['user_id'] ?? null;
+$busId    = $_POST['bus_id'] ?? null;
+$comment  = trim($_POST['comment'] ?? '');
+$rating   = $_POST['rating'] ?? null;
+$createdDate = date("Y-m-d");
 
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) {
-    die("❌ Connection failed: " . $conn->connect_error);
+// Validation
+if (empty($busId) || empty($rating)) {
+    $response = "❌ Missing required fields. Please fill out the form completely.";
+    $statusClass = "danger";
+} else {
+    // Prepare SQL
+    $stmt = $conn->prepare("INSERT INTO Feedback (UserId, BusId, Comment, Rating, CreatedDate) VALUES (?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        $response = "❌ SQL error: " . $conn->errorInfo()[2];
+        $statusClass = "danger";
+    } else {
+        // Handle nullable UserId
+        try {
+            if ($userId === '' || $userId === null) {
+                $stmt->execute([null, $busId, $comment, $rating, $createdDate]);
+            } else {
+                $stmt->execute([$userId, $busId, $comment, $rating, $createdDate]);
+            }
+            $response = "✅ Your feedback was successfully submitted!";
+            $statusClass = "success";
+        } catch (PDOException $e) {
+            $response = "❌ Failed to submit feedback: " . $e->getMessage();
+            $statusClass = "danger";
+        }
+    }
 }
 
-// Sanitize input
-function clean($value) {
-    return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
-}
+// Close database connection
+$database->closeConnection();
+?>
 
-// Collect and clean form data
-$name          = clean($_POST['name'] ?? '');
-$feedback_type = clean($_POST['feedback_type'] ?? '');
-$rating        = clean($_POST['rating'] ?? '');
-$message       = clean($_POST['message'] ?? '');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Submitting Feedback</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .flash-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            font-size: 16px;
+            z-index: 9999;
+            border-radius: 8px;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
 
-// Validate required fields (message is optional now)
-if (!$name || !$feedback_type || !$rating) {
-    echo "<script>alert('⚠️ Please fill in all required fields.'); window.history.back();</script>";
-    exit();
-}
+<!-- Flash Message Output -->
+<div id="flashMessage" class="flash-message alert alert-<?php echo $statusClass; ?>">
+    <?php echo $response; ?>
+</div>
 
-// Prepare and insert into DB
-$stmt = $conn->prepare("INSERT INTO feedback (name, feedback_type, rating, message, created_at) VALUES (?, ?, ?, ?, NOW())");
-$stmt->bind_param("ssis", $name, $feedback_type, $rating, $message);
+<script>
+    const msgBox = document.getElementById('flashMessage');
+    msgBox.style.display = 'block';
 
-if ($stmt->execute()) {
-    header("Location: feedback_success.php");
-    exit();
-}
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+        msgBox.style.opacity = '0';
+        setTimeout(() => msgBox.remove(), 500);
+    }, 2000);
+
+    // Redirect after 3.5 seconds
+    setTimeout(() => {
+        window.location.href = 'UserDashboard.php';
+    }, 2000);
+</script>
+
+</body>
+</html>

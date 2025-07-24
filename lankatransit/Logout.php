@@ -1,32 +1,13 @@
-<?php
-session_start();
-
-// Unset all session variables
-session_unset();
-
-// Destroy the session
-session_destroy();
-
-// Clear session cookie
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Logout Successful</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
       --primary-color: #800000;
-      --secondary-color: #060725;
+      --secondary-color: #333;
       --success-green: #28a745;
     }
 
@@ -36,25 +17,28 @@ if (ini_get("session.use_cookies")) {
       box-sizing: border-box;
     }
 
-    body {
-      background-color: #f4f4f4;
+    html, body {
+      width: 100%;
+      height: 100%;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #fff;
       display: flex;
-      align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      align-items: center;
       padding: 20px;
+      overflow-x: hidden;
     }
 
     .logout-box {
-      background-color: white;
-      border: 1px solid #ddd;
-      padding: 30px 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      text-align: center;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 32px 28px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
     }
 
     .success-icon {
@@ -66,7 +50,7 @@ if (ini_get("session.use_cookies")) {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 42px;
       margin: 0 auto 20px;
       animation: pop 0.3s ease-out;
     }
@@ -83,15 +67,16 @@ if (ini_get("session.use_cookies")) {
     }
 
     h1 {
+      font-size: 1.7rem;
       color: var(--secondary-color);
-      font-size: 1.6rem;
       margin-bottom: 10px;
     }
 
     p {
-      color: #333;
       font-size: 1rem;
+      color: #444;
       margin-bottom: 25px;
+      line-height: 1.5;
     }
 
     a {
@@ -99,20 +84,35 @@ if (ini_get("session.use_cookies")) {
       text-decoration: none;
       background-color: var(--primary-color);
       color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
+      padding: 10px 22px;
+      border-radius: 6px;
       font-weight: 500;
-      transition: background-color 0.3s ease;
       font-size: 0.95rem;
+      transition: background-color 0.3s ease;
     }
 
     a:hover {
-      background-color: #d93b46;
+      background-color: #a80000;
+    }
+
+    .link-small {
+      display: inline-block;
+      background: none;
+      color: #444;
+      padding: 0;
+      font-size: 0.9rem;
+      font-weight: normal;
+      text-decoration: underline;
+      margin-top: 12px;
+    }
+
+    .link-small:hover {
+      color: #004999;
     }
 
     @media (max-width: 480px) {
       .logout-box {
-        padding: 25px 20px;
+        padding: 25px 18px;
       }
 
       .success-icon {
@@ -122,7 +122,7 @@ if (ini_get("session.use_cookies")) {
       }
 
       h1 {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
       }
 
       p {
@@ -134,16 +134,33 @@ if (ini_get("session.use_cookies")) {
         padding: 9px 18px;
       }
     }
+
+    @media (max-width: 360px) {
+      .logout-box {
+        padding: 20px 15px;
+      }
+
+      h1 {
+        font-size: 1.35rem;
+      }
+
+      .success-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 28px;
+      }
+    }
   </style>
 </head>
 <body>
+
   <div class="logout-box">
     <div class="success-icon">✔</div>
     <h1>Logged Out</h1>
     <p>You have successfully logged out of your account.</p>
     <a href="login.php">Return to Login</a><br><br>
-    <a href="index.php">Return to Home Page</a>
+    <a href="index.php" class="link-small">Return to Home Page</a>
   </div>
-    
+
 </body>
 </html>
