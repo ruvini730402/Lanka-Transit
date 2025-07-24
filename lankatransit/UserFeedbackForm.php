@@ -29,13 +29,49 @@ $busResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <title>Feedback Form - LankaTransit</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="UserFeedbackForm.css" />
 </head>
 <body>
-<?php
-$showBackIcon = true;
-include 'Header.php';
-?>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../index.php">
+                <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.php">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="UserDashboard.php">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="UserFeedbackForm.php">
+                            <i class="fas fa-comment-alt me-1"></i>Feedback
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Report_Incidents.php">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Report Incident
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Logout.php">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
 
 <div class="feedback-wrapper">
   <div class="feedback-container">
@@ -83,6 +119,15 @@ include 'Header.php';
   </div>
 </div>
 
-<?php include 'Footer.php'; ?>
+<!-- Footer -->
+<footer class="text-white py-4 mt-5" style="background-color: #800000;">
+  <div class="container">
+    <div class="row">
+      <p>&copy; 2025 Transit. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
