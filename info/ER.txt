@@ -1,4 +1,6 @@
-Er diagram
+ER Diagram - Lanka Transit (Updated with Extended Schema)
+
+=== ORIGINAL TABLES ===
 
 User
 PK ID INT NOT NULL
@@ -17,6 +19,7 @@ SeatNumber VARCHAR(6) NOT NULL
 BookingTime TIMESTAMP DEFAULT CURRENT TIMESTAMP
 Status ENUM('confirmed','cancelled','completed') NOT NULL
 PhoneNumber VARCHAR(10) NOT NULL
+Fare DECIMAL(10,2) NOT NULL
 
 Feedback
 PK ID INT NOT NULL
@@ -31,7 +34,7 @@ PK ID INT NOT NULL
 FK UserId INT
 FK AdminId INT
 FK BookingId INT
-Discription TEXT
+Description TEXT
 Status ENUM('submitted','in progress','resolved') NOT NULL
 ReportedDate DATE
 ResolvedDate DATE
@@ -45,9 +48,9 @@ PhoneNumber VARCHAR(10) NOT NULL
 
 Bus
 PK ID INT NOT NULL
-FK RoutId INT
+FK RouteId INT
 FK AdminId INT
-BusNumber VARCHAR(6) NOT NULL
+BusNumber VARCHAR(7) NOT NULL
 Capacity INT NOT NULL
 LastUpdate DATE
 
@@ -57,8 +60,8 @@ FK BookingId INT NOT NULL
 PaymentMethod VARCHAR(50)
 Status ENUM('success','failed') NOT NULL
 Amount DECIMAL(10,2)
-PaymentDate NOT NULL
-PaymentDate NOT NULL
+PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+TransactionId VARCHAR(100)
 
 Receipt
 PK ID INT NOT NULL
@@ -70,15 +73,16 @@ Seat
 PK ID INT NOT NULL
 FK BusID INT
 SeatNumber VARCHAR(6) NOT NULL
-Status VARCHAR('available','booked')
+Status ENUM('available','booked')
 GenderPreference ENUM('male','female','other') NOT NULL
 IsLadySeat BOOLEAN
 
-Shedule
+Schedule
 PK ID INT NOT NULL
 FK BusID INT
-Depature_time DATE
-ArrivalTime DATE
+DepartureTime DATETIME NOT NULL
+ArrivalTime DATETIME NOT NULL
+Fare DECIMAL(10,2) NOT NULL
 
 Route
 PK ID INT NOT NULL
@@ -87,11 +91,163 @@ Destination VARCHAR(50)
 Stops TEXT
 
 Location
-PK UniqueID
-FK Name VARCHAR(100) NOT NULL
-Type VARCHAR('terminal','stop')
+PK UniqueID INT NOT NULL
+Name VARCHAR(100) NOT NULL
+Type ENUM('terminal','stop')
 
-Relationships:
+=== EXTENDED TABLES (with _2 suffix) ===
+
+User_2
+PK user_id INT (FK to User.ID)
+passenger_name VARCHAR(100)
+travel_history JSON
+preferred_seats VARCHAR(255)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Bus_2
+PK bus_id INT (FK to Bus.ID)
+fare_per_km DECIMAL(8,2)
+total_distance_km DECIMAL(8,2)
+driver_name VARCHAR(100)
+driver_contact VARCHAR(15)
+maintenance_date DATE
+status ENUM('active','maintenance','retired')
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Route_2
+PK route_id INT (FK to Route.ID)
+from_location VARCHAR(100)
+to_location VARCHAR(100)
+total_distance DECIMAL(8,2)
+estimated_duration TIME
+route_type ENUM('express','semi-express','normal')
+operating_days VARCHAR(20)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Schedule_2
+PK schedule_id INT (FK to Schedule.ID)
+travel_date DATE
+departure_time TIME
+arrival_time TIME
+actual_departure_time DATETIME
+actual_arrival_time DATETIME
+delay_minutes INT
+status ENUM('scheduled','delayed','cancelled','completed')
+weather_condition VARCHAR(50)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Booking_2
+PK booking_id INT (FK to Booking.ID)
+FK schedule_id INT (FK to Schedule.ID)
+seat_number VARCHAR(10)
+passenger_name VARCHAR(100)
+travel_date DATE
+booking_date DATE
+booking_reference VARCHAR(50) UNIQUE
+passenger_age INT
+passenger_gender ENUM('male','female','other')
+emergency_contact VARCHAR(15)
+special_requirements TEXT
+boarding_point VARCHAR(100)
+destination_point VARCHAR(100)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Seat_2
+PK seat_id INT (FK to Seat.ID)
+seat_number VARCHAR(10)
+seat_type ENUM('window','aisle','middle')
+is_lady_seat BOOLEAN
+is_handicap_accessible BOOLEAN
+comfort_level ENUM('standard','premium','luxury')
+additional_charges DECIMAL(6,2)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Payment_2
+PK payment_id INT (FK to Payment.ID)
+booking_reference VARCHAR(50)
+payment_gateway VARCHAR(50)
+gateway_transaction_id VARCHAR(100)
+payment_date DATETIME
+processing_fee DECIMAL(6,2)
+discount_amount DECIMAL(6,2)
+final_amount DECIMAL(10,2)
+refund_amount DECIMAL(10,2)
+refund_date DATETIME
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Feedback_2
+PK feedback_id INT (FK to Feedback.ID)
+booking_reference VARCHAR(50)
+service_rating INT (1-5)
+comfort_rating INT (1-5)
+punctuality_rating INT (1-5)
+staff_rating INT (1-5)
+detailed_comments TEXT
+improvement_suggestions TEXT
+recommend_to_others BOOLEAN
+feedback_status ENUM('pending','reviewed','responded')
+admin_response TEXT
+response_date DATETIME
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Incident_2
+PK incident_id INT (FK to Incident.ID)
+booking_reference VARCHAR(50)
+incident_type ENUM('delay','breakdown','accident','service_issue','safety_concern','other')
+severity ENUM('low','medium','high','critical')
+location VARCHAR(255)
+incident_time DATETIME
+reporter_contact VARCHAR(15)
+witness_details TEXT
+action_taken TEXT
+resolution_details TEXT
+compensation_provided DECIMAL(8,2)
+follow_up_required BOOLEAN
+follow_up_date DATE
+FK assigned_admin_id INT (FK to Admin.ID)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+Receipt_2
+PK receipt_id INT (FK to Receipt.ID)
+booking_reference VARCHAR(50)
+receipt_number VARCHAR(50) UNIQUE
+receipt_type ENUM('booking','payment','refund','cancellation')
+receipt_format ENUM('pdf','email','sms')
+generated_by ENUM('system','admin','user')
+delivery_status ENUM('pending','sent','delivered','failed')
+download_count INT
+last_downloaded DATETIME
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+=== NEW TABLES ===
+
+Announcements
+PK ID INT NOT NULL
+title VARCHAR(200) NOT NULL
+message TEXT NOT NULL
+announcement_type ENUM('general','route_update','service_change','emergency')
+priority ENUM('low','medium','high')
+target_audience ENUM('all','passengers','drivers','staff')
+valid_from DATE
+valid_until DATE
+is_active BOOLEAN
+FK created_by INT (FK to Admin.ID)
+created_at TIMESTAMP
+updated_at TIMESTAMP
+
+=== EXTENDED RELATIONSHIPS ===
+
+Original Relationships:
 - A **User** makes a **Booking**
 - A **Booking** reserves a **Seat**
 - A **Booking** generates a **Payment**
@@ -104,3 +260,37 @@ Relationships:
 - A **Bus** has a **Schedule**
 - A **Bus** operates on a **Route**
 - A **Route** includes multiple **Locations**
+
+Extended Relationships:
+- **User** extends to **User_2** (1:1 relationship)
+- **Bus** extends to **Bus_2** (1:1 relationship)
+- **Route** extends to **Route_2** (1:1 relationship)
+- **Schedule** extends to **Schedule_2** (1:1 relationship)
+- **Booking** extends to **Booking_2** (1:1 relationship)
+- **Seat** extends to **Seat_2** (1:1 relationship)
+- **Payment** extends to **Payment_2** (1:1 relationship)
+- **Feedback** extends to **Feedback_2** (1:1 relationship)
+- **Incident** extends to **Incident_2** (1:1 relationship)
+- **Receipt** extends to **Receipt_2** (1:1 relationship)
+- **Booking_2** references **Schedule** (many:1 relationship)
+- **Incident_2** can be assigned to **Admin** (many:1 relationship)
+- **Admin** creates **Announcements** (1:many relationship)
+
+=== MISSING ATTRIBUTES IDENTIFIED AND ADDRESSED ===
+
+From code analysis, these attributes were missing in original schema:
+✅ user_id (now mapped to User.ID)
+✅ booking_id (now mapped to Booking.ID)
+✅ bus_id (now mapped to Bus.ID)
+✅ schedule_id (added to Booking_2 and Schedule_2)
+✅ seat_number (enhanced in Booking_2 and Seat_2)
+✅ passenger_name (added to User_2 and Booking_2)
+✅ travel_date (added to Schedule_2 and Booking_2)
+✅ booking_date (added to Booking_2)
+✅ from_location/to_location (added to Route_2)
+✅ departure_time/arrival_time (enhanced in Schedule_2)
+✅ booking_reference (added to Booking_2, Payment_2, etc.)
+✅ announcements table (created as new table)
+✅ Various rating breakdowns (added to Feedback_2)
+✅ Incident management fields (added to Incident_2)
+✅ Receipt management (enhanced in Receipt_2)
