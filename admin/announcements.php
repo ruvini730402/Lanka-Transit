@@ -29,13 +29,13 @@ if ($connection) {
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin-style.css">
 </head>
 <body>
 
 <div class="container mt-4">
     <!-- Back Button -->
-    <a href="admin.html" class="btn btn-maroon-outline back-btn">&larr; Back</a>
+    <a href="dashboard.php" class="btn btn-maroon-outline back-btn">&larr; Back</a>
 
 
     <h1 class="text-center mb-4">Announcements</h1>

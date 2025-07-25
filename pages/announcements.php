@@ -28,14 +28,22 @@ if ($connection) {
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .btn-maroon-outline {
+            color: #800000;
+            border-color: #800000;
+        }
+        .btn-maroon-outline:hover {
+            background-color: #800000;
+            color: white;
+        }
+    </style>
 </head>
 <body>
 
 <div class="container mt-4">
     <!-- Back Button -->
-    <a href="admin.html" class="btn btn-maroon-outline back-btn">&larr; Back</a>
+    <a href="../index.php" class="btn btn-maroon-outline back-btn">&larr; Back</a>
 
 
     <h1 class="text-center mb-4">Announcements</h1>

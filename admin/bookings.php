@@ -24,7 +24,7 @@
 <body class="container mt-4">
 
     <!-- Back Button -->
-    <a href="admin.html" class="back-btn mb-4 d-inline-block">&larr; Back</a>
+    <a href="dashboard.php" class="back-btn mb-4 d-inline-block">&larr; Back</a>
 
     <!-- Page Heading -->
     <h2 class="text-center mb-5">Reservation Overview</h2>

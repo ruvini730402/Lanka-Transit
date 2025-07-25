@@ -49,7 +49,7 @@ if ($connection) {
 <body>
 
 <div class="container mt-4">
-    <a href="admin.html" class="btn btn-maroon-outline back-btn">&larr; Back</a>
+    <a href="dashboard.php" class="btn btn-maroon-outline back-btn">&larr; Back</a>
 
 
     <h1 class="text-center mb-4">Bus List</h1>
