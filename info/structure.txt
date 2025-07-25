@@ -1,0 +1,32 @@
+/                             # Root
+│
+├── index.php                # Homepage
+│
+├── auth/                    # Authentication Folder
+│   ├── login.php            # User/Admin Login
+│   ├── register.php         # User Registration
+│   └── logout.php           # Logout Logic
+│
+├── pages/                   # Registered User Pages
+│   ├── search.php           # Bus Search Results Page
+│   ├── bus-details.php      # Bus Detail Page (query: ?bus_id=123)
+│   ├── booking.php          # Booking Page (query: ?bus_id=123)
+│   ├── payment.php          # Payment Page (query: ?booking_id=456)
+│   ├── receipt.php          # Receipt Download Page (query: ?booking_id=456)
+│   ├── dashboard.php        # User Dashboard (Post-login landing page)
+│   ├── bookings.php         # My Bookings
+│   ├── feedback.php         # Submit Feedback
+│   ├── incidents.php        # Report Incident
+│   └── announcements.php    # View Announcements
+│
+├── admin/                   # Admin Panel
+│   ├── dashboard.php        # Admin Dashboard
+│   ├── buses.php            # Add/Edit/Remove Buses
+│   ├── bookings.php         # View and Manage Bookings
+│   ├── payments.php         # Monitor Payments
+│   ├── announcements.php    # Post/View Announcements
+│   ├── feedback.php         # Moderate Feedback
+│   └── incidents.php        # Track/Resolve Incidents
+│
+└── auth/
+    └── process_payment.php  # Backend payment processing (POST action)

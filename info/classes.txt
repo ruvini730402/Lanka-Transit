@@ -1,0 +1,116 @@
+Class diagram
+
+User
+- phoneNumber: String
++ searchBus()
++ bookSeat()
+
+RegisteredUser (inherits from User)
+- userID
+- name
+- email
+- password
+- travelHistory[ ]
++ login()
++ logout()
++ manageBookings()
++ downloadReceipt()
++ submitFeedback()
++ reportIncident()
++ viewDashboard()
+
+Admin
+- adminID
+- email
+- password
++ addBus()
++ updateBus()
++ removeBus()
++ viewReports()
++ resolveIncident()
++ manageFeedback()
++ postAnnouncement()
++ viewPayments()
+
+Bus
+- busID: String
+- busNumber: String
+- route: String
+- departureTime: DateTime
+- arrivalTime: DateTime
+- seatCount: int
+- fare: float
+- schedule: List
++ getAvailableSeats()
++ isLadySeat(seatNumber)
++ updateSchedule()
+
+Booking
+- bookingID: String
+- userPhone: String
+- seatNumber: String
+- busID: String
+- fare: float
+- status: String
+- gender: Enum
+- paymentID: String
++ generatePDFReceipt()
++ cancelBooking()
+
+Payment
+- paymentID: String
+- bookingID: String
+- transactionID: String
+- amount: float
+- status: Enum ("Success", "Fail")
+- timestamp: DateTime
++ retryPayment()
++ validateTransaction()
+
+IncidentReport
+- reportID: String
+- userPhone: String
+- tripID: String
+- message: String
+- status: Enum
++ trackStatus()
++ updateStatus()
+
+Feedback
+- feedbackID: String
+- rating: int (1-5)
+- message: String
+- category: String
+
+Announcement
+- announcementID: String
+- title: String
+- message: String
+- timestamp: DateTime
++ displayOnPages()
+
+Guest
+- name: String (optional)
+- NIC: String (optional)
++ bookWithPhoneOnly()
++ generateReceipt()
+
+Seat
+- seatNumber: String
+- genderType: String
+- isBooked: boolean
++ reserveSeat(): void
++ releaseSeat(): void
+
+Relationships:
+- A **User** can make multiple **Bookings**
+- A **RegisteredUser** has a **travelHistory** of **Bookings**
+- A **Booking** is linked to one **Bus**
+- A **Booking** reserves one **Seat**
+- A **Booking** results in one **Payment**
+- A **User** can submit multiple **IncidentReports**
+- A **User** can submit multiple **Feedback** entries
+- An **Admin** can manage multiple **Buses**
+- An **Admin** can resolve multiple **IncidentReports**
+- A **Bus** includes multiple **Seats**
+-

@@ -1,0 +1,106 @@
+Er diagram
+
+User
+PK ID INT NOT NULL
+Name VARCHAR(100) NOT NULL
+Email VARCHAR(60) NOT NULL
+PasswordHash VARCHAR(255) NOT NULL
+PhoneNumber VARCHAR(10) NOT NULL
+Role ENUM('administrator','guest user','registered user') NOT NULL
+RegistrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+Booking
+PK ID INT NOT NULL
+FK UserId INT
+FK BusID INT
+SeatNumber VARCHAR(6) NOT NULL
+BookingTime TIMESTAMP DEFAULT CURRENT TIMESTAMP
+Status ENUM('confirmed','cancelled','completed') NOT NULL
+PhoneNumber VARCHAR(10) NOT NULL
+
+Feedback
+PK ID INT NOT NULL
+FK UserId INT
+FK BusId INT
+Comment TEXT
+Rating INT
+CreatedDate DATE
+
+Incident
+PK ID INT NOT NULL
+FK UserId INT
+FK AdminId INT
+FK BookingId INT
+Discription TEXT
+Status ENUM('submitted','in progress','resolved') NOT NULL
+ReportedDate DATE
+ResolvedDate DATE
+
+Admin
+PK ID INT NOT NULL
+Email VARCHAR(60) NOT NULL
+PasswordHash VARCHAR(255) NOT NULL
+Name VARCHAR(100) NOT NULL
+PhoneNumber VARCHAR(10) NOT NULL
+
+Bus
+PK ID INT NOT NULL
+FK RoutId INT
+FK AdminId INT
+BusNumber VARCHAR(6) NOT NULL
+Capacity INT NOT NULL
+LastUpdate DATE
+
+Payment
+PK ID INT NOT NULL
+FK BookingId INT NOT NULL
+PaymentMethod VARCHAR(50)
+Status ENUM('success','failed') NOT NULL
+Amount DECIMAL(10,2)
+PaymentDate NOT NULL
+PaymentDate NOT NULL
+
+Receipt
+PK ID INT NOT NULL
+FK PaymentId INT NOT NULL
+PdfUrl VARCHAR(255) NOT NULL
+GeneratedDate DATE
+
+Seat
+PK ID INT NOT NULL
+FK BusID INT
+SeatNumber VARCHAR(6) NOT NULL
+Status VARCHAR('available','booked')
+GenderPreference ENUM('male','female','other') NOT NULL
+IsLadySeat BOOLEAN
+
+Shedule
+PK ID INT NOT NULL
+FK BusID INT
+Depature_time DATE
+ArrivalTime DATE
+
+Route
+PK ID INT NOT NULL
+Origin VARCHAR(50)
+Destination VARCHAR(50)
+Stops TEXT
+
+Location
+PK UniqueID
+FK Name VARCHAR(100) NOT NULL
+Type VARCHAR('terminal','stop')
+
+Relationships:
+- A **User** makes a **Booking**
+- A **Booking** reserves a **Seat**
+- A **Booking** generates a **Payment**
+- A **Payment** generates a **Receipt**
+- A **User** submits a **Feedback**
+- A **User** reports an **Incident**
+- An **Admin** resolves an **Incident**
+- An **Admin** manages a **Bus**
+- A **Bus** contains many **Seats**
+- A **Bus** has a **Schedule**
+- A **Bus** operates on a **Route**
+- A **Route** includes multiple **Locations**
