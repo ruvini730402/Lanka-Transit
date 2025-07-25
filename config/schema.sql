@@ -1,8 +1,8 @@
 -- Lanka Transit Database Schema
 -- Based on ER diagram requirements
 
-CREATE DATABASE IF NOT EXISTS transit;
-USE transit;
+CREATE DATABASE IF NOT EXISTS codebay_transit;
+USE codebay_transit;
 
 -- User table
 CREATE TABLE User (

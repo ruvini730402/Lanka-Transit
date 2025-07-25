@@ -1,116 +1,169 @@
-Class diagram
+Class diagram - Lanka Transit Project (ACTUAL IMPLEMENTATION)
 
-User
-- phoneNumber: String
-+ searchBus()
-+ bookSeat()
-
-RegisteredUser (inherits from User)
-- userID
-- name
-- email
-- password
-- travelHistory[ ]
-+ login()
-+ logout()
-+ manageBookings()
-+ downloadReceipt()
-+ submitFeedback()
-+ reportIncident()
-+ viewDashboard()
-
-Admin
-- adminID
-- email
-- password
-+ addBus()
-+ updateBus()
-+ removeBus()
-+ viewReports()
-+ resolveIncident()
-+ manageFeedback()
-+ postAnnouncement()
-+ viewPayments()
+Database
+- host: String
+- db_name: String
+- username: String
+- password: String
+- conn: PDO
++ getConnection(): PDO
++ closeConnection(): void
++ executeQuery(query, params): PDOStatement
++ sanitizeInput(data): String
++ validateInput(data, type): boolean
 
 Bus
-- busID: String
+- conn: PDO
+- table_name: String
+- id: int
+- routeId: int
+- adminId: int
 - busNumber: String
-- route: String
-- departureTime: DateTime
-- arrivalTime: DateTime
-- seatCount: int
-- fare: float
-- schedule: List
-+ getAvailableSeats()
-+ isLadySeat(seatNumber)
-+ updateSchedule()
+- capacity: int
+- lastUpdate: Date
++ __construct(db): void
++ searchBuses(origin, destination, travelDate, maxFare): Array
++ getAvailableSeats(busId, travelDate): Array
++ isLadySeat(busId, seatNumber): boolean
++ getBusDetails(busId): Array
 
-Booking
-- bookingID: String
-- userPhone: String
-- seatNumber: String
-- busID: String
-- fare: float
-- status: String
-- gender: Enum
-- paymentID: String
-+ generatePDFReceipt()
-+ cancelBooking()
+User (Database Table Structure)
+- ID: int (Primary Key)
+- Name: String
+- Email: String (Unique)
+- PasswordHash: String
+- PhoneNumber: String
+- Role: Enum('administrator','guest user','registered user')
+- RegistrationDate: Timestamp
 
-Payment
-- paymentID: String
-- bookingID: String
-- transactionID: String
-- amount: float
-- status: Enum ("Success", "Fail")
-- timestamp: DateTime
-+ retryPayment()
-+ validateTransaction()
+Admin (Database Table Structure)
+- ID: int (Primary Key)
+- Email: String (Unique)
+- PasswordHash: String
+- Name: String
+- PhoneNumber: String
 
-IncidentReport
-- reportID: String
-- userPhone: String
-- tripID: String
-- message: String
-- status: Enum
-+ trackStatus()
-+ updateStatus()
+Route (Database Table Structure)
+- ID: int (Primary Key)
+- Origin: String
+- Destination: String
+- Stops: Text
 
-Feedback
-- feedbackID: String
-- rating: int (1-5)
-- message: String
-- category: String
+Schedule (Database Table Structure)
+- ID: int (Primary Key)
+- BusId: int (Foreign Key)
+- AvailableDate: Date
+- DepartureTime: Time
+- ArrivalTime: Time
+- Status: Enum('active','inactive')
 
-Announcement
-- announcementID: String
-- title: String
-- message: String
-- timestamp: DateTime
-+ displayOnPages()
+Seat (Database Table Structure)
+- ID: int (Primary Key)
+- BusId: int (Foreign Key)
+- SeatNumber: String
+- GenderRestriction: Enum('male','female','general')
+- IsBooked: boolean
 
-Guest
-- name: String (optional)
-- NIC: String (optional)
-+ bookWithPhoneOnly()
-+ generateReceipt()
+Booking (Database Table Structure)
+- ID: int (Primary Key)
+- UserId: int (Foreign Key)
+- BusId: int (Foreign Key)
+- ScheduleId: int (Foreign Key)
+- SeatId: int (Foreign Key)
+- TravelDate: Date
+- BookingDate: Timestamp
+- SeatsBooked: int
+- TotalFare: Decimal
+- Status: Enum('pending','confirmed','cancelled')
 
-Seat
-- seatNumber: String
-- genderType: String
-- isBooked: boolean
-+ reserveSeat(): void
-+ releaseSeat(): void
+Payment (Database Table Structure)
+- ID: int (Primary Key)
+- BookingId: int (Foreign Key)
+- Amount: Decimal
+- PaymentMethod: String
+- PaymentStatus: Enum('pending','completed','failed')
+- PaymentDate: Timestamp
+- TransactionReference: String
 
-Relationships:
-- A **User** can make multiple **Bookings**
-- A **RegisteredUser** has a **travelHistory** of **Bookings**
-- A **Booking** is linked to one **Bus**
-- A **Booking** reserves one **Seat**
-- A **Booking** results in one **Payment**
-- A **User** can submit multiple **IncidentReports**
-- A **User** can submit multiple **Feedback** entries
-- An **Admin** can manage multiple **Buses**
-- An **Admin** can resolve multiple **IncidentReports**
-- A **Bus** includes multiple **Seats**
--
+Receipt (Database Table Structure)
+- ID: int (Primary Key)
+- BookingId: int (Foreign Key)
+- IssueDate: Timestamp
+- ReceiptData: JSON
+
+Feedback (Database Table Structure)
+- ID: int (Primary Key)
+- UserId: int (Foreign Key)
+- BusId: int (Foreign Key)
+- Rating: int (1-5)
+- Comments: Text
+- FeedbackDate: Timestamp
+- Category: String
+
+Incident (Database Table Structure)
+- ID: int (Primary Key)
+- BookingId: int (Foreign Key)
+- Description: Text
+- Status: Enum('open','in_progress','resolved','closed')
+- ReportedDate: Timestamp
+- ResolvedDate: Timestamp
+
+IMPLEMENTED FUNCTIONALITY:
+
+Authentication System:
+✅ User login with email/password
+✅ User registration with validation
+✅ Session management
+✅ Role-based access (admin/user)
+✅ Logout functionality
+
+Bus Search & Booking:
+✅ Search buses by origin, destination, date
+✅ Filter by maximum fare
+✅ View available seats
+✅ Check lady seat restrictions
+✅ Get bus details
+
+User Management:
+✅ User dashboard
+✅ View booking history
+✅ Submit feedback
+✅ Report incidents
+✅ View announcements
+
+Admin Panel:
+✅ Admin dashboard
+✅ Manage buses
+✅ View bookings
+✅ Manage announcements
+✅ View feedback
+✅ Handle incidents
+✅ Monitor payments
+
+File Organization:
+✅ MVC structure with auth/, pages/, admin/, classes/, config/
+✅ Centralized database configuration
+✅ Organized assets (CSS, JS, images)
+✅ Comprehensive test suite
+
+Database Features:
+✅ PDO with prepared statements
+✅ Input sanitization and validation
+✅ Proper error handling and logging
+✅ Transaction support
+✅ Foreign key relationships
+
+MISSING IMPLEMENTATIONS (as per original classes.txt):
+❌ PDF receipt generation (partially implemented)
+❌ Payment processing integration
+❌ Guest booking system
+❌ Complete booking cancellation
+❌ Travel history management
+❌ Comprehensive admin reports
+
+RELATIONSHIPS:
+- Database class provides connection to all other components
+- Bus class handles search and seat management
+- User authentication manages sessions and access control
+- All database operations use centralized Database class
+- Frontend pages interact with backend through forms and database queries
