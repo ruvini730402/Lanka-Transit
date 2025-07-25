@@ -19,13 +19,21 @@ if (isset($_SESSION['bus_success'])) {
     unset($_SESSION['bus_success']);
 }
 
-include('dbcon.php');
-include('php/Bus.php');
+require_once '../config/database.php';
+require_once '../classes/Bus.php';
 
-$busObj = new Bus($connection);
-$buses = $busObj->getAll();
-if (!$buses) {
+$database = new Database();
+$connection = $database->getConnection();
+
+if ($connection) {
+    $busObj = new Bus($connection);
+    $buses = $busObj->getAll();
+    if (!$buses) {
+        $buses = [];
+    }
+} else {
     $buses = [];
+    $errorMsg = "Database connection failed.";
 }
 ?>
 

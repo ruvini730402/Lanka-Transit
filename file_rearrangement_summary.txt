@@ -150,8 +150,21 @@ CODE UPDATES COMPLETED:
    ✅ admin/dashboard.php: login-form.php → ../auth/login.php
 
 5. Include/Require Paths Updated:
-   ✅ auth/login.php: Fixed class include to use database.php
+   ✅ auth/login.php: Fixed class include to use database.php and implemented proper login
+   ✅ auth/register.php: Updated to use centralized database for user registration
    ✅ pages/payment.php: Fixed class include to use Bus.php
+   ✅ pages/bus-details.php: Updated direct PDO connection to use centralized database
+   ✅ admin/buses.php: Updated from dbcon.php to centralized database.php
+   ✅ admin/announcements.php: Updated from dbcon.php to centralized database.php
+   ✅ pages/announcements.php: Updated from dbcon.php to centralized database.php
+
+6. Database Connection Standardization:
+   ✅ All files now use require_once '../config/database.php'
+   ✅ All files create Database instance: $database = new Database()
+   ✅ All files get connection: $conn = $database->getConnection()
+   ✅ All files properly close connections: $database->closeConnection()
+   ✅ Removed hardcoded database credentials from individual files
+   ✅ Eliminated direct PDO instantiation in favor of centralized Database class
 
 6. Form Actions and Redirects:
    ✅ All internal links now point to correct new file locations

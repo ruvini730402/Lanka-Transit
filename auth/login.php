@@ -9,27 +9,53 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$email = trim($_POST['email'] ?? '');
-$password = $_POST['password'] ?? '';
+require_once __DIR__ . '/../config/database.php';
 
-$auth = new Auth();
-$res = $auth->login($email, $password);
-
-if (!empty($res['success']) && $res['success'] === true) {
-    // Set session data for logged-in user
-    $_SESSION['user_id'] = $res['user']['id'];
-    $_SESSION['user_email'] = $res['user']['email'];
-    $_SESSION['role'] = $res['user']['role'] ?? 'user';  // set role if present or default 'user'
-    $_SESSION['success'] = 'Login successful! Redirecting...';
-
-    // Redirect to provided page (e.g., dashboard)
-    header("Location: ../pages/{$res['redirect']}");
-    exit;
-} else {
-    // On failure, set error message and redirect back to login form
-    $_SESSION['error'] = $res['message'] ?? 'Login failed. Please try again.';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../pages/login-form.php');
     exit;
 }
+
+$email = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+
+$database = new Database();
+$conn = $database->getConnection();
+
+if ($conn) {
+    try {
+        // Check if user exists
+        $stmt = $conn->prepare("SELECT user_id, email, password, role FROM User WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        
+        if ($user && password_verify($password, $user['password'])) {
+            // Set session data for logged-in user
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['role'] = $user['role'] ?? 'user';
+            $_SESSION['success'] = 'Login successful! Redirecting...';
+
+            // Redirect based on role
+            if ($user['role'] === 'admin') {
+                header('Location: ../admin/dashboard.php');
+            } else {
+                header('Location: ../pages/dashboard.php');
+            }
+            exit;
+        } else {
+            $_SESSION['error'] = 'Invalid email or password.';
+        }
+    } catch (Exception $e) {
+        $_SESSION['error'] = 'Database error occurred.';
+        error_log("Login error: " . $e->getMessage());
+    }
+    $database->closeConnection();
+} else {
+    $_SESSION['error'] = 'Database connection failed.';
+}
+
+header('Location: ../pages/login-form.php');
+exit;
 
 

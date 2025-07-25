@@ -1,12 +1,21 @@
 <?php
-include('dbcon.php');
-include('php/Announcement.php');
+require_once '../config/database.php';
 
-try {
-    $announcementObj = new Announcement($connection);
-    $announcements = $announcementObj->getAll();
-} catch (PDOException $e) {
-    die("Error fetching announcements: " . $e->getMessage());
+$database = new Database();
+$connection = $database->getConnection();
+
+if ($connection) {
+    try {
+        // For now, we'll fetch announcements directly since we don't have the Announcement class
+        $stmt = $connection->prepare("SELECT * FROM announcements ORDER BY created_at DESC");
+        $stmt->execute();
+        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $announcements = [];
+        error_log("Error fetching announcements: " . $e->getMessage());
+    }
+} else {
+    $announcements = [];
 }
 ?>
 
