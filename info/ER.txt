@@ -122,24 +122,3 @@ Original Relationships:
 
 Extended Relationships:
 - **Announcements** is a standalone table for system notifications
-
-=== SCHEMA2.SQL IMPLEMENTATION ===
-
-**Purpose**: Adds only essential functionality that is actually implemented and used in the project.
-
-**Content**: 
-- Single **Announcements** table for system notifications
-- Used in: admin/announcements.php and pages/announcements.php
-- Simple design with title, message, and timestamps
-- Includes sample data for testing
-
-**Design Philosophy**:
-- Minimal extension approach
-- Only includes features that are actively used
-- Avoids complex "_2" suffix table extensions
-- Focuses on working functionality over theoretical completeness
-
-**Future Extensions**:
-- Additional tables can be added to schema2.sql as new features are implemented
-- Each new table should be based on actual usage requirements
-- Maintain simplicity and avoid unused attributes
