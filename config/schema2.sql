@@ -1,7 +1,7 @@
 -- Lanka Transit Extended Schema (schema2.sql)
 -- Additional tables with "_2" suffix to extend original database structure
 
-USE codebay_transit;
+USE bosennoy016fmb5flv0m;
 
 -- User_2 table to extend User with additional fields
 CREATE TABLE User_2 (

@@ -14,8 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'travel_date' => $_POST['travel_date'] ?? '',
         'bus_id' => $_POST['bus_id'] ?? '',
         'seat_number' => $_POST['seat_number'] ?? '',
-        'fare' => (float)($_POST['fare'] ?? 0),
-        'demo_mode' => $_POST['demo_mode'] ?? 0
+        'fare' => (float)($_POST['fare'] ?? 0)
     ];
     
     try {
