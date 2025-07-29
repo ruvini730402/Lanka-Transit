@@ -5,7 +5,7 @@
  */
 
 class Database {
-    private $host = 'localhost';
+    private $host = 'https://codebay.co';
     private $db_name = 'codebay_transit';
     private $username = 'codebay_transit';
     private $password = 'pass1234';
