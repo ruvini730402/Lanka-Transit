@@ -5,10 +5,10 @@
  */
 
 class Database {
-    private $host = 'https://codebay.co';
-    private $db_name = 'codebay_transit';
-    private $username = 'codebay_transit';
-    private $password = 'pass1234';
+    private $host = 'bosennoy016fmb5flv0m-mysql.services.clever-cloud.com';
+    private $db_name = 'bosennoy016fmb5flv0m';
+    private $username = 'ul9ivik7jhoj9kyh';
+    private $password = 'iVbsGABNeLEWyG69bSqj';
     private $conn;
     
     /**

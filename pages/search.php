@@ -11,36 +11,55 @@ $searchPerformed = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $searchPerformed = true;
     
-    // Get and sanitize form data
-    $origin = isset($_POST['origin']) ? Database::sanitizeInput($_POST['origin']) : '';
-    $destination = isset($_POST['destination']) ? Database::sanitizeInput($_POST['destination']) : '';
-    $travelDate = isset($_POST['travel_date']) ? Database::sanitizeInput($_POST['travel_date']) : '';
-    $maxFare = isset($_POST['max_fare']) && !empty($_POST['max_fare']) ? (float)$_POST['max_fare'] : null;
-    
-    // Validate required fields
-    if (empty($origin) || empty($destination) || empty($travelDate)) {
-        $error = 'Please fill in all required fields.';
-    } elseif ($origin === $destination) {
-        $error = 'Origin and destination cannot be the same.';
-    } else {
-        // Initialize database connection
-        $database = new Database();
-        $db = $database->getConnection();
+    try {
+        // Get and sanitize form data
+        $origin = isset($_POST['origin']) ? Database::sanitizeInput($_POST['origin']) : '';
+        $destination = isset($_POST['destination']) ? Database::sanitizeInput($_POST['destination']) : '';
+        $travelDate = isset($_POST['travel_date']) ? Database::sanitizeInput($_POST['travel_date']) : '';
+        $maxFare = isset($_POST['max_fare']) && !empty($_POST['max_fare']) ? (float)$_POST['max_fare'] : null;
         
-        if ($db) {
-            // Create Bus object and search
-            $bus = new Bus($db);
-            $result = $bus->searchBuses($origin, $destination, $travelDate, $maxFare);
-            
-            if (isset($result['error'])) {
-                $error = $result['error'];
-            } else {
-                $searchResults = $result['data'];
-            }
+        // Validate required fields
+        if (empty($origin) || empty($destination) || empty($travelDate)) {
+            $error = 'Please fill in all required fields.';
+        } elseif ($origin === $destination) {
+            $error = 'Origin and destination cannot be the same.';
+        } elseif (!strtotime($travelDate)) {
+            $error = 'Invalid travel date format.';
+        } elseif (strtotime($travelDate) < strtotime(date('Y-m-d'))) {
+            $error = 'Travel date cannot be in the past.';
+        } elseif ($maxFare !== null && $maxFare < 0) {
+            $error = 'Maximum fare must be a positive number.';
         } else {
-            $error = 'Database connection failed. Please try again later.';
+        // Initialize database connection
+        try {
+            $database = new Database();
+            $db = $database->getConnection();
+            
+            if ($db) {
+                // Create Bus object and search
+                $bus = new Bus($db);
+                $result = $bus->searchBuses($origin, $destination, $travelDate, $maxFare);
+                
+                if (isset($result['error'])) {
+                    $error = $result['error'];
+                } else {
+                    $searchResults = $result['data'];
+                }
+            } else {
+                $error = 'Database connection failed. Please try again later.';
+            }
+        } catch (PDOException $e) {
+            $error = 'Database error occurred. Please try again later.';
+            error_log("Search database error: " . $e->getMessage());
+        } catch (Exception $e) {
+            $error = 'An unexpected error occurred. Please try again later.';
+            error_log("Search general error: " . $e->getMessage());
         }
     }
+} catch (Exception $e) {
+    $error = 'An error occurred while processing your request. Please try again.';
+    error_log("Form processing error: " . $e->getMessage());
+}
 }
 ?>
 
