@@ -97,6 +97,24 @@ Type ENUM('terminal','stop')
 
 === EXTENDED SCHEMA (schema2.sql) ===
 
+User_2
+PK user_id INT (FK to User.ID)
+reset_token VARCHAR(255)
+token_expiry DATETIME
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+Booking_2
+PK booking_id INT (FK to Booking.ID)
+gender ENUM('male','female','undisclosed') DEFAULT 'undisclosed'
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+Admin_2
+PK admin_id INT (FK to Admin.ID)
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
 Announcements
 PK ID INT NOT NULL AUTO_INCREMENT
 title VARCHAR(200) NOT NULL
@@ -121,4 +139,34 @@ Original Relationships:
 - A **Route** includes multiple **Locations**
 
 Extended Relationships:
+- **User** extends to **User_2** (1:1 relationship) for password reset functionality
+- **Booking** extends to **Booking_2** (1:1 relationship) for gender demographics
+- **Admin** extends to **Admin_2** (1:1 relationship) for account tracking
 - **Announcements** is a standalone table for system notifications
+
+=== EXTENDED SCHEMA DETAILS ===
+
+**User_2 Extensions:**
+- reset_token: For secure password reset functionality
+- token_expiry: Expiration time for reset tokens
+- created_at: User account creation tracking
+
+**Booking_2 Extensions:**
+- gender: Passenger gender for analytics and seating preferences
+- created_at: Booking creation tracking
+
+**Admin_2 Extensions:**
+- created_at: Admin account creation tracking
+
+**Announcements:**
+- Standalone table for system-wide notifications
+- Used in admin/announcements.php and pages/announcements.php
+
+**Indexes for Performance:**
+- idx_user2_reset_token: Quick token lookups
+- idx_user2_token_expiry: Token expiry validation
+- idx_user2_created_at: User registration analytics
+- idx_booking2_gender: Gender-based analytics
+- idx_booking2_created_at: Booking date analytics
+- idx_admin2_created_at: Admin account tracking
+- idx_announcements_created_at: Announcement chronology
