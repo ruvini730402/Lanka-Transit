@@ -126,17 +126,17 @@ $database->closeConnection();
                         <a class="nav-link" href="../index.php">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="UserDashboard.php">
+                        <a class="nav-link" href="dashboard.php">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="UserFeedbackForm.php">
+                        <a class="nav-link" href="feedback.php">
                             <i class="fas fa-comment-alt me-1"></i>Feedback
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="Logout.php">
+                        <a class="nav-link" href="../auth/Logout.php">
                             <i class="fas fa-sign-out-alt me-1"></i>Logout
                         </a>
                     </li>
