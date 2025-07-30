@@ -67,7 +67,12 @@ if (!empty($errors)) {
         // Get the inserted incident ID for reference
         $incidentId = $conn->lastInsertId();
         
-        $response = "✅ Incident reported successfully. Your Incident ID is: <strong>INC-$incidentId</strong><br>Status: <strong>$status</strong><br>Phone: <strong>$phoneNumber</strong>";
+        $response = <<<HTML
+                        ✅ Incident reported successfully.<br>
+                        Your Incident ID is: <strong>INC-$incidentId</strong><br>
+                        Status: <strong>$status</strong><br>
+                        Phone: <strong>$phoneNumber</strong>
+                    HTML;
         $statusClass = "success";
     } catch (PDOException $e) {
         // Log the actual error for debugging
