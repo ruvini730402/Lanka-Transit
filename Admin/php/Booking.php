@@ -7,7 +7,7 @@ class Booking {
     }
 
     public function getTotalBookings() {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM bookings");
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Booking");
         $stmt->execute();
         return $stmt->fetchColumn();
     }
