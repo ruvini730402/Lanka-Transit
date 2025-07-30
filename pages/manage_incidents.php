@@ -70,7 +70,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 12px;
             padding: 20px 30px;
             margin: 40px auto 20px;
-            max-width: 1200px;
+            max-width: 1100px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             font-size: 1.1rem;
             font-weight: 500;
@@ -80,7 +80,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f0f0f5;
             padding: 25px;
             margin: 0 auto 40px;
-            max-width: 1200px;
+            max-width: 1100px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
