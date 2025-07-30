@@ -118,9 +118,9 @@ $database->closeConnection();
         setTimeout(() => msgBox.remove(), 500);
     }, 2000);
 
-    // Redirect to Report_Incidents.php after 3.5 seconds
+    // Redirect to incidents.php after 3.5 seconds
     setTimeout(() => {
-        window.location.href = 'Report_Incidents.php';
+        window.location.href = 'incidents.php';
     }, 3500);
 </script>
 
