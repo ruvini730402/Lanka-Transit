@@ -56,7 +56,7 @@ try {
         <thead class="table-dark">
             <tr>
                 <th>Title</th>
-                <th>Content</th>
+                <th>Message</th>
                 <th>Posted On</th>
                 <th>Update</th>
                 <th>Delete</th>
@@ -67,24 +67,24 @@ try {
             <?php foreach ($announcements as $a): ?>
                 <tr>
                     <td><?= htmlspecialchars($a['title']) ?></td>
-                    <td><?= htmlspecialchars($a['content']) ?></td>
-                    <td><?= htmlspecialchars($a['posted_date']) ?></td>
+                    <td><?= htmlspecialchars($a['message']) ?></td>
+                    <td><?= htmlspecialchars($a['created_at']) ?></td>
                     <td>
-                        <a href="php/update_announcement.php?id=<?= $a['id'] ?>" class="btn btn-success btn-sm">Update</a>
+                        <a href="php/update_announcement.php?id=<?= $a['ID'] ?>" class="btn btn-success btn-sm">Update</a>
                     </td>
                     <td>
                         <!-- Delete Button triggers Modal -->
-                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal<?= $a['id'] ?>">
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal<?= $a['ID'] ?>">
                             Delete
                         </button>
 
                         <!-- Delete Confirmation Modal -->
-                        <div class="modal fade" id="deleteModal<?= $a['id'] ?>" tabindex="-1" aria-labelledby="deleteLabel<?= $a['id'] ?>" aria-hidden="true">
+                        <div class="modal fade" id="deleteModal<?= $a['ID'] ?>" tabindex="-1" aria-labelledby="deleteLabel<?= $a['ID'] ?>" aria-hidden="true">
                           <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
 
                               <div class="modal-header">
-                                <h5 class="modal-title" id="deleteLabel<?= $a['id'] ?>">Confirm Delete</h5>
+                                <h5 class="modal-title" id="deleteLabel<?= $a['ID'] ?>">Confirm Delete</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                               </div>
 
@@ -94,7 +94,7 @@ try {
 
                               <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <a href="php/delete_announcement.php?id=<?= $a['id'] ?>" class="btn btn-danger">Delete</a>
+                                <a href="php/delete_announcement.php?id=<?= $a['ID'] ?>" class="btn btn-danger">Delete</a>
                               </div>
 
                             </div>
@@ -126,10 +126,10 @@ try {
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Title</label>
-                        <input type="text" name="title" class="form-control" required minlength="3" maxlength="100">
+                        <input type="text" name="title" class="form-control" required minlength="3" maxlength="200">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Content</label>
+                        <label class="form-label">Message</label>
                         <textarea name="content" class="form-control" rows="4" required minlength="5" maxlength="1000"></textarea>
                     </div>
                 </div>
