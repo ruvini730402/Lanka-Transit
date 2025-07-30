@@ -1,0 +1,105 @@
+.hero-section {
+    background: linear-gradient(135deg, #4B0000 0%, #800000 100%); /* Lighter maroon tones */
+    color: #ffffff; /* White text */
+    padding: 20px 0; /* Reduced height */
+}
+
+.footer-full {
+  width: 100%;
+  background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+  padding: 20px 0; /* Matches hero-section height */
+  margin-top: 40px;
+  color: white;
+  box-sizing: border-box;
+}
+
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Critical to avoid horizontal scroll */
+}
+
+
+
+#seat-map {
+   
+ 
+
+  display: grid;
+  grid-template-columns: repeat(2, 60px) 40px repeat(2, 60px); /* 2 seats | aisle | 2 seats */
+  grid-auto-rows: 60px;
+  gap: 10px;
+  padding: 20px;
+  width: max-content;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+
+.seat {
+  background-color: lightgreen;
+  border: 1px solid #888;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  line-height: 60px;
+  font-size: 16px;
+}
+
+.seat.lady-seat {
+  border: 2px solid red !important; 
+  
+}
+
+.seat.selected {
+  background-color: orange;
+  outline: 3px solid darkorange;
+}
+
+.seat.booked {
+  cursor: not-allowed;
+  pointer-events: none;
+  color: #000;
+}
+
+.seat.booked.female {
+  background-color: pink;
+}
+
+.seat.booked.male {
+  background-color: lightblue;
+}
+
+.seat.booked.undisclosed {
+  background-color: gray;
+}
+
+.aisle {
+  width: 40px;
+  height: 60px;
+  user-select: none;
+  pointer-events: none;
+}
+.title-dark-blue {
+  color: #003366; /* Dark navy blue */
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
