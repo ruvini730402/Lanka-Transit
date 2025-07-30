@@ -77,7 +77,7 @@
           <!-- Auto-redirect after 2 seconds -->
           <script>
             setTimeout(() => {
-              window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? 'admin_dashboard.php' : 'user_dashboard.php'; ?>";
+              window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? '../Admin/admin.html' : 'user_dashboard.php'; ?>";
             }, 2000);
           </script>
         <?php endif; ?>
@@ -87,16 +87,7 @@
   <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
   <a href="index.php" class="fw-semibold" style="color: #800000; text-decoration: none;">Home</a>
 </div>
-          <div class="login-header">User  Login</div>
-          <?php if (isset($_SESSION['success'])): ?>
-  <div class="alert alert-success text-center" id="alertBox">
-    <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
-  </div>
-<?php elseif (isset($_SESSION['error'])): ?>
-  <div class="alert alert-danger text-center" id="alertBox">
-    <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
-  </div>
-<?php endif; ?>
+          <div class="login-header">User Login</div>
 
           <form action="../auth/login.php" method="POST" autocomplete="off"  >
             <div class="mb-3">
@@ -132,7 +123,7 @@
 <?php if (isset($_SESSION['role'])): ?>
 <script>
   setTimeout(() => {
-    window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? 'admin_dashboard.php' : 'user_dashboard.php'; ?>";
+    window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? '../Admin/admin.html' : 'user_dashboard.php'; ?>";
   }, 2000);
 </script>
 <?php endif; ?>

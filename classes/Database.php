@@ -1,10 +1,14 @@
 <?php
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require_once __DIR__ . '/../PHPMailer/PHPMailer.php';
-require_once __DIR__ . '/../PHPMailer/SMTP.php';
-require_once __DIR__ . '/../PHPMailer/Exception.php';
+// PHPMailer includes only when needed for email functionality
+if (class_exists('PHPMailer\PHPMailer\PHPMailer') === false) {
+    // Only include if files exist and PHPMailer is needed
+    $phpmailerPath = __DIR__ . '/../PHPMailer/PHPMailer.php';
+    if (file_exists($phpmailerPath)) {
+        require_once $phpmailerPath;
+        require_once __DIR__ . '/../PHPMailer/SMTP.php';
+        require_once __DIR__ . '/../PHPMailer/Exception.php';
+    }
+}
 
 class Database {
     private $host = 'bosennoy016fmb5flv0m-mysql.services.clever-cloud.com';
@@ -17,7 +21,9 @@ class Database {
     public static function getConnection() {
         if (self::$pdo === null) {
             try {
-                self::$pdo = new PDO("mysql:host=localhost;dbname=busbooking;charset=utf8", "root", "");
+                $instance = new self();
+                $dsn = "mysql:host={$instance->host};dbname={$instance->db_name};charset=utf8";
+                self::$pdo = new PDO($dsn, $instance->username, $instance->password);
                 self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             } catch (PDOException $e) {
                 error_log("DB Connection failed: " . $e->getMessage());
@@ -29,7 +35,13 @@ class Database {
 
     // Send password reset email
     public static function sendResetEmail($email, $token) {
-        $mail = new PHPMailer(true);
+        // Check if PHPMailer is available
+        if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+            error_log("PHPMailer not available for email sending");
+            return false;
+        }
+        
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
         try {
             // SMTP server settings
@@ -65,8 +77,11 @@ class Database {
             $mail->send();
             return true;
 
-        } catch (Exception $e) {
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
             error_log("PHPMailer Error: " . $mail->ErrorInfo);
+            return false;
+        } catch (Exception $e) {
+            error_log("General Error: " . $e->getMessage());
             return false;
         }
     }
