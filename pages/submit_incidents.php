@@ -4,7 +4,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405); // Method Not Allowed
     echo "<script>
         alert('❌ Invalid request method.');
-        window.location.href = 'incident_page.php';
+        window.location.href = 'incident.php';
     </script>";
     exit;
 }
