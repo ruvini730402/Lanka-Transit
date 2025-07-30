@@ -96,7 +96,7 @@ $database->closeConnection();
 
     // Redirect after 3.5 seconds
     setTimeout(() => {
-        window.location.href = 'dashboard.php';
+        window.location.href = 'feedback.php';
     }, 2000);
 </script>
 
