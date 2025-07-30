@@ -37,14 +37,8 @@ if (!empty($bookingIdFilter)) {
 }
 
 $whereClause = count($where) > 0 ? "WHERE " . implode(" AND ", $where) : "";
-// Fixed table name to match schema (Incident with capital I)
-$sql = "SELECT i.*, 
-        CASE 
-            WHEN i.RouteId = 1 THEN 'Badulla to Matara'
-            WHEN i.RouteId = 2 THEN 'Matara to Badulla'
-            ELSE 'Unknown Route'
-        END as RouteName
-        FROM Incident i $whereClause ORDER BY ReportedDate DESC";
+// Simplified SQL query without route information
+$sql = "SELECT * FROM Incident $whereClause ORDER BY ReportedDate DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
@@ -177,7 +171,6 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>#</th>
                         <th>Incident ID</th>
                         <th>Booking ID</th>
-                        <th>Selected Trip</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Reported Date</th>
@@ -187,7 +180,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </thead>
                 <tbody>
                     <?php if (empty($result)): ?>
-                        <tr><td colspan="9">No matching records found.</td></tr>
+                        <tr><td colspan="8">No matching records found.</td></tr>
                     <?php else:
                         $i = 1;
                         foreach ($result as $row):
@@ -198,7 +191,6 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= $i++ ?></td>
                             <td>INC-<?= htmlspecialchars($row['ID']) ?></td>
                             <td><?= $row['BookingId'] ? htmlspecialchars($row['BookingId']) : 'N/A' ?></td>
-                            <td><?= htmlspecialchars($row['RouteName']) ?></td>
                             <td style="white-space: normal; text-align: left;"><?= nl2br(htmlspecialchars($row['Description'])) ?></td>
                             <td><span class="status-pill <?= $statusClass ?>"><?= htmlspecialchars($row['Status']) ?></span></td>
                             <td><?= htmlspecialchars(date('Y-m-d', strtotime($row['ReportedDate']))) ?></td>
@@ -208,9 +200,10 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="hidden" name="incident_ids[]" value="<?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="d-flex justify-content-center align-items-center gap-2">
                                     <select name="new_statuses[]" class="form-select form-select-sm">
-                                        <option value="submitted" <?= $row['Status'] === "submitted" ? "selected" : "" ?>>Submitted</option>
-                                        <option value="in progress" <?= $row['Status'] === "in progress" ? "selected" : "" ?>>In Progress</option>
-                                        <option value="resolved" <?= $row['Status'] === "resolved" ? "selected" : "" ?>>Resolved</option>
+                                        <option value="">Select Status</option>
+                                        <option value="submitted">Submitted</option>
+                                        <option value="in progress">In Progress</option>
+                                        <option value="resolved">Resolved</option>
                                     </select>
                                     <button type="submit" name="update_single" value="<?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') ?>" class="btn btn-sm" style="background-color: #800000; color: white;">Update</button>
                                 </div>
