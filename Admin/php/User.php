@@ -7,7 +7,7 @@ class User {
     }
 
     public function getTotalUsers() {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM users");
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM User");
         $stmt->execute();
         return $stmt->fetchColumn();
     }

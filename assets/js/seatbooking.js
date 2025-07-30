@@ -4,7 +4,7 @@ let selectedSeat = null;
 
 // Fetch booked seats from PHP
 async function fetchBookedSeats() {
-  const response = await fetch('seats.php');
+  const response = await fetch('http://localhost/lanka-transit/pages/seats.php');
   const data = await response.json();
   return data; // returns [{seat: 2, gender: 'female'}, ...]
 }
@@ -145,6 +145,3 @@ function showMessage(message, type = 'info') {
 renderSeats();
 
 // INITIALIZE SEAT MAP
-
-
-

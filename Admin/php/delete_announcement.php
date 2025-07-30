@@ -1,6 +1,6 @@
 <?php
 include('../dbcon.php');
-include('Announcement.php');
+include('announcement.php');
 
 if (isset($_GET['id'])) {
     $announcement = new Announcement($connection);

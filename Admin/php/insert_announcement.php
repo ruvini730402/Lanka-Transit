@@ -1,6 +1,6 @@
 <?php
 include('../dbcon.php');
-include('Announcement.php');
+include('announcement.php');
 
 if (isset($_POST['add_announcement'])) {
     $title = $_POST['title'];

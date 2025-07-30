@@ -1,6 +1,6 @@
 <?php
 include('../dbcon.php');
-include('Announcement.php');
+include('announcement.php');
 
 $announcement = new Announcement($connection);
 
@@ -30,14 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
 <body class="container mt-5">
     <h3>Update Announcement</h3>
     <form method="POST">
-        <input type="hidden" name="id" value="<?= htmlspecialchars($data['id']) ?>">
+        <input type="hidden" name="id" value="<?= htmlspecialchars($data['ID']) ?>">
         <div class="mb-3">
             <label>Title</label>
-            <input type="text" name="title" class="form-control" value="<?= htmlspecialchars($data['title']) ?>" required>
+            <input type="text" name="title" class="form-control" value="<?= htmlspecialchars($data['title']) ?>" required maxlength="200">
         </div>
         <div class="mb-3">
-            <label>Content</label>
-            <textarea name="content" class="form-control" rows="4" required><?= htmlspecialchars($data['content']) ?></textarea>
+            <label>Message</label>
+            <textarea name="content" class="form-control" rows="4" required><?= htmlspecialchars($data['message']) ?></textarea>
         </div>
         <button type="submit" name="update_announcement" class="btn" style="background-color: maroon; color: white;">Update</button>
 

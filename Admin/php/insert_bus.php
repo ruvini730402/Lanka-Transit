@@ -7,10 +7,9 @@ $busObj = new Bus($connection);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bus_no = strtoupper(trim($_POST['bus_no']));
-    $route = trim($_POST['route']);
-    $contact = trim($_POST['driver_contact']);
-    $status = trim($_POST['status']);
-    $seats = trim($_POST['seat_count']);
+    $route_id = trim($_POST['route']);
+    $admin_id = trim($_POST['driver_contact']);
+    $capacity = trim($_POST['seat_count']);
 
     // Validate bus number format
     if (!preg_match('/^[A-Z]{2,3}-\d{4}$/', $bus_no)) {
@@ -19,22 +18,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../buslisting.php");
         exit();
     }
-    // Validate contact number
-    if (!preg_match('/^\d{10}$/', $contact)) {
-        $_SESSION['bus_error'] = "Invalid Driver Contact number. Must be 10 digits.";
+    // Validate route ID
+    if (!is_numeric($route_id) || $route_id <= 0) {
+        $_SESSION['bus_error'] = "Invalid Route ID. Must be a positive number.";
         $_SESSION['bus_form'] = $_POST;
         header("Location: ../buslisting.php");
         exit();
     }
-    // Validate seat count
-    if (!is_numeric($seats) || $seats <= 0) {
-        $_SESSION['bus_error'] = "Invalid Seat Count.";
+    // Validate admin ID
+    if (!is_numeric($admin_id) || $admin_id <= 0) {
+        $_SESSION['bus_error'] = "Invalid Admin ID. Must be a positive number.";
+        $_SESSION['bus_form'] = $_POST;
+        header("Location: ../buslisting.php");
+        exit();
+    }
+    // Validate capacity
+    if (!is_numeric($capacity) || $capacity <= 0) {
+        $_SESSION['bus_error'] = "Invalid Capacity.";
         $_SESSION['bus_form'] = $_POST;
         header("Location: ../buslisting.php");
         exit();
     }
 
-    if ($busObj->insert($bus_no, $route, $contact, $status, $seats)) {
+    if ($busObj->insert($bus_no, $route_id, $admin_id, '', $capacity)) {
         $_SESSION['bus_success'] = "Bus added successfully.";
         header("Location: ../buslisting.php");
         exit();

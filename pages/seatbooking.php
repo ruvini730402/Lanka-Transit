@@ -7,13 +7,13 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   
-  <link rel="stylesheet" href="../assets/booking.css">
+  <link rel="stylesheet" href="../assets/css/seatbooking.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="index.php">
-            <img src="../images/lankalogo.png" alt="Lanka Transit Logo" style="height: 40px; margin-right: 10px;">
+            <img src="../assets/images/lankalogo.png" alt="Lanka Transit Logo" style="height: 40px; margin-right: 10px;">
             <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -121,13 +121,6 @@
 
 
 
-<script src="../assets/booking.js"></script>
+<script src="../assets/js/seatbooking.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
