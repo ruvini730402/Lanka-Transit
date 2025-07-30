@@ -66,10 +66,10 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="auth/login.php">Login</a>
+                        <a class="nav-link" href="pages/login-form.php">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="auth/register.php">Register</a>
+                        <a class="nav-link" href="pages/register-form.php">Register</a>
                     </li>
                 </ul>
             </div>
