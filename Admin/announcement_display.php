@@ -1,6 +1,6 @@
 <?php
 include('dbcon.php');
-include('php/Announcement.php');
+include('php/announcement.php');
 
 try {
     $announcementObj = new Announcement($connection);

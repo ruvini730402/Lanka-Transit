@@ -7,29 +7,29 @@ class Announcement {
     }
 
     public function getAll() {
-        $stmt = $this->conn->prepare("SELECT * FROM announcements ORDER BY posted_date DESC");
+        $stmt = $this->conn->prepare("SELECT * FROM Announcements ORDER BY created_at DESC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function insert($title, $content) {
-        $stmt = $this->conn->prepare("INSERT INTO announcements (title, content) VALUES (?, ?)");
+        $stmt = $this->conn->prepare("INSERT INTO Announcements (title, message) VALUES (?, ?)");
         return $stmt->execute([$title, $content]);
     }
 
     public function getById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE id = ?");
+        $stmt = $this->conn->prepare("SELECT * FROM Announcements WHERE ID = ?");
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function update($id, $title, $content) {
-        $stmt = $this->conn->prepare("UPDATE announcements SET title = ?, content = ? WHERE id = ?");
+        $stmt = $this->conn->prepare("UPDATE Announcements SET title = ?, message = ? WHERE ID = ?");
         return $stmt->execute([$title, $content, $id]);
     }
 
     public function delete($id) {
-        $stmt = $this->conn->prepare("DELETE FROM announcements WHERE id = ?");
+        $stmt = $this->conn->prepare("DELETE FROM Announcements WHERE ID = ?");
         return $stmt->execute([$id]);
     }
 }
