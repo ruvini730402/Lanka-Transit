@@ -1,0 +1,153 @@
+/* Global Styles */
+body {
+  background-color: #f0f2f5;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Back Button */
+.back-btn {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  background-color: white;
+  color: #00008B;
+  border: 1px solid #00008B;
+  padding: 6px 15px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.back-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+  color: #ffffff;
+  padding: 20px 0;
+}
+
+/* Footer */
+footer, .footer-full {
+  background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+  color: white;
+  padding: 20px 0;
+  text-align: center;
+  margin-top: 40px;
+  box-sizing: border-box;
+}
+
+.card-custom {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  height: 180px;
+  transition: all 0.3s ease;
+}
+
+.card-custom:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-custom h5 {
+  font-weight: bold;
+  color: #00008B;
+}
+
+/* Stat Cards */
+.stat-card {
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 18px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card i {
+  font-size: 28px;
+}
+
+.stat-title {
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Button Styles */
+.go-btn {
+  margin-top: 15px;
+  background-color: maroon;
+  color: white;
+  border: none;
+  padding: 6px 20px;
+  border-radius: 6px;
+}
+
+.go-btn:hover {
+  background-color: #5a0000;
+}
+
+/* Custom Buttons */
+a.btn {
+  text-decoration: none !important;
+}
+
+.btn-maroon {
+  background-color: #800000;
+  color: #fff;
+  border: none;
+}
+
+.btn-maroon:hover {
+  background-color: #990000;
+}
+
+.btn-maroon-outline {
+  border: 1px solid #800000;
+  color: #800000;
+}
+
+.btn-maroon-outline:hover {
+  background-color: #800000;
+  color: #fff;
+}
+
+/* Custom card background colors */
+.bg-buses { background-color: #e6f0ff; }
+.bg-announcements { background-color: #fff4e6; }
+.bg-users { background-color: #e6ffe6; }
+.bg-reservations { background-color: #f0e6ff; }
+.bg-feedback { background-color: #ffe6f0; }
+.bg-reports { background-color: #e0f7fa; }
+
+/* Stat Colors */
+.bg-blue { background-color: #B22222; }
+.bg-green { background-color: #B22222; }
+.bg-yellow { background-color: #B22222; color: #333;
+color: white}
+
+thead th {
+    background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
