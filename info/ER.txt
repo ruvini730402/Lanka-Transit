@@ -34,6 +34,7 @@ PK ID INT NOT NULL
 FK UserId INT
 FK AdminId INT
 FK BookingId INT
+FK RouteId INT
 Description TEXT
 Status ENUM('submitted','in progress','resolved') NOT NULL
 ReportedDate DATE
@@ -122,6 +123,14 @@ message TEXT NOT NULL
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
+=== SCHEMA MODIFICATIONS (schema_3.sql) ===
+
+**Incident Table Enhancement:**
+- Added RouteId INT column with foreign key reference to Route(ID)
+- Added index idx_incident_route for performance optimization
+- Updated existing incident records to include route associations
+- Enables route-specific incident tracking and analytics
+
 === RELATIONSHIPS ===
 
 Original Relationships:
@@ -132,6 +141,7 @@ Original Relationships:
 - A **User** submits a **Feedback**
 - A **User** reports an **Incident**
 - An **Admin** resolves an **Incident**
+- An **Incident** is associated with a **Route**
 - An **Admin** manages a **Bus**
 - A **Bus** contains many **Seats**
 - A **Bus** has a **Schedule**
@@ -143,6 +153,9 @@ Extended Relationships:
 - **Booking** extends to **Booking_2** (1:1 relationship) for gender demographics
 - **Admin** extends to **Admin_2** (1:1 relationship) for account tracking
 - **Announcements** is a standalone table for system notifications
+
+Schema 3 Enhancements:
+- **Incident** now includes **RouteId** (Many:1 relationship with Route) for route-specific incident tracking
 
 === EXTENDED SCHEMA DETAILS ===
 
@@ -170,3 +183,13 @@ Extended Relationships:
 - idx_booking2_created_at: Booking date analytics
 - idx_admin2_created_at: Admin account tracking
 - idx_announcements_created_at: Announcement chronology
+- idx_incident_route: Route-specific incident analytics and filtering
+
+**Schema 3 Enhancements:**
+
+**Incident Table RouteId Addition:**
+- RouteId: Foreign key linking incidents to specific routes
+- Enables route-specific incident tracking and analysis
+- Supports route performance monitoring and maintenance planning
+- Facilitates targeted route improvements based on incident patterns
+- Allows for route-specific incident reporting and resolution tracking
