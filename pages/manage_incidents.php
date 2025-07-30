@@ -13,8 +13,8 @@ if (!$conn) {
 $statusFilter = trim($_GET['status'] ?? '');
 $bookingIdFilter = trim($_GET['booking_id'] ?? '');
 
-// Validate status filter
-$allowedStatuses = ['', 'submitted', 'Submitted', 'In Progress', 'Resolved', 'Pending'];
+// Validate status filter - updated to match database enum values
+$allowedStatuses = ['', 'submitted', 'in progress', 'resolved'];
 if (!in_array($statusFilter, $allowedStatuses)) {
     $statusFilter = '';
 }
@@ -37,7 +37,14 @@ if (!empty($bookingIdFilter)) {
 }
 
 $whereClause = count($where) > 0 ? "WHERE " . implode(" AND ", $where) : "";
-$sql = "SELECT * FROM incident $whereClause ORDER BY ReportedDate DESC";
+// Fixed table name to match schema (Incident with capital I)
+$sql = "SELECT i.*, 
+        CASE 
+            WHEN i.RouteId = 1 THEN 'Badulla to Matara'
+            WHEN i.RouteId = 2 THEN 'Matara to Badulla'
+            ELSE 'Unknown Route'
+        END as RouteName
+        FROM Incident i $whereClause ORDER BY ReportedDate DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
@@ -69,7 +76,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 12px;
             padding: 20px 30px;
             margin: 40px auto 20px;
-            max-width: 1100px;
+            max-width: 1200px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             font-size: 1.1rem;
             font-weight: 500;
@@ -79,7 +86,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f0f0f5;
             padding: 25px;
             margin: 0 auto 40px;
-            max-width: 1100px;
+            max-width: 1200px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
@@ -103,7 +110,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-weight: 500;
         }
 
-        .pending { background: #f0ad4e; }
+        .submitted { background: #f0ad4e; }
         .inprogress { background: #5bc0de; }
         .resolved { background: #5cb85c; }
     </style>
@@ -124,7 +131,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <a class="nav-link" href="../index.php">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="Logout.php">
+                        <a class="nav-link" href="../auth/Logout.php">
                             <i class="fas fa-sign-out-alt me-1"></i>Logout
                         </a>
                     </li>
@@ -145,13 +152,11 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-3">
                 <select name="status" class="form-select">
                     <option value="">All Status</option>
-                    <option value="Pending" <?= ($statusFilter == "Submitted") ? "selected" : "" ?>>Submitted</option>
-                    <option value="In Progress" <?= ($statusFilter == "In Progress") ? "selected" : "" ?>>In Progress</option>
-                    <option value="Resolved" <?= ($statusFilter == "Resolved") ? "selected" : "" ?>>Resolved</option>
+                    <option value="submitted" <?= ($statusFilter == "submitted") ? "selected" : "" ?>>Submitted</option>
+                    <option value="in progress" <?= ($statusFilter == "in progress") ? "selected" : "" ?>>In Progress</option>
+                    <option value="resolved" <?= ($statusFilter == "resolved") ? "selected" : "" ?>>Resolved</option>
                 </select>
             </div>
-
-           
 
             <div class="col-md-auto">
                 <button type="submit" class="btn" style="background-color: #800000; color: white;">
@@ -160,7 +165,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <div class="col-md-auto">
-                <a href="Manage_incidents_status.php" class="btn btn-secondary">Reset</a>
+                <a href="manage_incidents.php" class="btn btn-secondary">Reset</a>
             </div>
         </form>
 
@@ -170,7 +175,9 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
+                        <th>Incident ID</th>
                         <th>Booking ID</th>
+                        <th>Selected Trip</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Reported Date</th>
@@ -180,7 +187,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </thead>
                 <tbody>
                     <?php if (empty($result)): ?>
-                        <tr><td colspan="7">No matching records found.</td></tr>
+                        <tr><td colspan="9">No matching records found.</td></tr>
                     <?php else:
                         $i = 1;
                         foreach ($result as $row):
@@ -189,21 +196,23 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     ?>
                         <tr>
                             <td><?= $i++ ?></td>
-                            <td><?= htmlspecialchars($row['BookingId']) ?></td>
+                            <td>INC-<?= htmlspecialchars($row['ID']) ?></td>
+                            <td><?= $row['BookingId'] ? htmlspecialchars($row['BookingId']) : 'N/A' ?></td>
+                            <td><?= htmlspecialchars($row['RouteName']) ?></td>
                             <td style="white-space: normal; text-align: left;"><?= nl2br(htmlspecialchars($row['Description'])) ?></td>
                             <td><span class="status-pill <?= $statusClass ?>"><?= htmlspecialchars($row['Status']) ?></span></td>
                             <td><?= htmlspecialchars(date('Y-m-d', strtotime($row['ReportedDate']))) ?></td>
                             <td><?= $row['ResolvedDate'] ? htmlspecialchars(date('Y-m-d', strtotime($row['ResolvedDate']))) : '-' ?></td>
 
                             <td>
-                                <input type="hidden" name="booking_ids[]" value="<?= htmlspecialchars($row['BookingId'], ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="incident_ids[]" value="<?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="d-flex justify-content-center align-items-center gap-2">
                                     <select name="new_statuses[]" class="form-select form-select-sm">
-                                        <option <?= $row['Status'] === "submitted" ? "selected" : "" ?>>Submitted</option>
-                                        <option <?= $row['Status'] === "In Progress" ? "selected" : "" ?>>In Progress</option>
-                                        <option <?= $row['Status'] === "Resolved" ? "selected" : "" ?>>Resolved</option>
+                                        <option value="submitted" <?= $row['Status'] === "submitted" ? "selected" : "" ?>>Submitted</option>
+                                        <option value="in progress" <?= $row['Status'] === "in progress" ? "selected" : "" ?>>In Progress</option>
+                                        <option value="resolved" <?= $row['Status'] === "resolved" ? "selected" : "" ?>>Resolved</option>
                                     </select>
-                                    <button type="submit" name="update_single" value="<?= htmlspecialchars($row['BookingId'], ENT_QUOTES, 'UTF-8') ?>" class="btn btn-sm" style="background-color: #800000; color: white;">Update</button>
+                                    <button type="submit" name="update_single" value="<?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') ?>" class="btn btn-sm" style="background-color: #800000; color: white;">Update</button>
                                 </div>
                             </td>
                         </tr>
