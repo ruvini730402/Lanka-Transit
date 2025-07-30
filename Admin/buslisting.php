@@ -4,7 +4,7 @@ session_start();
 $showModal = false;
 $errorMsg = "";
 $successMsg = "";
-$formData = ['bus_no'=>'', 'route'=>'', 'driver_contact'=>'', 'status'=>'', 'seat_count'=>''];
+$formData = ['bus_no'=>'', 'route_id'=>'', 'admin_id'=>'', 'capacity'=>''];
 
 if (isset($_SESSION['bus_error'])) {
     $errorMsg = $_SESSION['bus_error'];
@@ -64,11 +64,12 @@ if (!$buses) {
     <table class="table table-bordered table-hover">
         <thead class="table-dark">
         <tr>
-            <th>Bus No</th>
-            <th>Route</th>
-            <th>Contact</th>
-            <th>Status</th>
-            <th>Seats</th>
+            <th>ID</th>
+            <th>Bus Number</th>
+            <th>Route ID</th>
+            <th>Admin ID</th>
+            <th>Capacity</th>
+            <th>Last Update</th>
             <th>Update</th>
             <th>Delete</th>
         </tr>
@@ -77,17 +78,18 @@ if (!$buses) {
         <?php if (!empty($buses)): ?>
             <?php foreach ($buses as $bus): ?>
                 <tr>
-                    <td><?= htmlspecialchars($bus['bus_no']) ?></td>
-                    <td><?= htmlspecialchars($bus['route']) ?></td>
-                    <td><?= htmlspecialchars($bus['driver_contact']) ?></td>
-                    <td><?= htmlspecialchars($bus['status']) ?></td>
-                    <td><?= htmlspecialchars($bus['seat_count']) ?></td>
+                    <td><?= htmlspecialchars($bus['ID']) ?></td>
+                    <td><?= htmlspecialchars($bus['BusNumber']) ?></td>
+                    <td><?= htmlspecialchars($bus['RouteId']) ?></td>
+                    <td><?= htmlspecialchars($bus['AdminId']) ?></td>
+                    <td><?= htmlspecialchars($bus['Capacity']) ?></td>
+                    <td><?= htmlspecialchars($bus['LastUpdate']) ?></td>
                     <td>
-                        <a href="php/update_buslist.php?bus_no=<?= urlencode($bus['bus_no']) ?>" class="btn btn-success btn-sm">Update</a>
+                        <a href="php/update_buslist.php?bus_no=<?= urlencode($bus['BusNumber']) ?>" class="btn btn-success btn-sm">Update</a>
                     </td>
                     <td>
                         <button class="btn btn-danger btn-sm delete-btn" 
-                                data-busno="<?= htmlspecialchars($bus['bus_no']) ?>"
+                                data-busno="<?= htmlspecialchars($bus['BusNumber']) ?>"
                                 data-bs-toggle="modal" 
                                 data-bs-target="#deleteModal">
                             Delete
@@ -96,7 +98,7 @@ if (!$buses) {
                 </tr>
             <?php endforeach; ?>
         <?php else: ?>
-            <tr><td colspan="7" class="text-center">No buses found.</td></tr>
+            <tr><td colspan="8" class="text-center">No buses found.</td></tr>
         <?php endif; ?>
         </tbody>
     </table>
@@ -125,24 +127,16 @@ if (!$buses) {
                         <input type="text" class="form-control" name="bus_no" placeholder="Ex: NB-1234" required value="<?= htmlspecialchars($formData['bus_no']) ?>" />
                     </div>
                     <div class="mb-3">
-                        <label for="route" class="form-label">Route</label>
-                        <input type="text" class="form-control" name="route" placeholder="Ex: Colombo - Kandy" required value="<?= htmlspecialchars($formData['route']) ?>" />
+                        <label for="route_id" class="form-label">Route ID</label>
+                        <input type="number" class="form-control" name="route" placeholder="Ex: 1" required value="<?= htmlspecialchars($formData['route_id']) ?>" min="1" />
                     </div>
                     <div class="mb-3">
-                        <label for="driver_contact" class="form-label">Driver Contact</label>
-                        <input type="tel" class="form-control" name="driver_contact" pattern="[0-9]{10}" placeholder="Ex: 0771234567" required value="<?= htmlspecialchars($formData['driver_contact']) ?>" />
+                        <label for="admin_id" class="form-label">Admin ID</label>
+                        <input type="number" class="form-control" name="driver_contact" placeholder="Ex: 1" required value="<?= htmlspecialchars($formData['admin_id']) ?>" min="1" />
                     </div>
                     <div class="mb-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-select" name="status" required>
-                            <option value="">-- Select Status --</option>
-                            <option value="Active" <?= ($formData['status'] === 'Active') ? 'selected' : '' ?>>Active</option>
-                            <option value="Inactive" <?= ($formData['status'] === 'Inactive') ? 'selected' : '' ?>>Inactive</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="seat_count" class="form-label">Seat Count</label>
-                        <input type="number" class="form-control" name="seat_count" min="1" placeholder="Ex: 45" required value="<?= htmlspecialchars($formData['seat_count']) ?>" />
+                        <label for="capacity" class="form-label">Capacity</label>
+                        <input type="number" class="form-control" name="seat_count" min="1" placeholder="Ex: 45" required value="<?= htmlspecialchars($formData['capacity']) ?>" />
                     </div>
                 </div>
 
@@ -181,21 +175,23 @@ if (!$buses) {
 <script>
 document.getElementById("addBusForm").addEventListener("submit", function(e) {
     const busNo = document.querySelector("input[name='bus_no']").value.trim();
-    const contact = document.querySelector("input[name='driver_contact']").value.trim();
-    const seats = document.querySelector("input[name='seat_count']").value.trim();
+    const routeId = document.querySelector("input[name='route']").value.trim();
+    const adminId = document.querySelector("input[name='driver_contact']").value.trim();
+    const capacity = document.querySelector("input[name='seat_count']").value.trim();
     const errorDiv = document.querySelector(".modal-body .alert-danger");
 
     const busNoPattern = /^[A-Z]{2,3}-\d{4}$/;
-    const contactPattern = /^\d{10}$/;
 
     let errorMsg = "";
 
     if (!busNoPattern.test(busNo)) {
         errorMsg = "❌ Invalid Bus Number. Format should be NB-1234 or ABC-5678.";
-    } else if (!contactPattern.test(contact)) {
-        errorMsg = "❌ Invalid Driver Contact. Must be exactly 10 digits.";
-    } else if (!seats || isNaN(seats) || parseInt(seats) <= 0) {
-        errorMsg = "❌ Invalid Seat Count. Must be a number greater than 0.";
+    } else if (!routeId || isNaN(routeId) || parseInt(routeId) <= 0) {
+        errorMsg = "❌ Invalid Route ID. Must be a number greater than 0.";
+    } else if (!adminId || isNaN(adminId) || parseInt(adminId) <= 0) {
+        errorMsg = "❌ Invalid Admin ID. Must be a number greater than 0.";
+    } else if (!capacity || isNaN(capacity) || parseInt(capacity) <= 0) {
+        errorMsg = "❌ Invalid Capacity. Must be a number greater than 0.";
     }
 
     if (errorMsg) {
