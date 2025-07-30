@@ -49,29 +49,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_bus'])) {
     <h2 class="mb-4">Update Bus Details</h2>
 
     <form method="POST" action="">
-        <input type="hidden" name="bus_no" value="<?= htmlspecialchars($bus['bus_no']) ?>">
+        <input type="hidden" name="bus_no" value="<?= htmlspecialchars($bus['BusNumber']) ?>">
 
         <div class="mb-3">
-            <label for="route" class="form-label">Route</label>
-            <input type="text" id="route" name="route" value="<?= htmlspecialchars($bus['route']) ?>" class="form-control" required>
+            <label for="route" class="form-label">Route ID</label>
+            <input type="number" id="route" name="route" value="<?= htmlspecialchars($bus['RouteId']) ?>" class="form-control" required>
         </div>
 
         <div class="mb-3">
-            <label for="driver_contact" class="form-label">Driver Contact</label>
-            <input type="text" id="driver_contact" name="driver_contact" value="<?= htmlspecialchars($bus['driver_contact']) ?>" class="form-control" required>
+            <label for="driver_contact" class="form-label">Admin ID</label>
+            <input type="number" id="driver_contact" name="driver_contact" value="<?= htmlspecialchars($bus['AdminId']) ?>" class="form-control" required>
         </div>
 
         <div class="mb-3">
-            <label for="status" class="form-label">Status</label>
-            <select id="status" name="status" class="form-select" required>
-                <option value="Active" <?= $bus['status'] == 'Active' ? 'selected' : '' ?>>Active</option>
-                <option value="Inactive" <?= $bus['status'] == 'Inactive' ? 'selected' : '' ?>>Inactive</option>
-            </select>
+            <label for="status" class="form-label">Bus Number</label>
+            <input type="text" id="status" name="status" value="<?= htmlspecialchars($bus['BusNumber']) ?>" class="form-control" readonly>
         </div>
 
         <div class="mb-3">
-            <label for="seat_count" class="form-label">Seat Count</label>
-            <input type="number" id="seat_count" name="seat_count" value="<?= htmlspecialchars($bus['seat_count']) ?>" class="form-control" required>
+            <label for="seat_count" class="form-label">Capacity</label>
+            <input type="number" id="seat_count" name="seat_count" value="<?= htmlspecialchars($bus['Capacity']) ?>" class="form-control" required>
         </div>
 
         <button type="submit" name="update_bus" class="btn btn-maroon w-100">Update Bus</button>
