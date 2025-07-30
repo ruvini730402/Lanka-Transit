@@ -170,7 +170,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </form>
 
         <!-- Incidents Table -->
-        <form method="POST" action="update_incidents_status.php">
+        <form method="POST" action="update_incidents.php">
             <table class="table table-bordered align-middle text-center">
                 <thead class="table-light">
                     <tr>

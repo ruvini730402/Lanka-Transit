@@ -11,38 +11,53 @@ if (!$conn) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single'])) {
-    $bookingId = trim($_POST['update_single']);
+    $incidentId = trim($_POST['update_single']);
     $statuses = $_POST['new_statuses'] ?? [];
-    $bookingIds = $_POST['booking_ids'] ?? [];
+    $incidentIds = $_POST['incident_ids'] ?? [];
 
-    // Validate booking ID
-    if (empty($bookingId)) {
-        error_log("Invalid booking ID provided");
-        header("Location: Manage_incidents_status.php");
+    // Validate incident ID
+    if (empty($incidentId)) {
+        error_log("Invalid incident ID provided");
+        header("Location: manage_incidents.php");
         exit;
     }
 
-    $index = array_search($bookingId, $bookingIds);
-    $newStatus = trim($statuses[$index] ?? 'Pending');
+    $index = array_search($incidentId, $incidentIds);
+    $newStatus = trim($statuses[$index] ?? '');
     
-    // Validate status
-    $allowedStatuses = ['submitted', 'Submitted', 'In Progress', 'Resolved', 'Pending'];
+    // Check if status is empty (user didn't select anything)
+    if (empty($newStatus)) {
+        error_log("No status selected");
+        header("Location: manage_incidents.php");
+        exit;
+    }
+    
+    // Validate status - match database enum values exactly
+    $allowedStatuses = ['submitted', 'in progress', 'resolved'];
     if (!in_array($newStatus, $allowedStatuses)) {
         error_log("Invalid status provided: " . $newStatus);
-        header("Location: Manage_incidents_status.php");
+        header("Location: manage_incidents.php");
         exit;
     }
 
-    $currentTime = date("Y-m-d H:i:s");
+    $currentDate = date("Y-m-d");
 
     try {
-        if ($newStatus === "In Progress" || $newStatus === "Resolved") {
-            $stmt = $conn->prepare("UPDATE incident SET Status = ?, ResolvedDate = ? WHERE BookingId = ?");
-            $stmt->execute([$newStatus, $currentTime, $bookingId]);
+        // Fixed table name to match schema (Incident with capital I)
+        if ($newStatus === "resolved") {
+            $stmt = $conn->prepare("UPDATE Incident SET Status = ?, ResolvedDate = ? WHERE ID = ?");
+            $stmt->execute([$newStatus, $currentDate, $incidentId]);
         } else {
-            $stmt = $conn->prepare("UPDATE incident SET Status = ?, ResolvedDate = NULL WHERE BookingId = ?");
-            $stmt->execute([$newStatus, $bookingId]);
+            $stmt = $conn->prepare("UPDATE Incident SET Status = ?, ResolvedDate = NULL WHERE ID = ?");
+            $stmt->execute([$newStatus, $incidentId]);
         }
+        
+        if ($stmt->rowCount() > 0) {
+            error_log("Successfully updated incident ID: " . $incidentId . " to status: " . $newStatus);
+        } else {
+            error_log("No rows updated for incident ID: " . $incidentId);
+        }
+        
     } catch (PDOException $e) {
         error_log("Update error: " . $e->getMessage());
     }
@@ -50,5 +65,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_single'])) {
 
 // Close database connection
 $database->closeConnection();
-header("Location: Manage_incidents_status.php");
+header("Location: manage_incidents.php");
 exit;

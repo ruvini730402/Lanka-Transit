@@ -4,7 +4,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405); // Method Not Allowed
     echo "<script>
         alert('❌ Invalid request method.');
-        window.location.href = 'incident.php';
+        window.location.href = 'incidents.php';
     </script>";
     exit;
 }
@@ -20,22 +20,17 @@ if (!$conn) {
     die("Connection failed: Unable to connect to database");
 }
 
-// 2. Sanitize and receive POST input
-$phoneNumber = trim($_POST['phone_number'] ?? '');
+// Sanitize and receive POST input
 $description = trim($_POST['description'] ?? '');
 
-// 3. Validate input
+// Validate input
 $errors = [];
-
-if (empty($phoneNumber) || !preg_match('/^[0-9]{10}$/', $phoneNumber)) {
-    $errors[] = "Invalid phone number. Must be exactly 10 digits.";
-}
 
 if (empty($description) || strlen($description) < 10) {
     $errors[] = "Description must be at least 10 characters.";
 }
 
-// 4. Prepare result
+// Prepare result
 $response = "";
 $statusClass = "";
 
@@ -43,31 +38,21 @@ if (!empty($errors)) {
     $response = implode("<br>", $errors);
     $statusClass = "danger";
 } else {
-    // 5. Prepare incident data
-    // Since BookingId is optional and refers to actual bookings, set it to NULL for general incidents
-    $bookingId = NULL;  // Will be NULL for general incidents not related to specific bookings
-
-    // Fixed initial status
+    // Prepare incident data
     $status = 'submitted';
-
     date_default_timezone_set('Asia/Colombo');
-    $reportedDate = date('Y-m-d H:i:s');
-    $resolvedDate = NULL;
+    $reportedDate = date('Y-m-d');
 
-    // 6. Insert into database
-    $stmt = $conn->prepare("INSERT INTO Incident (UserId, AdminId, BookingId, Description, Status, ReportedDate, ResolvedDate) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    // Insert into database
+    $stmt = $conn->prepare("INSERT INTO Incident (Description, Status, ReportedDate) VALUES (?, ?, ?)");
 
     try {
-        // Include phone number in description for reference
-        $fullDescription = "Phone: $phoneNumber\n\n$description";
-        
-        // Insert with NULL values for UserId, AdminId, and BookingId since this is a general incident report
-        $stmt->execute([NULL, NULL, $bookingId, $fullDescription, $status, $reportedDate, $resolvedDate]);
+        $stmt->execute([$description, $status, $reportedDate]);
         
         // Get the inserted incident ID for reference
         $incidentId = $conn->lastInsertId();
 
-        $response = "✅ Incident reported successfully. Your Incident ID is: INC-$incidentId, Status: $status, Phone: $phoneNumber";
+        $response = "✅ Incident reported successfully. Your Incident ID is: INC-$incidentId";
         $statusClass = "success";
     } catch (PDOException $e) {
         // Log the actual error for debugging

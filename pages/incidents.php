@@ -152,13 +152,10 @@ $database->closeConnection();
   <div class="form-section">
     <h3>📝 Report an Incident</h3>
     <form action="submit_incidents.php" method="POST">
-      <div class="mb-3">
-          <br>
-        <label class="form-label">Phone Number</label>
-        <input type="text" class="form-control" name="phone_number" required placeholder="Enter your phone number">
-      </div>
+
 
       <div class="mb-3">
+        <br>
         <label class="form-label">Description of the Incident</label>
         <textarea class="form-control" name="description" rows="4" required placeholder="Describe what happened in detail..."></textarea>
       </div>
