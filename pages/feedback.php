@@ -58,9 +58,9 @@ $busResult = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="Logout.php">
-                            <i class="fas fa-sign-out-alt me-1"></i>Logout
-                        </a>
+                      <a class="nav-link" href="../auth/Logout.php">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                      </a>
                     </li>
                 </ul>
             </div>
