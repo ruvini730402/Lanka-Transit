@@ -1,107 +1,112 @@
-ER Diagram - Lanka Transit (Updated with Simplified Extended Schema)
+ER Diagram - Lanka Transit (Current Implementation Schema)
 
-=== ORIGINAL TABLES ===
+=== CORE TABLES ===
 
 User
-PK ID INT NOT NULL
+PK ID INT AUTO_INCREMENT
 Name VARCHAR(100) NOT NULL
-Email VARCHAR(60) NOT NULL
+Email VARCHAR(60) NOT NULL UNIQUE
 PasswordHash VARCHAR(255) NOT NULL
 PhoneNumber VARCHAR(10) NOT NULL
-Role ENUM('administrator','guest user','registered user') NOT NULL
+Role ENUM('administrator','guest user','registered user') NOT NULL DEFAULT 'registered user'
 RegistrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 Booking
-PK ID INT NOT NULL
-FK UserId INT
-FK BusID INT
+PK ID INT AUTO_INCREMENT
+FK UserId INT (NULLABLE - for guest bookings)
+FK BusID INT NOT NULL
 SeatNumber VARCHAR(6) NOT NULL
-BookingTime TIMESTAMP DEFAULT CURRENT TIMESTAMP
-Status ENUM('confirmed','cancelled','completed') NOT NULL
 PhoneNumber VARCHAR(10) NOT NULL
 Fare DECIMAL(10,2) NOT NULL
+Status ENUM('confirmed','cancelled','completed') NOT NULL DEFAULT 'confirmed'
+BookingTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 Feedback
-PK ID INT NOT NULL
-FK UserId INT
-FK BusId INT
+PK ID INT AUTO_INCREMENT
+FK UserId INT (NULLABLE)
+FK BusId INT (NULLABLE)
 Comment TEXT
-Rating INT
-CreatedDate DATE
+Rating INT (1-5)
+CreatedDate DATE DEFAULT (CURRENT_DATE)
 
 Incident
-PK ID INT NOT NULL
-FK UserId INT
-FK AdminId INT
-FK BookingId INT
-FK RouteId INT
-Description TEXT
-Status ENUM('submitted','in progress','resolved') NOT NULL
-ReportedDate DATE
-ResolvedDate DATE
+PK ID INT AUTO_INCREMENT
+FK UserId INT (NULLABLE)
+FK AdminId INT (NULLABLE)
+FK BookingId INT (NULLABLE)
+FK RouteId INT (NULLABLE)
+Description TEXT NOT NULL
+Status ENUM('submitted','in progress','resolved') NOT NULL DEFAULT 'submitted'
+ReportedDate DATE DEFAULT (CURRENT_DATE)
+ResolvedDate DATE (NULLABLE)
 
 Admin
-PK ID INT NOT NULL
-Email VARCHAR(60) NOT NULL
+PK ID INT AUTO_INCREMENT
+Email VARCHAR(60) NOT NULL UNIQUE
 PasswordHash VARCHAR(255) NOT NULL
 Name VARCHAR(100) NOT NULL
 PhoneNumber VARCHAR(10) NOT NULL
 
 Bus
-PK ID INT NOT NULL
-FK RouteId INT
-FK AdminId INT
-BusNumber VARCHAR(7) NOT NULL
+PK ID INT AUTO_INCREMENT
+FK RouteId INT (NULLABLE)
+FK AdminId INT (NULLABLE)
+BusNumber VARCHAR(7) NOT NULL UNIQUE
 Capacity INT NOT NULL
 LastUpdate DATE
 
 Payment
-PK ID INT NOT NULL
+PK ID INT AUTO_INCREMENT
 FK BookingId INT NOT NULL
 PaymentMethod VARCHAR(50)
 Status ENUM('success','failed') NOT NULL
-Amount DECIMAL(10,2)
+Amount DECIMAL(10,2) NOT NULL
 PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 TransactionId VARCHAR(100)
 
 Receipt
-PK ID INT NOT NULL
+PK ID INT AUTO_INCREMENT
 FK PaymentId INT NOT NULL
 PdfUrl VARCHAR(255) NOT NULL
-GeneratedDate DATE
+GeneratedDate DATE DEFAULT (CURRENT_DATE)
 
 Seat
-PK ID INT NOT NULL
-FK BusID INT
+PK ID INT AUTO_INCREMENT
+FK BusID INT NOT NULL
 SeatNumber VARCHAR(6) NOT NULL
-Status ENUM('available','booked')
+Status ENUM('available','booked') DEFAULT 'available'
 GenderPreference ENUM('male','female','other') NOT NULL
-IsLadySeat BOOLEAN
+IsLadySeat BOOLEAN DEFAULT FALSE
+UNIQUE KEY unique_seat_per_bus (BusID, SeatNumber)
+
+Route
+PK ID INT AUTO_INCREMENT
+Origin VARCHAR(50) NOT NULL
+Destination VARCHAR(50) NOT NULL
+Stops TEXT (NULLABLE)
+
+-- Current Active Routes:
+-- ID 1: Badulla to Matara
+-- ID 2: Matara to Badulla
+
+Location
+PK UniqueID INT AUTO_INCREMENT
+Name VARCHAR(100) NOT NULL
+Type ENUM('terminal','stop') NOT NULL
 
 Schedule
-PK ID INT NOT NULL
-FK BusID INT
+PK ID INT AUTO_INCREMENT
+FK BusID INT NOT NULL
 DepartureTime DATETIME NOT NULL
 ArrivalTime DATETIME NOT NULL
 Fare DECIMAL(10,2) NOT NULL
 
-Route
-PK ID INT NOT NULL
-Origin VARCHAR(50)
-Destination VARCHAR(50)
-Stops TEXT
-
-Location
-PK UniqueID INT NOT NULL
-Name VARCHAR(100) NOT NULL
-Type ENUM('terminal','stop')
-
-=== EXTENDED SCHEMA (schema2.sql) ===
+=== EXTENDED SCHEMA TABLES ===
 
 User_2
 PK user_id INT (FK to User.ID)
-reset_token VARCHAR(255)
-token_expiry DATETIME
+reset_token VARCHAR(255) (NULLABLE)
+token_expiry DATETIME (NULLABLE)
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
@@ -117,79 +122,164 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
 Announcements
-PK ID INT NOT NULL AUTO_INCREMENT
+PK ID INT AUTO_INCREMENT
 title VARCHAR(200) NOT NULL
 message TEXT NOT NULL
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
-=== SCHEMA MODIFICATIONS (schema_3.sql) ===
+=== SAMPLE DATA (From schema files) ===
 
-**Incident Table Enhancement:**
-- Added RouteId INT column with foreign key reference to Route(ID)
-- Added index idx_incident_route for performance optimization
-- Updated existing incident records to include route associations
-- Enables route-specific incident tracking and analytics
+**Locations (from schema.sql):**
+- Badulla (terminal)
+- Ella (stop)
+- Wellawaya (stop)
+- Thanamalvila (stop)
+- Lunugamvehera (stop)
+- Tangalle (stop)
+- Dickwella (stop)
+- Devinuwara (stop)
+- Matara (terminal)
+
+**Routes (from schema.sql):**
+- Route 1: Badulla → Matara (Stops: Ella,Wellawaya,Thanamalvila,Lunugamvehera,Tangalle,Dickwella,Devinuwara)
+- Route 2: Matara → Badulla (Stops: Devinuwara,Dickwella,Tangalle,Lunugamvehera,Thanamalvila,Wellawaya,Ella)
+
+**Default Admin (from schema.sql):**
+- Email: admin@lankatransit.com
+- Name: System Administrator
+- Phone: 0771234567
+
+**Sample Announcements (from schema2.sql):**
+- Service Update: New bus route from Badulla to Matara now available
+- Maintenance Notice: Scheduled maintenance on Route 1 buses every Sunday
+- Holiday Special: Special discount rates for advance bookings
+
+=== CURRENT IMPLEMENTATION FEATURES ===
+
+**Authentication System:**
+- Email/password login for users and admins
+- Session-based authentication
+- Role-based access control (admin/guest user/registered user)
+- Password reset functionality (via User_2 table)
+
+**Booking System:**
+- Guest bookings (UserId can be NULL)
+- Seat selection and management
+- Payment processing with transaction tracking
+- PDF ticket generation
+- Booking confirmation system
+
+**Incident Management:**
+- Users can report incidents with description only
+- Admins can manage incident status (submitted/in progress/resolved)
+- Route association removed from user interface (simplified)
+- Status tracking with reported and resolved dates
+
+**Admin Panel:**
+- Bus management (add/edit/delete)
+- User management and booking overview
+- Incident status management
+- Announcement system
+- Feedback monitoring
+
+**Database Features:**
+- PDO with prepared statements
+- Input sanitization and validation
+- Transaction support for booking process
+- Proper foreign key relationships
+- ENUM constraints for data integrity
 
 === RELATIONSHIPS ===
 
-Original Relationships:
-- A **User** makes a **Booking**
-- A **Booking** reserves a **Seat**
-- A **Booking** generates a **Payment**
-- A **Payment** generates a **Receipt**
-- A **User** submits a **Feedback**
-- A **User** reports an **Incident**
-- An **Admin** resolves an **Incident**
-- An **Incident** is associated with a **Route**
-- An **Admin** manages a **Bus**
-- A **Bus** contains many **Seats**
-- A **Bus** has a **Schedule**
-- A **Bus** operates on a **Route**
-- A **Route** includes multiple **Locations**
+**Core Relationships:**
+- User (1) ←→ (0..n) Booking (Users can make multiple bookings)
+- Booking (n) ←→ (1) Bus (Multiple bookings can be for same bus)
+- Booking (1) ←→ (1) Payment (Each booking has one payment)
+- Payment (1) ←→ (0..1) Receipt (Payment may generate receipt)
+- User (1) ←→ (0..n) Feedback (Users can submit multiple feedback)
+- User (1) ←→ (0..n) Incident (Users can report multiple incidents)
+- Admin (1) ←→ (0..n) Incident (Admins can resolve multiple incidents)
+- Bus (n) ←→ (1) Route (Multiple buses can operate on same route)
+- Bus (1) ←→ (0..n) Seat (Each bus has multiple seats)
 
-Extended Relationships:
-- **User** extends to **User_2** (1:1 relationship) for password reset functionality
-- **Booking** extends to **Booking_2** (1:1 relationship) for gender demographics
-- **Admin** extends to **Admin_2** (1:1 relationship) for account tracking
-- **Announcements** is a standalone table for system notifications
+**Extended Relationships:**
+- User (1) ←→ (0..1) User_2 (Optional password reset data)
+- Booking (1) ←→ (0..1) Booking_2 (Optional gender tracking)
+- Admin (1) ←→ (0..1) Admin_2 (Optional admin metadata)
+- Announcements (standalone) - System-wide notifications
+- Route (1) ←→ (0..n) Location (Routes include multiple locations as stops)
+- Bus (1) ←→ (0..n) Schedule (Each bus can have multiple scheduled departures)
 
-Schema 3 Enhancements:
-- **Incident** now includes **RouteId** (Many:1 relationship with Route) for route-specific incident tracking
+**Schema Evolution (schema_3.sql):**
+- Added RouteId column to Incident table for route-specific tracking
+- Created idx_incident_route index for performance optimization
+- Updated existing incident records with appropriate route associations
 
-=== EXTENDED SCHEMA DETAILS ===
+**Current Constraints:**
+- RouteId in Incident table exists but not actively used in UI
+- BookingId in Incident is optional (general incidents vs booking-specific)
+- UserId in Booking is optional (supports guest bookings)
+- Many foreign keys are nullable to support flexible usage patterns
 
-**User_2 Extensions:**
-- reset_token: For secure password reset functionality
-- token_expiry: Expiration time for reset tokens
-- created_at: User account creation tracking
+=== ACTIVE USAGE PATTERNS ===
 
-**Booking_2 Extensions:**
-- gender: Passenger gender for analytics and seating preferences
-- created_at: Booking creation tracking
+**Incident Workflow:**
+1. Users report incidents via incidents.php (description only)
+2. Incidents stored with 'submitted' status
+3. Admins manage via manage_incidents.php
+4. Status updated through update_incidents.php
+5. Resolved incidents get ResolvedDate set
 
-**Admin_2 Extensions:**
-- created_at: Admin account creation tracking
+**Booking Workflow:**
+1. Users search buses and select seats
+2. Booking created with guest or registered user data
+3. Payment record generated automatically
+4. Confirmation page displays ticket information
+5. PDF ticket available for download
 
-**Announcements:**
-- Standalone table for system-wide notifications
-- Used in admin/announcements.php and pages/announcements.php
+**Admin Workflow:**
+1. Admin login through dedicated admin panel
+2. Manage buses, view bookings, handle incidents
+3. Create/update announcements
+4. Monitor feedback and user activity
 
-**Indexes for Performance:**
-- idx_user2_reset_token: Quick token lookups
+=== DATABASE INDEXES (Performance Optimization) ===
+
+**Primary Schema Indexes (schema.sql):**
+- idx_booking_user: Booking queries by user
+- idx_booking_bus: Booking queries by bus
+- idx_booking_phone: Booking queries by phone number
+- idx_schedule_bus: Schedule queries by bus
+- idx_schedule_departure: Schedule queries by departure time
+- idx_seat_bus: Seat queries by bus
+- idx_payment_booking: Payment queries by booking
+- idx_route_origin_dest: Route queries by origin and destination
+
+**Extended Schema Indexes (schema2.sql):**
+- idx_user2_reset_token: Password reset token validation
 - idx_user2_token_expiry: Token expiry validation
 - idx_user2_created_at: User registration analytics
 - idx_booking2_gender: Gender-based analytics
 - idx_booking2_created_at: Booking date analytics
 - idx_admin2_created_at: Admin account tracking
-- idx_announcements_created_at: Announcement chronology
+- idx_announcements_created_at: Chronological announcement display
+
+**Schema 3 Indexes (schema_3.sql):**
 - idx_incident_route: Route-specific incident analytics and filtering
 
-**Schema 3 Enhancements:**
+=== SCHEMA CONSTRAINTS ===
 
-**Incident Table RouteId Addition:**
-- RouteId: Foreign key linking incidents to specific routes
-- Enables route-specific incident tracking and analysis
-- Supports route performance monitoring and maintenance planning
-- Facilitates targeted route improvements based on incident patterns
-- Allows for route-specific incident reporting and resolution tracking
+**Unique Constraints:**
+- User.Email: Ensures unique user emails
+- Admin.Email: Ensures unique admin emails
+- Bus.BusNumber: Ensures unique bus identification
+- Seat.unique_seat_per_bus: Ensures unique seat numbers per bus
+
+**Check Constraints:**
+- Feedback.Rating: Rating must be between 1 and 5
+
+**Foreign Key Constraints:**
+- CASCADE DELETE: Bus→Schedule, Bus→Seat, Booking→Payment, Payment→Receipt
+- SET NULL: User/Admin references allow soft deletion
+- Proper referential integrity across all related tables
