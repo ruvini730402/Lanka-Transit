@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <i class="fas fa-chair me-1"></i>
                                             <?php echo $bus['available_seats']; ?> seats available
                                         </span>
-                                        <a href="booking.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>&origin=<?php echo urlencode($origin); ?>&destination=<?php echo urlencode($destination); ?>" 
+                                        <a href="seatbooking.php?bus_id=<?php echo $bus['bus_id']; ?>&date=<?php echo urlencode($travelDate); ?>&origin=<?php echo urlencode($origin); ?>&destination=<?php echo urlencode($destination); ?>&fare=<?php echo $bus['fare']; ?>&bus_number=<?php echo urlencode($bus['bus_number']); ?>&departure=<?php echo urlencode($bus['departure_time']); ?>&arrival=<?php echo urlencode($bus['arrival_time']); ?>" 
                                            class="btn btn-success">
                                             <i class="fas fa-ticket-alt me-1"></i>Book Now
                                         </a>

@@ -1,3 +1,22 @@
+<?php
+session_start();
+
+// Get booking parameters from URL
+$bus_id = $_GET['bus_id'] ?? '';
+$travel_date = $_GET['date'] ?? '';
+$origin = $_GET['origin'] ?? '';
+$destination = $_GET['destination'] ?? '';
+$fare = $_GET['fare'] ?? '';
+$bus_number = $_GET['bus_number'] ?? '';
+$departure_time = $_GET['departure'] ?? '';
+$arrival_time = $_GET['arrival'] ?? '';
+
+// Validate required parameters
+if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destination)) {
+    header('Location: ../index.php?error=missing_params');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,6 +56,44 @@
   <div class="container my-4">
  <h2 class="text-center mb-4 title-dark-blue">Bus Seat Selection</h2>
  
+ <!-- Booking Summary -->
+ <div class="row mb-4">
+   <div class="col-12">
+     <div class="card">
+       <div class="card-body">
+         <h5 class="card-title title-dark-blue">Journey Details</h5>
+         <div class="row">
+           <div class="col-md-3">
+             <strong>Route:</strong><br>
+             <?php echo htmlspecialchars($origin); ?> → <?php echo htmlspecialchars($destination); ?>
+           </div>
+           <div class="col-md-3">
+             <strong>Date:</strong><br>
+             <?php echo date('F j, Y', strtotime($travel_date)); ?>
+           </div>
+           <div class="col-md-3">
+             <strong>Bus:</strong><br>
+             <?php echo htmlspecialchars($bus_number); ?>
+           </div>
+           <div class="col-md-3">
+             <strong>Fare:</strong><br>
+             Rs. <?php echo number_format($fare, 2); ?>
+           </div>
+         </div>
+         <?php if ($departure_time): ?>
+         <div class="row mt-2">
+           <div class="col-md-6">
+             <strong>Departure:</strong> <?php echo date('g:i A', strtotime($departure_time)); ?>
+           </div>
+           <div class="col-md-6">
+             <strong>Arrival:</strong> <?php echo date('g:i A', strtotime($arrival_time)); ?>
+           </div>
+         </div>
+         <?php endif; ?>
+       </div>
+     </div>
+   </div>
+ </div>
 
  <div class="row">
   <!-- Left: Seat Map -->
@@ -50,8 +107,15 @@
       <div class="card-body">
         <h5 class="card-title mb-3 title-dark-blue">Passenger Info</h5>
 
+        <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?php echo htmlspecialchars($_SESSION['error']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['error']); endif; ?>
+
         <div id="form-message"></div>
-        <form id="booking-form">
+        <form id="booking-form" method="POST" action="book.php">
           <div class="mb-3">
             <label class="form-label title-dark-blue ">Passenger Name</label>
             <input type="text" class="form-control" name="name" required>
@@ -80,6 +144,14 @@
           </div>
 
           <input type="hidden" name="seat" id="selected-seat">
+          <input type="hidden" name="bus_id" value="<?php echo htmlspecialchars($bus_id); ?>">
+          <input type="hidden" name="travel_date" value="<?php echo htmlspecialchars($travel_date); ?>">
+          <input type="hidden" name="origin" value="<?php echo htmlspecialchars($origin); ?>">
+          <input type="hidden" name="destination" value="<?php echo htmlspecialchars($destination); ?>">
+          <input type="hidden" name="fare" value="<?php echo htmlspecialchars($fare); ?>">
+          <input type="hidden" name="bus_number" value="<?php echo htmlspecialchars($bus_number); ?>">
+          <input type="hidden" name="departure_time" value="<?php echo htmlspecialchars($departure_time); ?>">
+          <input type="hidden" name="arrival_time" value="<?php echo htmlspecialchars($arrival_time); ?>">
          <button type="submit" class="btn w-100" style="background-color: #800000; color: white;">Book Seat</button>
 
         </form>

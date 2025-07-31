@@ -33,6 +33,32 @@ class Database {
         return self::$pdo;
     }
 
+    /**
+     * Sanitize input to prevent XSS and clean data
+     */
+    public static function sanitizeInput($input) {
+        return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Validate input based on type
+     */
+    public static function validateInput($input, $type = 'string') {
+        $input = trim($input);
+        
+        switch ($type) {
+            case 'date':
+                return !empty($input) && strtotime($input) !== false;
+            case 'email':
+                return filter_var($input, FILTER_VALIDATE_EMAIL) !== false;
+            case 'phone':
+                return preg_match('/^\d{10}$/', $input);
+            case 'string':
+            default:
+                return !empty($input) && strlen($input) > 0;
+        }
+    }
+
     // Send password reset email
     public static function sendResetEmail($email, $token) {
         // Check if PHPMailer is available

@@ -132,6 +132,26 @@ class Bus {
             return ['error' => 'Invalid travel date'];
         }
         
+        // First check if seat records exist for this bus
+        $seatCheckQuery = "SELECT COUNT(*) FROM Seat WHERE BusID = ?";
+        $stmt = $this->conn->prepare($seatCheckQuery);
+        $stmt->execute([$busId]);
+        $seatCount = $stmt->fetchColumn();
+        
+        if ($seatCount == 0) {
+            // Generate default seat layout (40 seats)
+            $seats = [];
+            for ($i = 1; $i <= 40; $i++) {
+                $seats[] = [
+                    'seat_number' => (string)$i,
+                    'gender_preference' => 'other',
+                    'is_lady_seat' => ($i <= 8),
+                    'status' => 'available'
+                ];
+            }
+            return ['success' => true, 'data' => $seats];
+        }
+        
         $query = "SELECT 
                     s.SeatNumber,
                     s.GenderPreference,

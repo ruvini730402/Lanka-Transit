@@ -2,121 +2,125 @@
 /**
  * Booking Confirmation - Save to Database
  */
-require_once '../config/database.php';
+session_start();
+require_once '../classes/Database.php';
 
-// Process booking and save to database
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $bookingData = [
-        'passenger_name' => $_POST['passenger_name'] ?? '',
-        'phone' => $_POST['phone'] ?? '',
-        'origin' => $_POST['origin'] ?? '',
-        'destination' => $_POST['destination'] ?? '',
-        'travel_date' => $_POST['travel_date'] ?? '',
-        'bus_id' => $_POST['bus_id'] ?? '',
-        'seat_number' => $_POST['seat_number'] ?? '',
-        'fare' => (float)($_POST['fare'] ?? 0)
-    ];
+// Check if booking data exists in session
+if (!isset($_SESSION['booking_data'])) {
+    header('Location: ../index.php?error=no_booking_data');
+    exit;
+}
+
+$bookingData = $_SESSION['booking_data'];
+
+try {
+    // Get database connection
+    $pdo = Database::getConnection();
     
-    try {
-        // Get database connection
-        $database = new Database();
-        $pdo = $database->getConnection();
-        
-        if (!$pdo) {
-            throw new Exception("Database connection failed");
-        }
-        
-        // Start transaction
-        $pdo->beginTransaction();
-        
-        // 1. Create user record (guest user for demo)
-        // Handle duplicate emails by generating unique email
-        $baseEmail = strtolower(str_replace(' ', '', $bookingData['passenger_name'])) . '@demo.com';
-        $email = $baseEmail;
-        $counter = 1;
-        
-        // Check if email exists and create unique one if needed
-        $checkStmt = $pdo->prepare("SELECT ID FROM User WHERE Email = ?");
+    if (!$pdo) {
+        throw new Exception("Database connection failed");
+    }
+    
+    // Start transaction
+    $pdo->beginTransaction();
+    
+    // 1. Create user record (guest user for demo)
+    // Handle duplicate emails by generating unique email
+    $baseEmail = strtolower(str_replace(' ', '', $bookingData['passenger_name'])) . '@demo.com';
+    $email = $baseEmail;
+    $counter = 1;
+    
+    // Check if email exists and create unique one if needed
+    $checkStmt = $pdo->prepare("SELECT ID FROM User WHERE Email = ?");
+    $checkStmt->execute([$email]);
+    
+    while ($checkStmt->fetch()) {
+        $email = str_replace('@demo.com', $counter . '@demo.com', $baseEmail);
+        $counter++;
         $checkStmt->execute([$email]);
-        
-        while ($checkStmt->fetch()) {
-            $email = str_replace('@demo.com', $counter . '@demo.com', $baseEmail);
-            $counter++;
-            $checkStmt->execute([$email]);
-        }
-        
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO User (Name, Email, PasswordHash, PhoneNumber, Role) 
+        VALUES (?, ?, ?, ?, 'guest user')
+    ");
+    $stmt->execute([
+        $bookingData['passenger_name'],
+        $email,
+        password_hash('demo123', PASSWORD_DEFAULT),
+        $bookingData['phone']
+    ]);
+    $userId = $pdo->lastInsertId();
+    
+    // 2. Create booking record
+    $stmt = $pdo->prepare("
+        INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status) 
+        VALUES (?, ?, ?, ?, ?, 'confirmed')
+    ");
+    $stmt->execute([
+        $userId,
+        $bookingData['bus_id'],
+        $bookingData['seat_number'],
+        $bookingData['phone'],
+        $bookingData['fare']
+    ]);
+    $bookingId = $pdo->lastInsertId();
+    
+    // 3. Create booking_2 record for gender tracking
+    try {
         $stmt = $pdo->prepare("
-            INSERT INTO User (Name, Email, PasswordHash, PhoneNumber, Role) 
-            VALUES (?, ?, ?, ?, 'guest user')
+            INSERT INTO Booking_2 (booking_id, gender) 
+            VALUES (?, ?)
         ");
-        $stmt->execute([
-            $bookingData['passenger_name'],
-            $email,
-            password_hash('demo123', PASSWORD_DEFAULT),
-            $bookingData['phone']
-        ]);
-        $userId = $pdo->lastInsertId();
-        
-        // 2. Create booking record
-        $stmt = $pdo->prepare("
-            INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status) 
-            VALUES (?, ?, ?, ?, ?, 'confirmed')
-        ");
-        $stmt->execute([
-            $userId,
-            $bookingData['bus_id'],
-            $bookingData['seat_number'],
-            $bookingData['phone'],
-            $bookingData['fare']
-        ]);
-        $bookingId = $pdo->lastInsertId();
-        
-        // 3. Create payment record
-        $stmt = $pdo->prepare("
-            INSERT INTO Payment (BookingId, PaymentMethod, Status, Amount, TransactionId) 
-            VALUES (?, 'Demo Payment', 'success', ?, ?)
-        ");
-        $transactionId = 'TXN-' . time() . '-' . rand(1000, 9999);
-        $stmt->execute([
-            $bookingId,
-            $bookingData['fare'],
-            $transactionId
-        ]);
-        
-        // 4. Update seat status (if seat table exists for this bus)
+        $stmt->execute([$bookingId, $bookingData['gender']]);
+    } catch (PDOException $e) {
+        // Booking_2 table might not exist, continue without it
+        error_log("Booking_2 insert failed: " . $e->getMessage());
+    }
+    
+    // 4. Create payment record
+    $stmt = $pdo->prepare("
+        INSERT INTO Payment (BookingId, PaymentMethod, Status, Amount, TransactionId) 
+        VALUES (?, 'Demo Payment', 'success', ?, ?)
+    ");
+    $transactionId = 'TXN-' . time() . '-' . rand(1000, 9999);
+    $stmt->execute([
+        $bookingId,
+        $bookingData['fare'],
+        $transactionId
+    ]);
+    
+    // 5. Update seat status (if seat table exists for this bus)
+    try {
         $stmt = $pdo->prepare("
             UPDATE Seat SET Status = 'booked' 
             WHERE BusID = ? AND SeatNumber = ?
         ");
         $stmt->execute([$bookingData['bus_id'], $bookingData['seat_number']]);
-        
-        // Commit transaction
-        $pdo->commit();
-        
-        // Generate booking reference
-        $bookingReference = 'LT-' . str_pad($bookingId, 6, '0', STR_PAD_LEFT);
-        
-        // Demo bus numbers mapping
-        $busNumbers = [
-            '1' => 'NB-1001',
-            '2' => 'NB-1002', 
-            '3' => 'NB-1003'
-        ];
-        $busNumber = $busNumbers[$bookingData['bus_id']] ?? 'NB-1001';
-        
-        $success = true;
-        
-    } catch (Exception $e) {
-        // Rollback transaction on error
-        $pdo->rollback();
-        $error = "Booking failed: " . $e->getMessage();
-        $success = false;
+    } catch (PDOException $e) {
+        // Seat table might not exist for this bus, continue without it
+        error_log("Seat update failed: " . $e->getMessage());
     }
     
-} else {
-    // Redirect if accessed directly
-    header('Location: booking.php');
-    exit();
+    // Commit transaction
+    $pdo->commit();
+    
+    // Generate booking reference
+    $bookingReference = 'LT-' . str_pad($bookingId, 6, '0', STR_PAD_LEFT);
+    
+    $success = true;
+    
+    // Clear booking data from session
+    unset($_SESSION['booking_data']);
+    
+} catch (Exception $e) {
+    // Rollback transaction on error
+    if (isset($pdo)) {
+        $pdo->rollback();
+    }
+    $error = "Booking failed: " . $e->getMessage();
+    $success = false;
+    error_log("Booking confirmation error: " . $e->getMessage());
 }
 ?>
 
@@ -289,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="card-body text-center">
                                         <i class="fas fa-bus fa-2x text-warning mb-2"></i>
                                         <h6 class="card-title text-muted small">BUS</h6>
-                                        <p class="card-text fw-bold"><?= htmlspecialchars($busNumber) ?></p>
+                                        <p class="card-text fw-bold"><?= htmlspecialchars($bookingData['bus_number']) ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -316,7 +320,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="card-body text-center">
                                         <i class="fas fa-clock fa-2x text-secondary mb-2"></i>
                                         <h6 class="card-title text-muted small">DEPARTURE</h6>
-                                        <p class="card-text fw-bold">08:00 AM</p>
+                                        <p class="card-text fw-bold">
+                                            <?= !empty($bookingData['departure_time']) ? date('g:i A', strtotime($bookingData['departure_time'])) : 'N/A' ?>
+                                        </p>
                                     </div>
                                 </div>
                             </div>

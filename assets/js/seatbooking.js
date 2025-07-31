@@ -2,31 +2,61 @@ const seatMap = document.getElementById('seat-map');
 const selectedSeatInput = document.getElementById('selected-seat');
 let selectedSeat = null;
 
+// Get bus data from URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+const busId = urlParams.get('bus_id');
+const travelDate = urlParams.get('date');
+
 // Fetch booked seats from PHP
 async function fetchBookedSeats() {
-  const response = await fetch('http://localhost/lanka-transit/pages/seats.php');
-  const data = await response.json();
-  return data; // returns [{seat: 2, gender: 'female'}, ...]
+  try {
+    const response = await fetch(`view.php?api=seats&bus_id=${busId}&date=${travelDate}`);
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('Error fetching seats:', data.error);
+      return [];
+    }
+    
+    return data.seats || [];
+  } catch (error) {
+    console.error('Failed to fetch seat data:', error);
+    return [];
+  }
 }
 
 // Create a single seat button
-function createSeat(seatNum, bookedSeats) {
+function createSeat(seatNum, seatData) {
   const seat = document.createElement('button');
   seat.textContent = seatNum;
   seat.className = 'seat btn btn-success';
   seat.style.width = '60px';
   seat.style.height = '60px';
+  seat.type = 'button'; // Prevent form submission
 
   // Lady seat (first 8 seats)
   if (seatNum <= 8) {
     seat.classList.add('lady-seat');
+    seat.style.border = '2px solid red';
   }
 
-  // Check if seat is already booked
-  const booking = bookedSeats.find(b => b.seat == seatNum);
-  if (booking) {
+  // Find seat data
+  const seatInfo = seatData.find(s => s.seat == seatNum);
+  
+  if (seatInfo && seatInfo.status === 'booked') {
     seat.disabled = true;
-    seat.classList.add('booked', booking.gender); // Adds 'female', 'male', etc.
+    seat.classList.remove('btn-success');
+    
+    // Color based on gender of booked passenger
+    if (seatInfo.gender_preference === 'female') {
+      seat.classList.add('btn-secondary');
+      seat.style.backgroundColor = '#ffb6c1'; // Light pink
+    } else if (seatInfo.gender_preference === 'male') {
+      seat.style.backgroundColor = '#add8e6'; // Light blue
+    } else {
+      seat.style.backgroundColor = '#A9A9A9'; // Gray
+    }
+    seat.style.color = '#000';
   } else {
     seat.addEventListener('click', () => {
       const gender = document.getElementById('gender').value;
@@ -36,7 +66,7 @@ function createSeat(seatNum, bookedSeats) {
       }
 
       if (seatNum <= 8 && gender !== 'female') {
-        showMessage("Seats 1 to 8 are reserved for female passengers (unless < 3 hours before journey).", "danger");
+        showMessage("Seats 1 to 8 are reserved for female passengers.", "danger");
         return;
       }
 
@@ -48,6 +78,7 @@ function createSeat(seatNum, bookedSeats) {
 
       seat.classList.remove('btn-success');
       seat.classList.add('selected', 'btn-warning');
+      seat.style.backgroundColor = '#FFA500'; // Orange
       selectedSeat = seatNum;
       selectedSeatInput.value = seatNum;
     });
@@ -58,14 +89,14 @@ function createSeat(seatNum, bookedSeats) {
 
 // Render all 40 seats
 async function renderSeats() {
-  const bookedSeats = await fetchBookedSeats();
+  const seatData = await fetchBookedSeats();
   seatMap.innerHTML = '';
 
   for (let row = 0; row < 10; row++) {
     // 2 seats on left
     for (let i = 0; i < 2; i++) {
       const seatNum = row * 4 + i + 1;
-      seatMap.appendChild(createSeat(seatNum, bookedSeats));
+      seatMap.appendChild(createSeat(seatNum, seatData));
     }
 
     // Aisle
@@ -76,7 +107,7 @@ async function renderSeats() {
     // 2 seats on right
     for (let i = 2; i < 4; i++) {
       const seatNum = row * 4 + i + 1;
-      seatMap.appendChild(createSeat(seatNum, bookedSeats));
+      seatMap.appendChild(createSeat(seatNum, seatData));
     }
   }
 }
@@ -84,46 +115,15 @@ async function renderSeats() {
 
 
 // Submit booking form
-// Submit booking form
-document.getElementById('booking-form').addEventListener('submit', async function (e) {
-  e.preventDefault();
-
-  const form = e.target;
-  const formData = new FormData(form);
-  const messageDiv = document.getElementById('form-message');
-  messageDiv.innerHTML = '';
-
-  if (!formData.get('seat')) {
+document.getElementById('booking-form').addEventListener('submit', function (e) {
+  if (!selectedSeat) {
+    e.preventDefault();
     showMessage("Please select a seat before booking.", "danger");
     return;
   }
-
-  try {
-    const res = await fetch('book.php', {
-      method: 'POST',
-      body: formData
-    });
-
-    const result = await res.json();
-    console.log(result); // Helpful for debugging
-
-    if (result.success) {
-      const bookingId = result.booking_id;
-      showMessage(`Seat booked successfully! Your Booking ID: ${bookingId}`, "success");
-
-      // Wait a moment to show the success message, then redirect
-      setTimeout(() => {
-        if (bookingId) {
-          window.location.href = `payment.php?booking_id=${encodeURIComponent(bookingId)}`;
-        }
-      }, 1500);
-    } else {
-      showMessage(result.message, "danger");
-    }
-  } catch (err) {
-    console.error(err);
-    showMessage("Something went wrong. Please try again.", "danger");
-  }
+  
+  // Form will submit normally to book.php
+  showMessage("Processing your booking...", "info");
 });
 
 
