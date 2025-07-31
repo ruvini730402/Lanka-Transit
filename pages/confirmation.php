@@ -364,7 +364,7 @@ try {
                             </button>
                         </div>
                         <div class="col-md-6 col-lg-3">
-                            <a href="ticket_pdf.php?ref=<?= urlencode($bookingReference) ?>&name=<?= urlencode($bookingData['passenger_name']) ?>&phone=<?= urlencode($bookingData['phone']) ?>&origin=<?= urlencode($bookingData['origin']) ?>&destination=<?= urlencode($bookingData['destination']) ?>&date=<?= urlencode($bookingData['travel_date']) ?>&bus=<?= urlencode($busNumber) ?>&seat=<?= urlencode($bookingData['seat_number']) ?>&fare=<?= urlencode($bookingData['fare']) ?>" 
+                            <a href="ticket_pdf.php?ref=<?= urlencode($bookingReference) ?>&name=<?= urlencode($bookingData['passenger_name']) ?>&phone=<?= urlencode($bookingData['phone']) ?>&origin=<?= urlencode($bookingData['origin']) ?>&destination=<?= urlencode($bookingData['destination']) ?>&date=<?= urlencode($bookingData['travel_date']) ?>&bus=<?= urlencode($bookingData['bus_number']) ?>&seat=<?= urlencode($bookingData['seat_number']) ?>&fare=<?= urlencode($bookingData['fare']) ?>" 
                class="btn btn-success w-100">
                                 <i class="fas fa-download me-2"></i>Download PDF
                             </a>
