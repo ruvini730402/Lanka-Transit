@@ -79,6 +79,16 @@ GenderPreference ENUM('male','female','other') NOT NULL
 IsLadySeat BOOLEAN DEFAULT FALSE
 UNIQUE KEY unique_seat_per_bus (BusID, SeatNumber)
 
+BookingCancellation
+PK ID INT AUTO_INCREMENT
+FK BookingID INT NOT NULL
+FK UserID INT (NULLABLE - for guest booking cancellations)
+CancellationReason TEXT NOT NULL
+RequestedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+Status ENUM('pending','refunded','declined') NOT NULL DEFAULT 'pending'
+FK ProcessedBy INT (NULLABLE - Admin ID who processed the request)
+ProcessedAt TIMESTAMP (NULLABLE - when the request was processed)
+
 Route
 PK ID INT AUTO_INCREMENT
 Origin VARCHAR(50) NOT NULL
@@ -196,10 +206,13 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 - User (1) ←→ (0..n) Booking (Users can make multiple bookings)
 - Booking (n) ←→ (1) Bus (Multiple bookings can be for same bus)
 - Booking (1) ←→ (1) Payment (Each booking has one payment)
+- Booking (1) ←→ (0..n) BookingCancellation (Each booking can have multiple cancellation requests)
 - Payment (1) ←→ (0..1) Receipt (Payment may generate receipt)
 - User (1) ←→ (0..n) Feedback (Users can submit multiple feedback)
 - User (1) ←→ (0..n) Incident (Users can report multiple incidents)
+- User (1) ←→ (0..n) BookingCancellation (Users can request multiple cancellations)
 - Admin (1) ←→ (0..n) Incident (Admins can resolve multiple incidents)
+- Admin (1) ←→ (0..n) BookingCancellation (Admins can process multiple cancellation requests)
 - Bus (n) ←→ (1) Route (Multiple buses can operate on same route)
 - Bus (1) ←→ (0..n) Seat (Each bus has multiple seats)
 
@@ -237,12 +250,28 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 3. Payment record generated automatically
 4. Confirmation page displays ticket information
 5. PDF ticket available for download
+6. Users can request cancellation via cancellation form
+7. Cancellation requests stored with 'pending' status
+8. Admins process cancellation requests (approve/decline)
+9. Approved cancellations trigger refund process
+
+**Cancellation Workflow:**
+1. Users submit cancellation request with reason
+2. Request stored in BookingCancellation table with 'pending' status
+3. Admins review cancellation requests
+4. Admin processes request (refunded/declined)
+5. ProcessedBy and ProcessedAt fields updated
+6. User notified of cancellation decision
+7. Refund processed if approved
 
 **Admin Workflow:**
 1. Admin login through dedicated admin panel
 2. Manage buses, view bookings, handle incidents
 3. Create/update announcements
 4. Monitor feedback and user activity
+5. Process booking cancellation requests
+6. Approve/decline refund requests
+7. Track cancellation analytics and patterns
 
 === DATABASE INDEXES (Performance Optimization) ===
 
@@ -268,6 +297,13 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 **Schema 3 Indexes (schema_3.sql):**
 - idx_incident_route: Route-specific incident analytics and filtering
 
+**Schema 4 Indexes (schema_4.sql):**
+- idx_booking_cancellation_booking: Cancellation queries by booking
+- idx_booking_cancellation_user: Cancellation queries by user
+- idx_booking_cancellation_status: Cancellation queries by status
+- idx_booking_cancellation_requested_at: Chronological cancellation display
+- idx_booking_cancellation_processed_by: Admin processing analytics
+
 === SCHEMA CONSTRAINTS ===
 
 **Unique Constraints:**
@@ -280,6 +316,12 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 - Feedback.Rating: Rating must be between 1 and 5
 
 **Foreign Key Constraints:**
-- CASCADE DELETE: Bus→Schedule, Bus→Seat, Booking→Payment, Payment→Receipt
+- CASCADE DELETE: Bus→Schedule, Bus→Seat, Booking→Payment, Payment→Receipt, Booking→BookingCancellation
 - SET NULL: User/Admin references allow soft deletion
 - Proper referential integrity across all related tables
+
+**Schema Evolution (schema_4.sql):**
+- Added BookingCancellation table for handling cancellation requests
+- Created comprehensive indexes for cancellation analytics
+- Implemented proper foreign key relationships with cascade/set null behaviors
+- Added ProcessedAt timestamp for tracking when cancellations are processed
