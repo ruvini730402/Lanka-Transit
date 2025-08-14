@@ -1,16 +1,28 @@
-const seatMap = document.getElementById('seat-map');
+const seatMap = document.querySelector('.seat-grid');
 const selectedSeatInput = document.getElementById('selected-seat');
+const selectedModelInput = document.getElementById('selected-model');
+const busModelSelect = document.getElementById('bus-model');
 let selectedSeat = null;
 
 // Get bus data from URL parameters
 const urlParams = new URLSearchParams(window.location.search);
 const busId = urlParams.get('bus_id');
 const travelDate = urlParams.get('date');
+const departureTime = urlParams.get('departure') || '';
+
+// Calculate if lady seats are free (within 3 hours of departure)
+let isLadySeatsFree = false;
+if (departureTime) {
+  const departure = new Date(`${travelDate}T${departureTime}:00`);
+  const threeHoursBefore = new Date(departure.getTime() - 3 * 60 * 60 * 1000);
+  const now = new Date();
+  isLadySeatsFree = now >= threeHoursBefore;
+}
 
 // Fetch booked seats from PHP
-async function fetchBookedSeats() {
+async function fetchBookedSeats(model) {
   try {
-    const response = await fetch(`view.php?api=seats&bus_id=${busId}&date=${travelDate}`);
+    const response = await fetch(`view.php?api=seats&bus_id=${busId}&date=${travelDate}&model=${model}`);
     const data = await response.json();
     
     if (data.error) {
@@ -29,15 +41,12 @@ async function fetchBookedSeats() {
 function createSeat(seatNum, seatData) {
   const seat = document.createElement('button');
   seat.textContent = seatNum;
-  seat.className = 'seat btn btn-success';
-  seat.style.width = '60px';
-  seat.style.height = '60px';
-  seat.type = 'button'; // Prevent form submission
+  seat.className = 'seat btn';
+  seat.type = 'button';
 
   // Lady seat (first 8 seats)
   if (seatNum <= 8) {
     seat.classList.add('lady-seat');
-    seat.style.border = '2px solid red';
   }
 
   // Find seat data
@@ -45,18 +54,16 @@ function createSeat(seatNum, seatData) {
   
   if (seatInfo && seatInfo.status === 'booked') {
     seat.disabled = true;
-    seat.classList.remove('btn-success');
+    seat.classList.add('booked');
     
     // Color based on gender of booked passenger
     if (seatInfo.gender_preference === 'female') {
-      seat.classList.add('btn-secondary');
-      seat.style.backgroundColor = '#ffb6c1'; // Light pink
+      seat.classList.add('female');
     } else if (seatInfo.gender_preference === 'male') {
-      seat.style.backgroundColor = '#add8e6'; // Light blue
+      seat.classList.add('male');
     } else {
-      seat.style.backgroundColor = '#A9A9A9'; // Gray
+      seat.classList.add('undisclosed');
     }
-    seat.style.color = '#000';
   } else {
     seat.addEventListener('click', () => {
       const gender = document.getElementById('gender').value;
@@ -65,20 +72,17 @@ function createSeat(seatNum, seatData) {
         return;
       }
 
-      if (seatNum <= 8 && gender !== 'female') {
+      if (seatNum <= 8 && gender !== 'female' && !isLadySeatsFree) {
         showMessage("Seats 1 to 8 are reserved for female passengers.", "danger");
         return;
       }
 
       // Deselect any previously selected
       document.querySelectorAll('.seat.selected').forEach(s => {
-        s.classList.remove('selected', 'btn-warning');
-        s.classList.add('btn-success');
+        s.classList.remove('selected');
       });
 
-      seat.classList.remove('btn-success');
-      seat.classList.add('selected', 'btn-warning');
-      seat.style.backgroundColor = '#FFA500'; // Orange
+      seat.classList.add('selected');
       selectedSeat = seatNum;
       selectedSeatInput.value = seatNum;
     });
@@ -87,32 +91,56 @@ function createSeat(seatNum, seatData) {
   return seat;
 }
 
-// Render all 40 seats
-async function renderSeats() {
-  const seatData = await fetchBookedSeats();
+// Render all seats based on model
+async function renderSeats(model) {
+  const seatData = await fetchBookedSeats(model);
   seatMap.innerHTML = '';
+  selectedSeat = null;
+  selectedSeatInput.value = '';
+  selectedModelInput.value = model;
 
-  for (let row = 0; row < 10; row++) {
-    // 2 seats on left
-    for (let i = 0; i < 2; i++) {
-      const seatNum = row * 4 + i + 1;
+  let config;
+  if (model === '49') {
+    config = { left: 2, right: 2, rows: 12, hasLastFull: true, lastRightAdjust: 0 };
+  } else {
+    config = { left: 2, right: 3, rows: 11, hasLastFull: false, lastRightAdjust: -1 };
+  }
+
+  seatMap.style.gridTemplateColumns = `repeat(${config.left}, 55px) 50px repeat(${config.right}, 55px)`;
+  seatMap.style.gridAutoRows = '55px';
+
+  // Render seats
+  let seatNum = 0;
+  for (let row = 0; row < config.rows; row++) {
+    const isLast = row === config.rows - 1;
+    let rightThis = config.right;
+    if (isLast && !config.hasLastFull) {
+      rightThis += config.lastRightAdjust;
+    }
+
+    // Left seats
+    for (let i = 0; i < config.left; i++) {
+      seatNum++;
       seatMap.appendChild(createSeat(seatNum, seatData));
     }
 
-    // Aisle
-    const aisle = document.createElement('div');
-    aisle.className = 'aisle';
-    seatMap.appendChild(aisle);
+    // Aisle or extra seat
+    if (!isLast || !config.hasLastFull) {
+      const aisle = document.createElement('div');
+      aisle.className = 'aisle';
+      seatMap.appendChild(aisle);
+    } else {
+      seatNum++;
+      seatMap.appendChild(createSeat(seatNum, seatData));
+    }
 
-    // 2 seats on right
-    for (let i = 2; i < 4; i++) {
-      const seatNum = row * 4 + i + 1;
+    // Right seats
+    for (let i = 0; i < rightThis; i++) {
+      seatNum++;
       seatMap.appendChild(createSeat(seatNum, seatData));
     }
   }
 }
-
-
 
 // Submit booking form
 document.getElementById('booking-form').addEventListener('submit', function (e) {
@@ -122,10 +150,8 @@ document.getElementById('booking-form').addEventListener('submit', function (e) 
     return;
   }
   
-  // Form will submit normally to book.php
   showMessage("Processing your booking...", "info");
 });
-
 
 // Bootstrap Alert Helper
 function showMessage(message, type = 'info') {
@@ -141,7 +167,11 @@ function showMessage(message, type = 'info') {
     if (alertEl) alertEl.remove();
   }, 4000);
 }
-// Call this on page load to populate seat map
-renderSeats();
 
-// INITIALIZE SEAT MAP
+// Event listener for model change
+busModelSelect.addEventListener('change', (e) => {
+  renderSeats(e.target.value);
+});
+
+// Initial render with default model
+renderSeats('49');

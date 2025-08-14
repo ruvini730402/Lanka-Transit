@@ -21,17 +21,16 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bus Seat Booking</title>
   <!-- Bootstrap 5 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/seatbooking.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="index.php">
+        <a class="navbar-brand d-flex align-items-center" href="../index.php">
             <img src="../assets/images/lankalogo.png" alt="Lanka Transit Logo" style="height: 40px; margin-right: 10px;">
             <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
         </a>
@@ -41,7 +40,7 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php">Home</a>
+                    <a class="nav-link" href="../index.php">Home</a>
                 </li>
             </ul>
         </div>
@@ -59,7 +58,7 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
  <!-- Booking Summary -->
  <div class="row mb-4">
    <div class="col-12">
-     <div class="card">
+     <div class="card shadow-sm">
        <div class="card-body">
          <h5 class="card-title title-dark-blue">Journey Details</h5>
          <div class="row">
@@ -95,10 +94,34 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
    </div>
  </div>
 
+ <!-- Bus Model Selection -->
+ <div class="row mb-4">
+   <div class="col-12">
+     <div class="card shadow-sm">
+       <div class="card-body">
+         <h5 class="card-title title-dark-blue">Choose Bus Model</h5>
+         <select id="bus-model" class="form-select">
+           <option value="49">49 Seater Model</option>
+           <option value="54">54 Seater Model</option>
+         </select>
+       </div>
+     </div>
+   </div>
+ </div>
+
  <div class="row">
   <!-- Left: Seat Map -->
   <div class="col-md-7">
-    <div id="seat-map"></div>
+    <div id="seat-map" class="bus-interior">
+      <div class="bus-front">
+        <div class="entrance-area">🚪 Front Entrance</div>
+        <div class="driver-area">🚍 Driver</div>
+      </div>
+      <div class="seat-grid"></div>
+      <div class="bus-rear">
+        <div class="rear-entrance">🚪 Rear Entrance</div>
+      </div>
+    </div>
   </div>
 
   <!-- Right: Passenger Info Form + Legend -->
@@ -117,21 +140,19 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
         <div id="form-message"></div>
         <form id="booking-form" method="POST" action="book.php">
           <div class="mb-3">
-            <label class="form-label title-dark-blue ">Passenger Name</label>
-            <input type="text" class="form-control" name="name" required>
+            <label class="form-label title-dark-blue">Passenger Name</label>
+            <input type="text" class="form-control" name="name" required pattern="[A-Za-z\s]+" title="Name should contain only letters and spaces.">
           </div>
 
           <div class="mb-3">
             <label class="form-label title-dark-blue">Mobile Number</label>
-            <input type="tel" class="form-control" name="phone" required>
+            <input type="tel" class="form-control" name="phone" required pattern="07\d{8}" title="Mobile number should start with 07 followed by 8 digits.">
           </div>
 
           <div class="mb-3">
             <label class="form-label title-dark-blue">NIC (Optional)</label>
-            <input type="text" class="form-control" name="nic">
+            <input type="text" class="form-control" name="nic" pattern="^([0-9]{9}[vVxX]|[0-9]{12})$" title="Valid NIC format: 9 digits + V/X or 12 digits.">
           </div>
-           
-
 
           <div class="mb-3">
             <label class="form-label title-dark-blue">Gender</label>
@@ -144,6 +165,7 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
           </div>
 
           <input type="hidden" name="seat" id="selected-seat">
+          <input type="hidden" name="model" id="selected-model">
           <input type="hidden" name="bus_id" value="<?php echo htmlspecialchars($bus_id); ?>">
           <input type="hidden" name="travel_date" value="<?php echo htmlspecialchars($travel_date); ?>">
           <input type="hidden" name="origin" value="<?php echo htmlspecialchars($origin); ?>">
@@ -153,34 +175,31 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
           <input type="hidden" name="departure_time" value="<?php echo htmlspecialchars($departure_time); ?>">
           <input type="hidden" name="arrival_time" value="<?php echo htmlspecialchars($arrival_time); ?>">
          <button type="submit" class="btn w-100" style="background-color: #800000; color: white;">Book Seat</button>
-
         </form>
       </div>
     </div>
 
-    <!-- Legend moved here -->
+    <!-- Legend -->
     <div class="mt-4">
       <h6 class="title-dark-blue">Legend:</h6>
-
       <div class="d-flex flex-column">
-        <div class="d-flex align-items-center mb-1 title-dark-blue">
-          <span class="d-inline-block rounded me-2" style="width:20px; height:20px; background:#90EE90;"></span> Available
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend available"></span> Available
         </div>
-        <div class="d-flex align-items-center mb-1 title-dark-blue">
-          <span class="d-inline-block rounded me-2" style="width:20px; height:20px; background:#ffb6c1;"></span> Booked (Female)
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend booked female"></span> Booked (Female)
         </div>
-        <div class="d-flex align-items-center mb-1 title-dark-blue">
-          <span class="d-inline-block rounded me-2" style="width:20px; height:20px; background:#add8e6;"></span> Booked (Male)
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend booked male"></span> Booked (Male)
         </div>
-        <div class="d-flex align-items-center mb-1 title-dark-blue">
-          <span class="d-inline-block rounded me-2" style="width:20px; height:20px; background:#A9A9A9;"></span> Booked (Undisclosed)
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend booked undisclosed"></span> Booked (Undisclosed)
         </div>
-          <div class="d-flex align-items-center mb-1 title-dark-blue">
-  <span class="d-inline-block me-2" style="width:20px; height:20px; border:2px solid red;"></span> Lady Seats (1–8)
-</div>
-
-        <div class="d-flex align-items-center mb-1 title-dark-blue">
-          <span class="d-inline-block rounded me-2" style="width:20px; height:20px; background: #FFA500 ;"></span> Selected
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend lady-seat"></span> Lady Seats (1–8)
+        </div>
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend selected"></span> Selected
         </div>
       </div>
     </div>
@@ -191,8 +210,7 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
   <p class="mb-0">&copy; 2025 Transit. All rights reserved.</p>
 </footer>
 
-
-
 <script src="../assets/js/seatbooking.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
