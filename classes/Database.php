@@ -92,12 +92,112 @@ class Database {
             $mail->addAddress($email);
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset - LankaTransit';
-            $mail->Body = "
-                <h4>Hello,</h4>
-                <p>You requested a password reset. Click the link below:</p>
-                <a href='http://localhost/Registerlog/pages/reset_password_form.php?token=$token'>Reset Password</a>
-                <p>This link is valid for 1 hour.</p>
-            ";
+            $mail->Body = '
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset Request</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 100%);
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #800000 0%, #a30000 100%);
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+      height: auto;
+    }
+    .header h1 {
+      color: #ffffff;
+      font-size: 24px;
+      margin: 10px 0 0;
+      font-weight: 600;
+    }
+    .content {
+      padding: 30px;
+      color: #003366;
+    }
+    .content h4 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #003366;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #800000 0%, #a30000 100%);
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      background: linear-gradient(135deg, #a30000 0%, #cc0000 100%);
+      box-shadow: 0 4px 12px rgba(128, 0, 0, 0.3);
+    }
+    .footer {
+      background: #f9f9f9;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #6c757d;
+      border-top: 1px solid #e9ecef;
+    }
+    .footer p {
+      margin: 0;
+    }
+    .highlight {
+      color: #800000;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Lanka Transit</h1>
+    </div>
+    <div class="content">
+      <h4>Hello,</h4>
+      <p>You have requested a password reset for your <span class="highlight">Lanka Transit</span> account. Please click the button below to reset your password:</p>
+      <p style="text-align: center;">
+        <a href="http://localhost/Registerlog/pages/reset_password_form.php?token=$token" class="btn">Reset Password</a>
+      </p>
+      <p>This link is valid for <span class="highlight">1 hour</span>. If you did not request a password reset, please ignore this email or contact our support team.</p>
+      <p>Thank you for choosing <span class="highlight">Lanka Transit</span>!</p>
+    </div>
+    <div class="footer">
+      <p>&copy; ' . date("Y") . ' Lanka Transit. All rights reserved.</p>
+      <p>For support, contact us at <a href="mailto:support@lankatransit.com" style="color: #003366;">support@lankatransit.com</a></p>
+    </div>
+  </div>
+</body>
+</html>
+';
 
             $mail->send();
             return true;
@@ -145,13 +245,27 @@ class Database {
             $mail->isHTML(true);
             $mail->Subject = 'Welcome to LankaTransit!';
             $mail->Body = "
-                <h4>Hello, " . htmlspecialchars($name) . "</h4>
-                <p>Thank you for registering with LankaTransit!</p>
-                <p>Your account has been successfully created. You can now log in to explore our services.</p>
-                <p><a href='http://localhost/Registerlog/pages/login-form.php'>Click here to log in</a></p>
-                <p>If you have any questions, feel free to contact our support team.</p>
-                <p>Best regards,<br>LankaTransit Team</p>
-            ";
+    <div style='font-family: Arial, sans-serif; background-color: #f4f7fa; padding: 20px;'>
+        <div style='max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;'>
+            <div style='background-color: #007bff; color: white; padding: 15px 20px; text-align: center;'>
+                <h2 style='margin: 0; font-size: 24px;'>🚍 Welcome to LankaTransit!</h2>
+            </div>
+            <div style='padding: 20px; color: #333;'>
+                <h4 style='font-size: 20px;'>👋 Hello, " . htmlspecialchars($name) . "</h4>
+                <p style='font-size: 16px;'>Thank you for registering with <strong>LankaTransit</strong>! 🎉</p>
+                <p style='font-size: 15px; color: #555;'>Your account has been successfully created. You can now log in to explore our services and start your journey.</p>
+                <p style='text-align: center; margin: 25px 0;'>
+                    <a href='http://localhost/Registerlog/pages/login-form.php' style='display: inline-block; padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;'>🔑 Log In Now</a>
+                </p>
+                <p style='font-size: 14px; color: #555;'>If you have any questions, feel free to contact our support team 💬.</p>
+                <p style='margin-top: 30px; font-size: 15px;'>Best regards,<br>💼 <strong>LankaTransit Team</strong></p>
+            </div>
+            <div style='background-color: #f0f0f0; padding: 10px; text-align: center; font-size: 12px; color: #777;'>
+                © " . date('Y') . " LankaTransit. All rights reserved.
+            </div>
+        </div>
+    </div>
+";
 
             $mail->send();
             return true;
