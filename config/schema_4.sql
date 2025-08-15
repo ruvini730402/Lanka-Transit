@@ -4,6 +4,9 @@
 
 USE bosennoy016fmb5flv0m;
 
+-- Remove Receipt table (if exists) as it's no longer needed
+DROP TABLE IF EXISTS Receipt;
+
 -- BookingCancellation table for managing cancellation requests
 CREATE TABLE BookingCancellation (
     ID INT PRIMARY KEY AUTO_INCREMENT,

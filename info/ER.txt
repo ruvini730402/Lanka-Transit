@@ -64,12 +64,6 @@ Amount DECIMAL(10,2) NOT NULL
 PaymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 TransactionId VARCHAR(100)
 
-Receipt
-PK ID INT AUTO_INCREMENT
-FK PaymentId INT NOT NULL
-PdfUrl VARCHAR(255) NOT NULL
-GeneratedDate DATE DEFAULT (CURRENT_DATE)
-
 Seat
 PK ID INT AUTO_INCREMENT
 FK BusID INT NOT NULL
@@ -160,7 +154,6 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 - Booking (1) ←→ (0..n) BookingCancellation
 - Booking (1) ←→ (0..1) Booking_2
 
-- Payment (1) ←→ (0..1) Receipt
 
 **Foreign Key Constraints:**
 - CASCADE DELETE: Bus→Schedule, Bus→Seat, Booking→Payment, Payment→Receipt
