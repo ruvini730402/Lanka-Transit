@@ -1,4 +1,4 @@
-ER Diagram - Lanka Transit (Current Implementation Schema)
+ER Diagram - Lanka Transit Database Schema
 
 === CORE TABLES ===
 
@@ -13,7 +13,7 @@ RegistrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 Booking
 PK ID INT AUTO_INCREMENT
-FK UserId INT (NULLABLE - for guest bookings)
+FK UserId INT (NULLABLE)
 FK BusID INT NOT NULL
 SeatNumber VARCHAR(6) NOT NULL
 PhoneNumber VARCHAR(10) NOT NULL
@@ -35,7 +35,7 @@ FK UserId INT (NULLABLE)
 FK AdminId INT (NULLABLE)
 FK BookingId INT (NULLABLE)
 FK RouteId INT (NULLABLE)
-Description TEXT NOT NULL
+Description TEXT
 Status ENUM('submitted','in progress','resolved') NOT NULL DEFAULT 'submitted'
 ReportedDate DATE DEFAULT (CURRENT_DATE)
 ResolvedDate DATE (NULLABLE)
@@ -82,22 +82,18 @@ UNIQUE KEY unique_seat_per_bus (BusID, SeatNumber)
 BookingCancellation
 PK ID INT AUTO_INCREMENT
 FK BookingID INT NOT NULL
-FK UserID INT (NULLABLE - for guest booking cancellations)
+FK UserID INT (NULLABLE)
 CancellationReason TEXT NOT NULL
 RequestedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 Status ENUM('pending','refunded','declined') NOT NULL DEFAULT 'pending'
-FK ProcessedBy INT (NULLABLE - Admin ID who processed the request)
-ProcessedAt TIMESTAMP (NULLABLE - when the request was processed)
+FK ProcessedBy INT (NULLABLE)
+ProcessedAt TIMESTAMP (NULLABLE)
 
 Route
 PK ID INT AUTO_INCREMENT
 Origin VARCHAR(50) NOT NULL
 Destination VARCHAR(50) NOT NULL
 Stops TEXT (NULLABLE)
-
--- Current Active Routes:
--- ID 1: Badulla to Matara
--- ID 2: Matara to Badulla
 
 Location
 PK UniqueID INT AUTO_INCREMENT
@@ -138,190 +134,35 @@ message TEXT NOT NULL
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
-=== SAMPLE DATA (From schema files) ===
-
-**Locations (from schema.sql):**
-- Badulla (terminal)
-- Ella (stop)
-- Wellawaya (stop)
-- Thanamalvila (stop)
-- Lunugamvehera (stop)
-- Tangalle (stop)
-- Dickwella (stop)
-- Devinuwara (stop)
-- Matara (terminal)
-
-**Routes (from schema.sql):**
-- Route 1: Badulla → Matara (Stops: Ella,Wellawaya,Thanamalvila,Lunugamvehera,Tangalle,Dickwella,Devinuwara)
-- Route 2: Matara → Badulla (Stops: Devinuwara,Dickwella,Tangalle,Lunugamvehera,Thanamalvila,Wellawaya,Ella)
-
-**Default Admin (from schema.sql):**
-- Email: admin@lankatransit.com
-- Name: System Administrator
-- Phone: 0771234567
-
-**Sample Announcements (from schema2.sql):**
-- Service Update: New bus route from Badulla to Matara now available
-- Maintenance Notice: Scheduled maintenance on Route 1 buses every Sunday
-- Holiday Special: Special discount rates for advance bookings
-
-=== CURRENT IMPLEMENTATION FEATURES ===
-
-**Authentication System:**
-- Email/password login for users and admins
-- Session-based authentication
-- Role-based access control (admin/guest user/registered user)
-- Password reset functionality (via User_2 table)
-
-**Booking System:**
-- Guest bookings (UserId can be NULL)
-- Seat selection and management
-- Payment processing with transaction tracking
-- PDF ticket generation
-- Booking confirmation system
-
-**Incident Management:**
-- Users can report incidents with description only
-- Admins can manage incident status (submitted/in progress/resolved)
-- Route association removed from user interface (simplified)
-- Status tracking with reported and resolved dates
-
-**Admin Panel:**
-- Bus management (add/edit/delete)
-- User management and booking overview
-- Incident status management
-- Announcement system
-- Feedback monitoring
-
-**Database Features:**
-- PDO with prepared statements
-- Input sanitization and validation
-- Transaction support for booking process
-- Proper foreign key relationships
-- ENUM constraints for data integrity
-
 === RELATIONSHIPS ===
 
-**Core Relationships:**
-- User (1) ←→ (0..n) Booking (Users can make multiple bookings)
-- Booking (n) ←→ (1) Bus (Multiple bookings can be for same bus)
-- Booking (1) ←→ (1) Payment (Each booking has one payment)
-- Booking (1) ←→ (0..n) BookingCancellation (Each booking can have multiple cancellation requests)
-- Payment (1) ←→ (0..1) Receipt (Payment may generate receipt)
-- User (1) ←→ (0..n) Feedback (Users can submit multiple feedback)
-- User (1) ←→ (0..n) Incident (Users can report multiple incidents)
-- User (1) ←→ (0..n) BookingCancellation (Users can request multiple cancellations)
-- Admin (1) ←→ (0..n) Incident (Admins can resolve multiple incidents)
-- Admin (1) ←→ (0..n) BookingCancellation (Admins can process multiple cancellation requests)
-- Bus (n) ←→ (1) Route (Multiple buses can operate on same route)
-- Bus (1) ←→ (0..n) Seat (Each bus has multiple seats)
+**Core Entity Relationships:**
+- User (1) ←→ (0..n) Booking
+- User (1) ←→ (0..n) Feedback  
+- User (1) ←→ (0..n) Incident
+- User (1) ←→ (0..n) BookingCancellation
+- User (1) ←→ (0..1) User_2
 
-**Extended Relationships:**
-- User (1) ←→ (0..1) User_2 (Optional password reset data)
-- Booking (1) ←→ (0..1) Booking_2 (Optional gender tracking)
-- Admin (1) ←→ (0..1) Admin_2 (Optional admin metadata)
-- Announcements (standalone) - System-wide notifications
-- Route (1) ←→ (0..n) Location (Routes include multiple locations as stops)
-- Bus (1) ←→ (0..n) Schedule (Each bus can have multiple scheduled departures)
+- Admin (1) ←→ (0..n) Bus
+- Admin (1) ←→ (0..n) Incident
+- Admin (1) ←→ (0..n) BookingCancellation
+- Admin (1) ←→ (0..1) Admin_2
 
-**Schema Evolution (schema_3.sql):**
-- Added RouteId column to Incident table for route-specific tracking
-- Created idx_incident_route index for performance optimization
-- Updated existing incident records with appropriate route associations
+- Route (1) ←→ (0..n) Bus
+- Route (1) ←→ (0..n) Incident
 
-**Current Constraints:**
-- RouteId in Incident table exists but not actively used in UI
-- BookingId in Incident is optional (general incidents vs booking-specific)
-- UserId in Booking is optional (supports guest bookings)
-- Many foreign keys are nullable to support flexible usage patterns
+- Bus (1) ←→ (0..n) Booking
+- Bus (1) ←→ (0..n) Seat
+- Bus (1) ←→ (0..n) Schedule
+- Bus (1) ←→ (0..n) Feedback
 
-=== ACTIVE USAGE PATTERNS ===
+- Booking (1) ←→ (1) Payment
+- Booking (1) ←→ (0..n) BookingCancellation
+- Booking (1) ←→ (0..1) Booking_2
 
-**Incident Workflow:**
-1. Users report incidents via incidents.php (description only)
-2. Incidents stored with 'submitted' status
-3. Admins manage via manage_incidents.php
-4. Status updated through update_incidents.php
-5. Resolved incidents get ResolvedDate set
-
-**Booking Workflow:**
-1. Users search buses and select seats
-2. Booking created with guest or registered user data
-3. Payment record generated automatically
-4. Confirmation page displays ticket information
-5. PDF ticket available for download
-6. Users can request cancellation via cancellation form
-7. Cancellation requests stored with 'pending' status
-8. Admins process cancellation requests (approve/decline)
-9. Approved cancellations trigger refund process
-
-**Cancellation Workflow:**
-1. Users submit cancellation request with reason
-2. Request stored in BookingCancellation table with 'pending' status
-3. Admins review cancellation requests
-4. Admin processes request (refunded/declined)
-5. ProcessedBy and ProcessedAt fields updated
-6. User notified of cancellation decision
-7. Refund processed if approved
-
-**Admin Workflow:**
-1. Admin login through dedicated admin panel
-2. Manage buses, view bookings, handle incidents
-3. Create/update announcements
-4. Monitor feedback and user activity
-5. Process booking cancellation requests
-6. Approve/decline refund requests
-7. Track cancellation analytics and patterns
-
-=== DATABASE INDEXES (Performance Optimization) ===
-
-**Primary Schema Indexes (schema.sql):**
-- idx_booking_user: Booking queries by user
-- idx_booking_bus: Booking queries by bus
-- idx_booking_phone: Booking queries by phone number
-- idx_schedule_bus: Schedule queries by bus
-- idx_schedule_departure: Schedule queries by departure time
-- idx_seat_bus: Seat queries by bus
-- idx_payment_booking: Payment queries by booking
-- idx_route_origin_dest: Route queries by origin and destination
-
-**Extended Schema Indexes (schema2.sql):**
-- idx_user2_reset_token: Password reset token validation
-- idx_user2_token_expiry: Token expiry validation
-- idx_user2_created_at: User registration analytics
-- idx_booking2_gender: Gender-based analytics
-- idx_booking2_created_at: Booking date analytics
-- idx_admin2_created_at: Admin account tracking
-- idx_announcements_created_at: Chronological announcement display
-
-**Schema 3 Indexes (schema_3.sql):**
-- idx_incident_route: Route-specific incident analytics and filtering
-
-**Schema 4 Indexes (schema_4.sql):**
-- idx_booking_cancellation_booking: Cancellation queries by booking
-- idx_booking_cancellation_user: Cancellation queries by user
-- idx_booking_cancellation_status: Cancellation queries by status
-- idx_booking_cancellation_requested_at: Chronological cancellation display
-- idx_booking_cancellation_processed_by: Admin processing analytics
-
-=== SCHEMA CONSTRAINTS ===
-
-**Unique Constraints:**
-- User.Email: Ensures unique user emails
-- Admin.Email: Ensures unique admin emails
-- Bus.BusNumber: Ensures unique bus identification
-- Seat.unique_seat_per_bus: Ensures unique seat numbers per bus
-
-**Check Constraints:**
-- Feedback.Rating: Rating must be between 1 and 5
+- Payment (1) ←→ (0..1) Receipt
 
 **Foreign Key Constraints:**
-- CASCADE DELETE: Bus→Schedule, Bus→Seat, Booking→Payment, Payment→Receipt, Booking→BookingCancellation
-- SET NULL: User/Admin references allow soft deletion
-- Proper referential integrity across all related tables
-
-**Schema Evolution (schema_4.sql):**
-- Added BookingCancellation table for handling cancellation requests
-- Created comprehensive indexes for cancellation analytics
-- Implemented proper foreign key relationships with cascade/set null behaviors
-- Added ProcessedAt timestamp for tracking when cancellations are processed
+- CASCADE DELETE: Bus→Schedule, Bus→Seat, Booking→Payment, Payment→Receipt
+- SET NULL: User/Admin references (maintains historical data)
+- NULLABLE foreign keys support guest bookings and optional relationships
