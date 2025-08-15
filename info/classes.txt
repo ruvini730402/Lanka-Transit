@@ -28,6 +28,10 @@ User
 │   - phoneNumber: String
 │   - role: String
 │   - registrationDate: DateTime
+│   - resetToken: String (NULLABLE)
+│   - tokenExpiry: DateTime (NULLABLE)
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
 │   + findByEmail(email): Array|false
 │   + findByToken(token): Array|false
 │   + setResetToken(email, token, expiry): Boolean
@@ -38,6 +42,8 @@ User
 │   + deleteUser(id): Boolean
 │   + login(email, password): Array
 │   + register(name, email, password, phone): Array
+│   + validateResetToken(token): Array|null
+│   + clearResetToken(userId): Boolean
 
 Bus
 │   - id: int
@@ -64,6 +70,9 @@ Booking
 │   - status: String
 │   - phoneNumber: String
 │   - fare: float
+│   - gender: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
 │   + createBooking(data): Boolean
 │   + getBookingsByUser(userId): Array
 │   + updateBookingStatus(id, status): Boolean
@@ -76,6 +85,9 @@ Booking
 │   + saveBooking(): Boolean
 │   + isValidNIC(nic): Boolean
 │   + getTotalBookings(): int
+│   + createGenderRecord(bookingId, gender): Boolean
+│   + getGenderByBooking(bookingId): String|null
+│   + updateGender(bookingId, gender): Boolean
 
 Payment
 │   - id: int
@@ -146,12 +158,16 @@ Admin
 │   - passwordHash: String
 │   - name: String
 │   - phoneNumber: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
 │   + login(email, password): Array
 │   + getAllAdmins(): Array
 │   + createAdmin(email, password, name, phone): Boolean
 │   + updateAdmin(id, data): Boolean
 │   + deleteAdmin(id): Boolean
 │   + changePassword(id, newPassword): Boolean
+│   + createAdminRecord(adminId): Boolean
+│   + getAdminActivity(adminId): Array
 
 Incident
 │   - id: int
@@ -203,34 +219,6 @@ Announcement
 │   + updateAnnouncement(id, title, message): Boolean
 │   + deleteAnnouncement(id): Boolean
 │   + getRecentAnnouncements(limit): Array
-
-=== EXTENDED SCHEMA CLASSES ===
-
-User_2
-│   - userId: int
-│   - resetToken: String
-│   - tokenExpiry: DateTime
-│   - createdAt: DateTime
-│   - updatedAt: DateTime
-│   + setResetToken(userId, token, expiry): Boolean
-│   + validateResetToken(token): Array|null
-│   + clearResetToken(userId): Boolean
-
-Booking_2
-│   - bookingId: int
-│   - gender: String
-│   - createdAt: DateTime
-│   - updatedAt: DateTime
-│   + createGenderRecord(bookingId, gender): Boolean
-│   + getGenderByBooking(bookingId): String|null
-│   + updateGender(bookingId, gender): Boolean
-
-Admin_2
-│   - adminId: int
-│   - createdAt: DateTime
-│   - updatedAt: DateTime
-│   + createAdminRecord(adminId): Boolean
-│   + getAdminActivity(adminId): Array
 
 === RELATIONSHIPS FOR DIAGRAM ===
 
