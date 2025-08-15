@@ -36,6 +36,8 @@ User
 │   + getUserById(id): Array|null
 │   + updateUser(id, data): Boolean
 │   + deleteUser(id): Boolean
+│   + login(email, password): Array
+│   + register(name, email, password, phone): Array
 
 Bus
 │   - id: int
@@ -67,6 +69,13 @@ Booking
 │   + updateBookingStatus(id, status): Boolean
 │   + checkSeatAvailability(busId, seatNumber, date): Boolean
 │   + validateBookingData(data): Array
+│   + processBooking(): void
+│   + validateInput(): Boolean
+│   + isSeatBooked(): Boolean
+│   + isLadySeatRestricted(): Boolean
+│   + saveBooking(): Boolean
+│   + isValidNIC(nic): Boolean
+│   + getTotalBookings(): int
 
 Payment
 │   - id: int
@@ -107,6 +116,122 @@ BookingCancellation
 │   + processCancellation(id, adminId, status): Boolean
 │   + getCancellationDetails(id): Array|null
 
+Route
+│   - id: int
+│   - origin: String
+│   - destination: String
+│   - stops: String
+│   + getAllRoutes(): Array
+│   + getRouteById(id): Array|null
+│   + createRoute(origin, destination, stops): Boolean
+│   + updateRoute(id, data): Boolean
+│   + deleteRoute(id): Boolean
+│   + getRoutesByOriginDestination(origin, destination): Array
+
+Schedule
+│   - id: int
+│   - busId: int
+│   - departureTime: DateTime
+│   - arrivalTime: DateTime
+│   - fare: float
+│   + getSchedulesByBus(busId): Array
+│   + createSchedule(busId, departureTime, arrivalTime, fare): Boolean
+│   + updateSchedule(id, data): Boolean
+│   + deleteSchedule(id): Boolean
+│   + getSchedulesByRoute(origin, destination, date): Array
+
+Admin
+│   - id: int
+│   - email: String
+│   - passwordHash: String
+│   - name: String
+│   - phoneNumber: String
+│   + login(email, password): Array
+│   + getAllAdmins(): Array
+│   + createAdmin(email, password, name, phone): Boolean
+│   + updateAdmin(id, data): Boolean
+│   + deleteAdmin(id): Boolean
+│   + changePassword(id, newPassword): Boolean
+
+Incident
+│   - id: int
+│   - userId: int
+│   - adminId: int
+│   - bookingId: int
+│   - routeId: int
+│   - description: String
+│   - status: String
+│   - reportedDate: Date
+│   - resolvedDate: Date
+│   + reportIncident(userId, description, bookingId): Boolean
+│   + getIncidentsByUser(userId): Array
+│   + getIncidentsByStatus(status): Array
+│   + updateIncidentStatus(id, status, adminId): Boolean
+│   + getIncidentDetails(id): Array|null
+
+Feedback
+│   - id: int
+│   - userId: int
+│   - busId: int
+│   - comment: String
+│   - rating: int
+│   - createdDate: Date
+│   + submitFeedback(userId, busId, comment, rating): Boolean
+│   + getFeedbackByBus(busId): Array
+│   + getFeedbackByUser(userId): Array
+│   + getAllFeedback(): Array
+│   + deleteFeedback(id): Boolean
+
+Location
+│   - uniqueId: int
+│   - name: String
+│   - type: String
+│   + getAllLocations(): Array
+│   + getLocationsByType(type): Array
+│   + createLocation(name, type): Boolean
+│   + updateLocation(id, data): Boolean
+│   + deleteLocation(id): Boolean
+
+Announcement
+│   - id: int
+│   - title: String
+│   - message: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + createAnnouncement(title, message): Boolean
+│   + getAllAnnouncements(): Array
+│   + updateAnnouncement(id, title, message): Boolean
+│   + deleteAnnouncement(id): Boolean
+│   + getRecentAnnouncements(limit): Array
+
+=== EXTENDED SCHEMA CLASSES ===
+
+User_2
+│   - userId: int
+│   - resetToken: String
+│   - tokenExpiry: DateTime
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + setResetToken(userId, token, expiry): Boolean
+│   + validateResetToken(token): Array|null
+│   + clearResetToken(userId): Boolean
+
+Booking_2
+│   - bookingId: int
+│   - gender: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + createGenderRecord(bookingId, gender): Boolean
+│   + getGenderByBooking(bookingId): String|null
+│   + updateGender(bookingId, gender): Boolean
+
+Admin_2
+│   - adminId: int
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + createAdminRecord(adminId): Boolean
+│   + getAdminActivity(adminId): Array
+
 === RELATIONSHIPS FOR DIAGRAM ===
 
 COMPOSITION:
@@ -120,15 +245,34 @@ DEPENDENCY:
    Payment -----> Database (Payment depends on Database)
    Seat -----> Database (Seat depends on Database)
    BookingCancellation -----> Database (BookingCancellation depends on Database)
+   Route -----> Database (Route depends on Database)
+   Schedule -----> Database (Schedule depends on Database)
+   Admin -----> Database (Admin depends on Database)
+   Incident -----> Database (Incident depends on Database)
+   Feedback -----> Database (Feedback depends on Database)
+   Location -----> Database (Location depends on Database)
+   Announcement -----> Database (Announcement depends on Database)
 
 ASSOCIATION:
    User ──── Booking (1:many - User has many Bookings)
    User ──── BookingCancellation (1:many - User has many Cancellation requests)
+   User ──── Incident (1:many - User can report many Incidents)
+   User ──── Feedback (1:many - User can give many Feedback)
    Bus ──── Booking (1:many - Bus has many Bookings)
    Bus ──── Seat (1:many - Bus has many Seats)
+   Bus ──── Schedule (1:many - Bus has many Schedules)
+   Bus ──── Feedback (1:many - Bus receives many Feedback)
+   Bus ──── Route (many:1 - Many Buses belong to one Route)
+   Route ──── Location (many:many - Routes connect multiple Locations)
+   Route ──── Incident (1:many - Route can have many Incidents)
+   Schedule ──── Bus (many:1 - Many Schedules belong to one Bus)
    Booking ──── Payment (1:1 - Booking has one Payment)
    Booking ──── BookingCancellation (1:many - Booking can have multiple cancellation requests)
+   Booking ──── Incident (1:many - Booking can have related Incidents)
+   Admin ──── Bus (1:many - Admin manages many Buses)
    Admin ──── BookingCancellation (1:many - Admin processes many cancellation requests)
+   Admin ──── Incident (1:many - Admin handles many Incidents)
+   Admin ──── Announcement (1:many - Admin creates many Announcements)
 
 === DIAGRAM SYMBOLS ===
 
