@@ -1,22 +1,11 @@
 <?php
-require_once '../config/database.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+use App\Config\Database;
 
 $database = new Database();
-$connection = $database->getConnection();
-
-if ($connection) {
-    try {
-        // Fetch announcements directly from database
-        $stmt = $connection->prepare("SELECT * FROM announcements ORDER BY created_at DESC");
-        $stmt->execute();
-        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $announcements = [];
-        error_log("Error fetching announcements: " . $e->getMessage());
-    }
-} else {
-    $announcements = [];
-}
+$announcements = $database->fetchAllQuery(
+        "SELECT * FROM announcements ORDER BY created_at DESC"
+);
 ?>
 
 <!DOCTYPE html>
