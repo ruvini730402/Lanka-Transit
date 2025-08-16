@@ -35,18 +35,27 @@ class Bus {
         $destination = Database::sanitizeInput($destination);
         $travelDate = Database::sanitizeInput($travelDate);
         
-        // Validate inputs
+        // Comprehensive validation
         if (!Database::validateInput($origin) || !Database::validateInput($destination)) {
-            return ['error' => 'Invalid origin or destination'];
+            return ['error' => 'Please enter valid city names for origin and destination.'];
+        }
+        
+        if ($origin === $destination) {
+            return ['error' => 'Origin and destination cities must be different. Please select different locations.'];
         }
         
         if (!Database::validateInput($travelDate, 'date')) {
-            return ['error' => 'Invalid travel date'];
+            return ['error' => 'Please enter a valid travel date in the correct format.'];
         }
         
         // Check if travel date is not in the past
         if (strtotime($travelDate) < strtotime(date('Y-m-d'))) {
-            return ['error' => 'Travel date cannot be in the past'];
+            return ['error' => 'Travel date must be today or a future date. Please select a valid date.'];
+        }
+        
+        // Validate max fare
+        if ($maxFare !== null && (!is_numeric($maxFare) || $maxFare < 0)) {
+            return ['error' => 'Maximum fare must be a positive amount. Please enter a valid price.'];
         }
         
         // Build query
@@ -114,7 +123,7 @@ class Bus {
             
         } catch(PDOException $exception) {
             error_log("Search error: " . $exception->getMessage());
-            return ['error' => 'Database error occurred(SearchBus) '. $exception->getMessage()];
+            return ['error' => 'We are experiencing technical difficulties. Please try your search again in a few moments.'];
         }
     }
     
@@ -129,7 +138,7 @@ class Bus {
         $travelDate = Database::sanitizeInput($travelDate);
         
         if (!Database::validateInput($travelDate, 'date')) {
-            return ['error' => 'Invalid travel date'];
+            return ['error' => 'Please select a valid travel date.'];
         }
         
         // First check if seat records exist for this bus
@@ -189,7 +198,7 @@ class Bus {
             
         } catch(PDOException $exception) {
             error_log("Seat availability error: " . $exception->getMessage());
-            return ['error' => 'Database error occurred(AvailableSeats)'];
+            return ['error' => 'Unable to load seat information. Please refresh the page and try again.'];
         }
     }
     
@@ -266,12 +275,12 @@ class Bus {
                     ]
                 ];
             } else {
-                return ['error' => 'Bus not found'];
+                return ['error' => 'Bus not found. This bus may no longer be available for booking.'];
             }
             
         } catch(PDOException $exception) {
             error_log("Bus details error: " . $exception->getMessage());
-            return ['error' => 'Database error occurred(BusDetails)'];
+            return ['error' => 'Unable to load bus details. Please try again.'];
         }
     }
 }

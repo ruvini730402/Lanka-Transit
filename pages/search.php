@@ -12,23 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $searchPerformed = true;
     
     try {
-        // Get and sanitize form data
-        $origin = isset($_POST['origin']) ? Database::sanitizeInput($_POST['origin']) : '';
-        $destination = isset($_POST['destination']) ? Database::sanitizeInput($_POST['destination']) : '';
-        $travelDate = isset($_POST['travel_date']) ? Database::sanitizeInput($_POST['travel_date']) : '';
+        // Get form data (validation will be handled by Bus class)
+        $origin = isset($_POST['origin']) ? $_POST['origin'] : '';
+        $destination = isset($_POST['destination']) ? $_POST['destination'] : '';
+        $travelDate = isset($_POST['travel_date']) ? $_POST['travel_date'] : '';
         $maxFare = isset($_POST['max_fare']) && !empty($_POST['max_fare']) ? (float)$_POST['max_fare'] : null;
         
-        // Validate required fields
+        // Basic required field check only
         if (empty($origin) || empty($destination) || empty($travelDate)) {
-            $error = 'Please fill in all required fields.';
-        } elseif ($origin === $destination) {
-            $error = 'Origin and destination cannot be the same.';
-        } elseif (!strtotime($travelDate)) {
-            $error = 'Invalid travel date format.';
-        } elseif (strtotime($travelDate) < strtotime(date('Y-m-d'))) {
-            $error = 'Travel date cannot be in the past.';
-        } elseif ($maxFare !== null && $maxFare < 0) {
-            $error = 'Maximum fare must be a positive number.';
+            $error = 'Please fill in all required fields to search for buses.';
         } else {
         // Initialize database connection
         try {
@@ -46,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $searchResults = $result['data'];
                 }
             } else {
-                $error = 'Database connection failed. Please try again later.';
+                $error = 'Unable to connect to the booking system. Please check your internet connection and try again.';
             }
         } catch (PDOException $e) {
-            $error = 'Database error occurred. Please try again later.';
+            $error = 'We are experiencing technical difficulties with our booking system. Please try again in a few minutes.';
             error_log("Search database error: " . $e->getMessage());
         } catch (Exception $e) {
-            $error = 'An unexpected error occurred. Please try again later.';
+            $error = 'Something went wrong while searching for buses. Please refresh the page and try again.';
             error_log("Search general error: " . $e->getMessage());
         }
     }
@@ -224,9 +216,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-12">
                         <div class="no-results">
                             <i class="fas fa-bus fa-4x mb-3 text-muted"></i>
-                            <h4>No buses found</h4>
-                            <p>Sorry, no buses are available for your selected route and date.</p>
-                            <a href="../index.php" class="btn btn-primary">Try Different Search</a>
+                            <h4>No buses available</h4>
+                            <p>We couldn't find any buses for your selected route and date. Try adjusting your search criteria or selecting a different date.</p>
+                            <a href="../index.php" class="btn btn-primary">Search Different Route</a>
                         </div>
                     </div>
                 <?php else: ?>

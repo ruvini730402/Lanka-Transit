@@ -212,7 +212,7 @@
             // Basic validation
             if (origin === destination && origin !== '') {
                 e.preventDefault();
-                alert('Origin and destination cannot be the same!');
+                alert('Please choose different cities for your origin and destination!');
                 return false;
             }
             
@@ -220,7 +220,7 @@
             const today = new Date().toISOString().split('T')[0];
             if (travelDate < today) {
                 e.preventDefault();
-                alert('Please select a valid travel date!');
+                alert('Please select today or a future date for your travel!');
                 return false;
             }
         });
