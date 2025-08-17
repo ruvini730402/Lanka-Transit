@@ -5,7 +5,7 @@ class User {
     private $pdo;
 
     public function __construct() {
-        $this->pdo =  Database::getConnection();
+        $this->pdo = Database::getConnection();
     }
 
     public function findByEmail($email) {
@@ -57,7 +57,7 @@ class User {
         return $result1 && $result2;
     }
 
-    public function register($name, $email, $password, $phoneNumber = '0000000000') {
+    public function register($name, $email, $password, $phoneNumber) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         try {
             // Check if email already exists
@@ -65,6 +65,13 @@ class User {
             $checkStmt->execute([$email]);
             if ($checkStmt->fetch()) {
                 return ['success' => false, 'message' => 'Email already registered.'];
+            }
+
+            // Check if mobile number already exists
+            $checkMobileStmt = $this->pdo->prepare("SELECT ID FROM User WHERE PhoneNumber = ?");
+            $checkMobileStmt->execute([$phoneNumber]);
+            if ($checkMobileStmt->fetch()) {
+                return ['success' => false, 'message' => 'Mobile number already registered.'];
             }
             
             $stmt = $this->pdo->prepare("INSERT INTO User (Name, Email, PasswordHash, PhoneNumber, Role) VALUES (?, ?, ?, ?, 'registered user')");
@@ -113,5 +120,4 @@ class User {
             ];
         }
     }
-
 }

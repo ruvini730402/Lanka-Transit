@@ -18,27 +18,42 @@ if (isset($_GET['api']) && $_GET['api'] === 'seats') {
     
     $bus_id = (int)$_GET['bus_id'];
     $travel_date = $_GET['date'];
+    $model = $_GET['model'] ?? '49'; // Default to 49 if not provided
+    $total_seats = ($model === '54') ? 54 : 49;
     
     try {
         $pdo = Database::getConnection();
-        $bus = new Bus($pdo);
         
-        // Get available seats
-        $result = $bus->getAvailableSeats($bus_id, $travel_date);
+        // Query only booked seats
+        $stmt = $pdo->prepare("
+            SELECT b.SeatNumber as seat_number, LOWER(u.Gender) as gender_preference
+            FROM Booking b
+            LEFT JOIN User u ON b.UserId = u.ID
+            WHERE b.BusID = ? AND b.TravelDate = ? AND b.Status = 'booked'
+        ");
+        $stmt->execute([$bus_id, $travel_date]);
+        $bookedSeats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        if (isset($result['error'])) {
-            echo json_encode(['error' => $result['error']]);
-            exit;
-        }
-        
-        // Format the data for JavaScript
+        // Generate full seat data
         $seatData = [];
-        foreach ($result['data'] as $seat) {
+        for ($i = 1; $i <= $total_seats; $i++) {
+            $status = 'available';
+            $gender_pref = null;
+            $is_lady_seat = ($i <= 8) ? true : false;
+            
+            foreach ($bookedSeats as $booked) {
+                if ($booked['seat_number'] == $i) {
+                    $status = 'booked';
+                    $gender_pref = $booked['gender_preference'];
+                    break;
+                }
+            }
+            
             $seatData[] = [
-                'seat' => $seat['seat_number'],
-                'status' => $seat['status'],
-                'gender_preference' => $seat['gender_preference'],
-                'is_lady_seat' => $seat['is_lady_seat']
+                'seat' => $i,
+                'status' => $status,
+                'gender_preference' => $gender_pref,
+                'is_lady_seat' => $is_lady_seat
             ];
         }
         
@@ -109,12 +124,6 @@ if (isset($_GET['api']) && $_GET['api'] === 'seats') {
                         </div>
                     </form>
                 </div>
-
-<!-- view.php -->
-<form method="POST">
-  <label>Booking ID or Phone Number: <input type="text" name="identifier" required></label>
-  <button type="submit">View Booking</button>
-</form>
 
                 <?php
                 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -231,6 +240,3 @@ if (isset($_GET['api']) && $_GET['api'] === 'seats') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
