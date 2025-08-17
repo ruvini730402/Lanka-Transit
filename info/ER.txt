@@ -101,8 +101,6 @@ DepartureTime DATETIME NOT NULL
 ArrivalTime DATETIME NOT NULL
 Fare DECIMAL(10,2) NOT NULL
 
-=== EXTENDED SCHEMA TABLES ===
-
 User_2
 PK user_id INT (FK to User.ID)
 reset_token VARCHAR(255) (NULLABLE)
