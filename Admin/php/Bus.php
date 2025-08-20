@@ -7,7 +7,7 @@ class Bus {
     }
 
     public function getAll() {
-        $stmt = $this->conn->prepare("SELECT * FROM Bus");
+        $stmt = $this->conn->prepare("SELECT b.*, r.Origin, r.Destination FROM Bus b LEFT JOIN Route r ON b.RouteId = r.ID");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -52,7 +52,7 @@ class Bus {
     }
 
     public function getOne($bus_no) {
-        $stmt = $this->conn->prepare("SELECT * FROM Bus WHERE BusNumber = :bus_no");
+        $stmt = $this->conn->prepare("SELECT b.*, r.Origin, r.Destination FROM Bus b LEFT JOIN Route r ON b.RouteId = r.ID WHERE b.BusNumber = :bus_no");
         $stmt->execute([':bus_no' => $bus_no]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }

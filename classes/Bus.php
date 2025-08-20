@@ -12,8 +12,8 @@ class Bus {
     public function getAllBuses() {
         $stmt = $this->conn->prepare("
             SELECT b.ID, b.BusNumber, b.Capacity, b.LastUpdate, 
-                    r.ID AS RouteID,
-                    a.ID AS AdminID
+                   r.ID AS RouteID, r.Origin, r.Destination,
+                   a.ID AS AdminID
             FROM Bus b
             LEFT JOIN Route r ON b.RouteId = r.ID
             LEFT JOIN Admin a ON b.AdminId = a.ID
@@ -27,7 +27,8 @@ class Bus {
     public function getBus($id) {
         $stmt = $this->conn->prepare("
             SELECT b.ID, b.BusNumber, b.Capacity, b.LastUpdate, 
-                   b.RouteId, b.AdminId
+                   b.RouteId, b.AdminId,
+                   r.Origin, r.Destination
             FROM Bus b
             LEFT JOIN Route r ON b.RouteId = r.ID
             LEFT JOIN Admin a ON b.AdminId = a.ID
