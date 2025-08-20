@@ -4,7 +4,13 @@ session_start();
 $showModal = false;
 $errorMsg = "";
 $successMsg = "";
-$formData = ['bus_no'=>'', 'route_id'=>'', 'admin_id'=>'', 'capacity'=>''];
+$formData = [
+    'bus_number' => '',
+    'route_id'   => '',
+    'admin_id'   => '',
+    'capacity'   => '',
+    'last_update'=> ''
+];
 
 if (isset($_SESSION['bus_error'])) {
     $errorMsg = $_SESSION['bus_error'];
@@ -20,15 +26,47 @@ if (isset($_SESSION['bus_success'])) {
 }
 
 include('dbcon.php');
-include('php/Bus.php');
+include('../classes/Bus.php');
 
 $busObj = new Bus($connection);
-$buses = $busObj->getAll();
+$buses = $busObj->getAllBuses();
 if (!$buses) {
     $buses = [];
 }
-?>
 
+// Handle Add Bus form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
+    $busNumber = trim($_POST['bus_number']);
+    $routeId = intval($_POST['route_id']);
+    $adminId = $_SESSION['admin_id'] ?? 1; // Use session or default admin
+    $capacity = intval($_POST['capacity']);
+    $lastUpdate = date('Y-m-d H:i:s');
+
+    // Simple validation
+    if (!preg_match('/^[A-Z]{2,3}-\d{4}$/', $busNumber)) {
+        $_SESSION['bus_error'] = "Invalid Bus Number format.";
+        $_SESSION['bus_form'] = $_POST;
+        header("Location: buslisting.php");
+        exit;
+    }
+
+    if ($routeId < 1 || $capacity < 1) {
+        $_SESSION['bus_error'] = "Route ID and Capacity must be positive numbers.";
+        $_SESSION['bus_form'] = $_POST;
+        header("Location: buslisting.php");
+        exit;
+    }
+
+    if ($busObj->addBus($routeId, $adminId, $busNumber, $capacity, $lastUpdate)) {
+        $_SESSION['bus_success'] = "Bus added successfully!";
+    } else {
+        $_SESSION['bus_error'] = "Failed to add bus. Please try again.";
+        $_SESSION['bus_form'] = $_POST;
+    }
+    header("Location: buslisting.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,22 +77,16 @@ if (!$buses) {
     <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-
 <div class="container mt-4">
     <a href="admin.html" class="btn btn-maroon-outline back-btn">&larr; Back</a>
 
-
     <h1 class="text-center mb-4">Bus List</h1>
 
-    <!-- Success and Error Alerts -->
-    <?php if (isset($_GET['insert_msg'])): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($_GET['insert_msg']) ?></div>
-    <?php endif; ?>
-    <?php if (isset($_GET['update_msg'])): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($_GET['update_msg']) ?></div>
-    <?php endif; ?>
-    <?php if (isset($_GET['delete_msg'])): ?>
-        <div class="alert alert-danger"><?= htmlspecialchars($_GET['delete_msg']) ?></div>
+    <!-- Alerts -->
+    <?php if ($errorMsg): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
+    <?php elseif ($successMsg): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($successMsg) ?></div>
     <?php endif; ?>
 
     <div class="d-flex justify-content-end mb-3">
@@ -67,7 +99,7 @@ if (!$buses) {
             <th>ID</th>
             <th>Bus Number</th>
             <th>Route ID</th>
-            <th>Admin ID</th>
+            
             <th>Capacity</th>
             <th>Last Update</th>
             <th>Update</th>
@@ -80,16 +112,15 @@ if (!$buses) {
                 <tr>
                     <td><?= htmlspecialchars($bus['ID']) ?></td>
                     <td><?= htmlspecialchars($bus['BusNumber']) ?></td>
-                    <td><?= htmlspecialchars($bus['RouteId']) ?></td>
-                    <td><?= htmlspecialchars($bus['AdminId']) ?></td>
+                    <td><?= htmlspecialchars($bus['RouteID']) ?></td>
                     <td><?= htmlspecialchars($bus['Capacity']) ?></td>
                     <td><?= htmlspecialchars($bus['LastUpdate']) ?></td>
                     <td>
-                        <a href="php/update_buslist.php?bus_no=<?= urlencode($bus['BusNumber']) ?>" class="btn btn-success btn-sm">Update</a>
+                        <a href="update_buslist.php?id=<?= urlencode($bus['ID']) ?>" class="btn btn-success btn-sm">Update</a>
                     </td>
                     <td>
                         <button class="btn btn-danger btn-sm delete-btn" 
-                                data-busno="<?= htmlspecialchars($bus['BusNumber']) ?>"
+                                data-id="<?= htmlspecialchars($bus['ID']) ?>"
                                 data-bs-toggle="modal" 
                                 data-bs-target="#deleteModal">
                             Delete
@@ -105,44 +136,33 @@ if (!$buses) {
 </div>
 
 <!-- Add Bus Modal -->
-<form id="addBusForm" action="php/insert_bus.php" method="POST">
+<form id="addBusForm" action="" method="POST">
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Add New Bus</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Add New Bus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
-                    <?php if ($errorMsg): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
-                    <?php elseif ($successMsg): ?>
-                        <div class="alert alert-success"><?= htmlspecialchars($successMsg) ?></div>
-                    <?php endif; ?>
-
                     <div class="mb-3">
-                        <label for="bus_no" class="form-label">Bus Number</label>
-                        <input type="text" class="form-control" name="bus_no" placeholder="Ex: NB-1234" required value="<?= htmlspecialchars($formData['bus_no']) ?>" />
+                        <label class="form-label">Bus Number</label>
+                        <input type="text" class="form-control" name="bus_number" placeholder="Ex: NB-1234" required value="<?= htmlspecialchars($formData['bus_number']) ?>" />
                     </div>
                     <div class="mb-3">
-                        <label for="route_id" class="form-label">Route ID</label>
-                        <input type="number" class="form-control" name="route" placeholder="Ex: 1" required value="<?= htmlspecialchars($formData['route_id']) ?>" min="1" />
+                        <label class="form-label">Route ID</label>
+                        <input type="number" class="form-control" name="route_id" min="1" required value="<?= htmlspecialchars($formData['route_id']) ?>" />
                     </div>
                     <div class="mb-3">
-                        <label for="admin_id" class="form-label">Admin ID</label>
-                        <input type="number" class="form-control" name="driver_contact" placeholder="Ex: 1" required value="<?= htmlspecialchars($formData['admin_id']) ?>" min="1" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="capacity" class="form-label">Capacity</label>
-                        <input type="number" class="form-control" name="seat_count" min="1" placeholder="Ex: 45" required value="<?= htmlspecialchars($formData['capacity']) ?>" />
+                        <label class="form-label">Capacity</label>
+                        <input type="number" class="form-control" name="capacity" min="1" required value="<?= htmlspecialchars($formData['capacity']) ?>" />
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" name="add_buses" class="btn btn-maroon w-100">Add Bus</button>
+                    <button type="submit" name="add_bus" class="btn btn-maroon w-100">Add Bus</button>
                 </div>
 
             </div>
@@ -155,15 +175,14 @@ if (!$buses) {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete this bus?</p>
                 <p class="text-danger"><strong>This action cannot be undone.</strong></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <a id="confirmDelete" href="#" class="btn btn-danger">Delete Bus</a>
             </div>
         </div>
@@ -171,40 +190,14 @@ if (!$buses) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
 document.getElementById("addBusForm").addEventListener("submit", function(e) {
-    const busNo = document.querySelector("input[name='bus_no']").value.trim();
-    const routeId = document.querySelector("input[name='route']").value.trim();
-    const adminId = document.querySelector("input[name='driver_contact']").value.trim();
-    const capacity = document.querySelector("input[name='seat_count']").value.trim();
-    const errorDiv = document.querySelector(".modal-body .alert-danger");
-
+    const busNo = document.querySelector("input[name='bus_number']").value.trim();
     const busNoPattern = /^[A-Z]{2,3}-\d{4}$/;
 
-    let errorMsg = "";
-
     if (!busNoPattern.test(busNo)) {
-        errorMsg = "❌ Invalid Bus Number. Format should be NB-1234 or ABC-5678.";
-    } else if (!routeId || isNaN(routeId) || parseInt(routeId) <= 0) {
-        errorMsg = "❌ Invalid Route ID. Must be a number greater than 0.";
-    } else if (!adminId || isNaN(adminId) || parseInt(adminId) <= 0) {
-        errorMsg = "❌ Invalid Admin ID. Must be a number greater than 0.";
-    } else if (!capacity || isNaN(capacity) || parseInt(capacity) <= 0) {
-        errorMsg = "❌ Invalid Capacity. Must be a number greater than 0.";
-    }
-
-    if (errorMsg) {
         e.preventDefault();
-        if (errorDiv) {
-            errorDiv.textContent = errorMsg;
-            errorDiv.style.display = "block";
-        } else {
-            const div = document.createElement("div");
-            div.className = "alert alert-danger";
-            div.textContent = errorMsg;
-            this.querySelector(".modal-body").prepend(div);
-        }
+        alert("❌ Invalid Bus Number. Format: NB-1234 or ABC-5678");
     }
 });
 
@@ -214,11 +207,12 @@ const confirmDelete = document.getElementById('confirmDelete');
 
 deleteButtons.forEach(button => {
     button.addEventListener('click', function() {
-        const busNo = this.getAttribute('data-busno');
-        confirmDelete.href = `php/delete_bus.php?bus_no=${encodeURIComponent(busNo)}`;
+        const id = this.getAttribute('data-id');
+        confirmDelete.href = `php/delete_bus.php?id=${encodeURIComponent(id)}`;
     });
 });
 </script>
+
 
 <?php if ($showModal): ?>
 <script>
@@ -226,6 +220,5 @@ deleteButtons.forEach(button => {
     myModal.show();
 </script>
 <?php endif; ?>
-
 </body>
 </html>
