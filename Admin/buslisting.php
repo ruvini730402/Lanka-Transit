@@ -98,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
         <tr>
             <th>ID</th>
             <th>Bus Number</th>
-            <th>Route ID</th>
             <th>Origin</th>
             <th>Destination</th>
             <th>Capacity</th>
@@ -113,7 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
                 <tr>
                     <td><?= htmlspecialchars($bus['ID']) ?></td>
                     <td><?= htmlspecialchars($bus['BusNumber']) ?></td>
-                    <td><?= htmlspecialchars($bus['RouteID']) ?></td>
                     <td><?= htmlspecialchars($bus['Origin'] ?? '') ?></td>
                     <td><?= htmlspecialchars($bus['Destination'] ?? '') ?></td>
                     <td><?= htmlspecialchars($bus['Capacity']) ?></td>

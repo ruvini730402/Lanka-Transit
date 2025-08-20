@@ -1,3 +1,9 @@
+<?php
+include('dbcon.php');
+$stmt = $connection->prepare("SELECT Name, Email, PasswordHash, PhoneNumber FROM User ORDER BY ID DESC");
+$stmt->execute();
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +14,8 @@
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 <div class="container mt-4">
     <!-- Back Button -->
     <a href="admin.html" class="btn back-btn mb-3">&larr; Back</a>
@@ -22,29 +30,21 @@
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Password</th>
             <th>Telephone Number</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Devindi Jayaweera</td>
-            <td>devindi@example.com</td>
-            <td>********</td>
-            <td>0711234567</td>
-          </tr>
-          <tr>
-            <td>Kasun Perera</td>
-            <td>kasun@example.com</td>
-            <td>********</td>
-            <td>0779876543</td>
-          </tr>
-          <tr>
-            <td>Nimali Fernando</td>
-            <td>nimali@example.com</td>
-            <td>********</td>
-            <td>0754567890</td>
-          </tr>
+          <?php if (!empty($users)): ?>
+            <?php foreach ($users as $user): ?>
+              <tr>
+                <td><?= htmlspecialchars($user['Name']) ?></td>
+                <td><?= htmlspecialchars($user['Email']) ?></td>
+                <td><?= htmlspecialchars($user['PhoneNumber']) ?></td>
+              </tr>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <tr><td colspan="4" class="text-center">No users found.</td></tr>
+          <?php endif; ?>
         </tbody>
       </table>
     </div>
