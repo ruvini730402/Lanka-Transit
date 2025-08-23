@@ -1,3 +1,26 @@
+<?php
+include('dbcon.php');
+// Fetch Booking Details
+$bookingStmt = $connection->prepare("
+    SELECT b.ID, b.SeatNumber, u.Name, u.Email, u.PhoneNumber, u.Role, b.BookingTime, u.ID AS UserID
+    FROM Booking b
+    LEFT JOIN User u ON b.UserId = u.ID
+    ORDER BY b.BookingTime DESC
+");
+$bookingStmt->execute();
+$bookings = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch Payment Details
+$paymentStmt = $connection->prepare("
+    SELECT p.ID, u.Name, u.Email, u.ID AS UserID, b.SeatNumber, b.BookingTime, p.Amount, p.PaymentMethod, p.PaymentDate, u.PhoneNumber
+    FROM Payment p
+    LEFT JOIN Booking b ON p.BookingId = b.ID
+    LEFT JOIN User u ON b.UserId = u.ID
+    ORDER BY p.PaymentDate DESC
+");
+$paymentStmt->execute();
+$payments = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,24 +74,21 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>101</td>
-                                    <td>A1</td>
-                                    <td>Devindi</td>
-                                    <td>993456789V</td>
-                                    <td>0712345678</td>
-                                    <td>Female</td>
-                                    <td>2025-07-14 10:23 AM</td>
-                                </tr>
-                                <tr>
-                                    <td>102</td>
-                                    <td>B3</td>
-                                    <td>Thilina</td>
-                                    <td>993452312V</td>
-                                    <td>0771234567</td>
-                                    <td>Male</td>
-                                    <td>2025-07-14 11:45 AM</td>
-                                </tr>
+                                <?php if (!empty($bookings)): ?>
+                                    <?php foreach ($bookings as $booking): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($booking['ID']) ?></td>
+                                            <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
+                                            <td><?= htmlspecialchars($booking['Name'] ?? 'N/A') ?></td>
+                                            <td><?= htmlspecialchars($booking['UserID']) ?></td>
+                                            <td><?= htmlspecialchars($booking['PhoneNumber'] ?? 'N/A') ?></td>
+                                            <td><?= htmlspecialchars($booking['Role'] ?? 'N/A') ?></td>
+                                            <td><?= htmlspecialchars($booking['BookingTime']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="7" class="text-center">No bookings found.</td></tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -96,22 +116,20 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>P201</td>
-                                    <td>Devindi</td>
-                                    <td>993456789V</td>
-                                    <td>Rs. 350.00</td>
-                                    <td>Card</td>
-                                    <td>2025-07-14 10:25 AM</td>
-                                </tr>
-                                <tr>
-                                    <td>P202</td>
-                                    <td>Thilina</td>
-                                    <td>993452312V</td>
-                                    <td>Rs. 420.00</td>
-                                    <td>Cash</td>
-                                    <td>2025-07-14 11:50 AM</td>
-                                </tr>
+                                <?php if (!empty($payments)): ?>
+                                    <?php foreach ($payments as $payment): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($payment['ID']) ?></td>
+                                            <td><?= htmlspecialchars($payment['Name'] ?? 'N/A') ?></td>
+                                            <td><?= htmlspecialchars($payment['UserID']) ?></td>
+                                            <td>Rs. <?= htmlspecialchars($payment['Amount']) ?></td>
+                                            <td><?= htmlspecialchars($payment['PaymentMethod']) ?></td>
+                                            <td><?= htmlspecialchars($payment['PaymentDate']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="6" class="text-center">No payments found.</td></tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
