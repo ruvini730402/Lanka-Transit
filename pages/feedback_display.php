@@ -1,5 +1,5 @@
 <?php
-include('dbcon.php');
+include('../php/dbcon.php');
 $stmt = $connection->prepare("
     SELECT f.ID, u.Name AS UserName, f.BusId, f.Rating, f.Comment
     FROM Feedback f
@@ -32,7 +32,7 @@ $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 <div class="container mt-4">
   <!-- Back Button -->
-  <a href="admin.html" class="btn back-btn mb-3">&larr; Back</a>
+  <a href="admin.php" class="btn back-btn mb-3">&larr; Back</a>
 
   <!-- Page Title -->
   <h1 class="text-center fw-bold mb-4">User Feedbacks</h1>

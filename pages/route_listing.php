@@ -1,5 +1,5 @@
 <?php
-include('dbcon.php');
+include('../php/dbcon.php');
 
 class Route {
     private $conn;
@@ -26,7 +26,7 @@ $routes = $routeObj->getAllRoutes();
 </head>
 <body>
 <div class="container mt-4">
-    <a href="admin.html" class="btn btn-maroon-outline back-btn">&larr; Back</a>
+    <a href="admin.php" class="btn btn-maroon-outline back-btn">&larr; Back</a>
     <h1 class="text-center mb-4">Route List</h1>
     <table class="table table-bordered table-hover">
         <thead class="table-dark">

@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-include('../dbcon.php');        // dbcon is one level up
+include('dbcon.php');        // dbcon is one level up
 include('Bus.php');             // inside the same folder
 include('User.php');
 include('Booking.php');

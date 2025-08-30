@@ -1,6 +1,6 @@
 <?php
-include('dbcon.php');
-include('php/announcement.php');
+include('../php/dbcon.php');
+include('../php/announcement.php');
 
 try {
     $announcementObj = new Announcement($connection);
@@ -26,7 +26,7 @@ try {
 
 <div class="container mt-4">
     <!-- Back Button -->
-    <a href="admin.html" class="btn btn-maroon-outline back-btn">&larr; Back</a>
+    <a href="admin.php" class="btn btn-maroon-outline back-btn">&larr; Back</a>
 
 
     <h1 class="text-center mb-4">Announcements</h1>

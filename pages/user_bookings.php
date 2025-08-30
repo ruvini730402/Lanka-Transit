@@ -1,5 +1,5 @@
 <?php
-include('dbcon.php');
+include('../php/dbcon.php');
 // Fetch Booking Details
 $bookingStmt = $connection->prepare("
     SELECT b.ID, b.SeatNumber, u.Name, u.Email, u.PhoneNumber, u.Role, b.BookingTime, u.ID AS UserID
@@ -47,7 +47,7 @@ $payments = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
 <body class="container mt-4">
 
     <!-- Back Button -->
-    <a href="admin.html" class="back-btn mb-4 d-inline-block">&larr; Back</a>
+    <a href="admin.php" class="back-btn mb-4 d-inline-block">&larr; Back</a>
 
     <!-- Page Heading -->
     <h2 class="text-center mb-5">Reservation Overview</h2>
