@@ -212,7 +212,7 @@ deleteButtons.forEach(button => {
 </script>
 
 
-<?php if ($showModal): ?>
+<?php if ($showModal && isset($_SESSION['bus_error'])): ?>
 <script>
     var myModal = new bootstrap.Modal(document.getElementById('exampleModal'));
     myModal.show();
