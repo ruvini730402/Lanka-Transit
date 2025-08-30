@@ -25,8 +25,11 @@ if (isset($_SESSION['bus_success'])) {
     unset($_SESSION['bus_success']);
 }
 
-include('../php/dbcon.php');
+require_once('../classes/Database.php');
 include('../classes/Bus.php');
+
+// Create database connection
+$connection = Database::getConnection();
 
 $busObj = new Bus($connection);
 $buses = $busObj->getAllBuses();

@@ -1,7 +1,10 @@
 <?php
-include('dbcon.php');
+session_start();
+require_once('../classes/Database.php');
 include('../classes/Bus.php');
 
+// Create database connection
+$connection = Database::getConnection();
 
 $busObj = new Bus($connection);
 
@@ -12,7 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $bus = $busObj->getBus($_GET['id']);
     // Redirect if bus not found
     if (!$bus) {
-        header("Location: ../buslisting.php?error_msg=Bus not found");
+        $_SESSION['error_msg'] = "Bus not found";
+        header("Location: buslisting.php");
         exit();
     }
 }
@@ -22,17 +26,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_bus'])) {
     $id = $_POST['bus_id'];
     $routeId = $_POST['route_id'];
-    $adminId = $_POST['admin_id'];
+    $adminId = 1;
     $busNumber = $_POST['bus_number'];
     $capacity = $_POST['capacity'];
     $lastUpdate = date('Y-m-d H:i:s');
 
-    $updated = $busObj->updateBus($id, $routeId, $adminId, $busNumber, $capacity, $lastUpdate);
-    if ($updated) {
-        header("Location: buslisting.php?update_msg=Bus updated successfully");
-        exit();
-    } else {
-        echo "<div style='color:red; padding:10px;'>Update failed. Please try again.</div>";
+    try {
+        $updated = $busObj->updateBus($id, $routeId, $adminId, $busNumber, $capacity, $lastUpdate);
+        if ($updated) {
+            $_SESSION['success_msg'] = "Bus updated successfully!";
+            header("Location: buslisting.php");
+            exit();
+        } else {
+            throw new Exception("Failed to update bus.");
+        }
+    } catch (Exception $e) {
+        $_SESSION['error_msg'] = $e->getMessage();
     }
 }
 ?>
@@ -44,11 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_bus'])) {
     <title>Update Bus</title>
     <meta charset="UTF-8">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin-style.css">
+    <?php include('../includes/toast_styles.php'); ?>
 
 </head>
 <body>
 <div class="container mt-4">
+    <?php include('../includes/toast_messages.php'); ?>
+    
     <h2 class="mb-4">Update Bus Details</h2>
 
     <form method="POST" action="">
@@ -76,5 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_bus'])) {
 
     </form>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
