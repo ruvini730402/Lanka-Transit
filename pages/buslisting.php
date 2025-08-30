@@ -42,14 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
     $capacity = intval($_POST['capacity']);
     $lastUpdate = date('Y-m-d H:i:s');
 
-    // Simple validation
-    if (!preg_match('/^[A-Z]{2,3}-\d{4}$/', $busNumber)) {
-        $_SESSION['bus_error'] = "Invalid Bus Number format.";
-        $_SESSION['bus_form'] = $_POST;
-        header("Location: buslisting.php");
-        exit;
-    }
-
     if ($routeId < 1 || $capacity < 1) {
         $_SESSION['bus_error'] = "Route ID and Capacity must be positive numbers.";
         $_SESSION['bus_form'] = $_POST;
@@ -57,12 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
         exit;
     }
 
-    if ($busObj->addBus($routeId, $adminId, $busNumber, $capacity, $lastUpdate)) {
-        $_SESSION['bus_success'] = "Bus added successfully!";
-    } else {
-        $_SESSION['bus_error'] = "Failed to add bus. Please try again.";
+    try {
+        if ($busObj->addBus($routeId, $adminId, $busNumber, $capacity, $lastUpdate)) {
+            $_SESSION['bus_success'] = "Bus added successfully!";
+        } else {
+            throw new Exception("Failed to add bus. Please try again.");
+        }
+    } catch (Exception $e) {
+        $_SESSION['bus_error'] = $e->getMessage();
         $_SESSION['bus_form'] = $_POST;
     }
+    
     header("Location: buslisting.php");
     exit;
 }
@@ -74,7 +71,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
     <title>All Buses</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" />
     <link rel="stylesheet" href="../assets/css/admin-style.css" />
+    <style>
+        .toast {
+            opacity: 1 !important;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-4">
@@ -82,12 +86,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
 
     <h1 class="text-center mb-4">Bus List</h1>
 
-    <!-- Alerts -->
-    <?php if ($errorMsg): ?>
-        <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
-    <?php elseif ($successMsg): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($successMsg) ?></div>
-    <?php endif; ?>
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <?php if ($errorMsg): ?>
+        <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-x-circle-fill me-2"></i>
+                    <?= htmlspecialchars($errorMsg) ?>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <?php if ($successMsg): ?>
+        <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <?= htmlspecialchars($successMsg) ?>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-maroon" data-bs-toggle="modal" data-bs-target="#exampleModal">Add Bus</button>
@@ -158,7 +182,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Capacity</label>
-                        <input type="number" class="form-control" name="capacity" min="1" required value="<?= htmlspecialchars($formData['capacity']) ?>" />
+                        <select class="form-select" name="capacity" required>
+                            <option value="" disabled <?= empty($formData['capacity']) ? 'selected' : '' ?>>Select Capacity</option>
+                            <option value="49" <?= $formData['capacity'] == '49' ? 'selected' : '' ?>>49 Seats</option>
+                            <option value="54" <?= $formData['capacity'] == '54' ? 'selected' : '' ?>>54 Seats</option>
+                        </select>
                     </div>
                 </div>
 
@@ -221,5 +249,20 @@ deleteButtons.forEach(button => {
     myModal.show();
 </script>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all toasts
+    const toastElList = document.querySelectorAll('.toast');
+    const toastList = [...toastElList].map(toastEl => {
+        const toast = new bootstrap.Toast(toastEl, {
+            autohide: true,
+            delay: 5000 // Auto hide after 5 seconds
+        });
+        toast.show();
+        return toast;
+    });
+});
+</script>
 </body>
 </html>
