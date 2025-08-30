@@ -16,7 +16,7 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
-      <a class="navbar-brand fw-bold d-flex align-items-center" style="color: #800000;" href="index.php">
+      <a class="navbar-brand fw-bold d-flex align-items-center" style="color: #800000;" href="../index.php">
         <img src="../assets/images/lanka-transit-logo.png" alt="Lanka Transit Logo" style="height: 50px; margin-right: 10px;">
         Lanka Transit
       </a>
@@ -25,9 +25,9 @@
       </button>
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="../index.php">Home</a></li>
 
-            <a class="nav-link text-danger d-flex align-items-center" href="php/logout.php">
+            <a class="nav-link text-danger d-flex align-items-center" href="../auth/Logout.php">
               <i class="fas fa-sign-out-alt me-1"></i>Logout
             </a>
           </li>
