@@ -13,14 +13,14 @@ $formData = [
 ];
 
 if (isset($_SESSION['bus_error'])) {
-    $errorMsg = $_SESSION['bus_error'];
+    $_SESSION['error_msg'] = $_SESSION['bus_error'];
     $formData = $_SESSION['bus_form'] ?? $formData;
     $showModal = true;
     unset($_SESSION['bus_error'], $_SESSION['bus_form']);
 }
 
 if (isset($_SESSION['bus_success'])) {
-    $successMsg = $_SESSION['bus_success'];
+    $_SESSION['success_msg'] = $_SESSION['bus_success'];
     $showModal = true;
     unset($_SESSION['bus_success']);
 }
@@ -71,14 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
     <title>All Buses</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" />
     <link rel="stylesheet" href="../assets/css/admin-style.css" />
-    <style>
-        .toast {
-            opacity: 1 !important;
-            margin-bottom: 1rem;
-        }
-    </style>
+    <?php include('../includes/toast_styles.php'); ?>
 </head>
 <body>
 <div class="container mt-4">
@@ -86,32 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_bus'])) {
 
     <h1 class="text-center mb-4">Bus List</h1>
 
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <?php if ($errorMsg): ?>
-        <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="bi bi-x-circle-fill me-2"></i>
-                    <?= htmlspecialchars($errorMsg) ?>
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <?php if ($successMsg): ?>
-        <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    <?= htmlspecialchars($successMsg) ?>
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
+    <?php include('../includes/toast_messages.php'); ?>
 
     <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-maroon" data-bs-toggle="modal" data-bs-target="#exampleModal">Add Bus</button>
@@ -250,19 +219,5 @@ deleteButtons.forEach(button => {
 </script>
 <?php endif; ?>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize all toasts
-    const toastElList = document.querySelectorAll('.toast');
-    const toastList = [...toastElList].map(toastEl => {
-        const toast = new bootstrap.Toast(toastEl, {
-            autohide: true,
-            delay: 5000 // Auto hide after 5 seconds
-        });
-        toast.show();
-        return toast;
-    });
-});
-</script>
 </body>
 </html>
