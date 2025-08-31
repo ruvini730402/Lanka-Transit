@@ -1,5 +1,9 @@
 <?php
-include('../php/dbcon.php');
+require_once('../classes/Database.php');
+
+$connection = Database::getConnection();
+
+
 // Fetch Booking Details
 $bookingStmt = $connection->prepare("
     SELECT b.ID, b.SeatNumber, u.Name, u.Email, u.PhoneNumber, u.Role, b.BookingTime, u.ID AS UserID

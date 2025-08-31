@@ -1,5 +1,8 @@
 <?php
-include('../php/dbcon.php');
+require_once('../classes/Database.php');
+
+$connection = Database::getConnection();
+
 $stmt = $connection->prepare("SELECT Name, Email, PasswordHash, PhoneNumber FROM User ORDER BY ID DESC");
 $stmt->execute();
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -13,7 +16,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin-style.css">
 </head>
 <body>
 <div class="container mt-4">
