@@ -25,6 +25,11 @@ if (isset($_SESSION['bus_success'])) {
     unset($_SESSION['bus_success']);
 }
 
+// Handle delete message if it exists in the URL
+if (isset($_GET['delete_msg'])) {
+    $_SESSION['success_msg'] = $_GET['delete_msg'];
+}
+
 require_once('../classes/Database.php');
 include('../classes/Bus.php');
 
@@ -209,7 +214,7 @@ const confirmDelete = document.getElementById('confirmDelete');
 deleteButtons.forEach(button => {
     button.addEventListener('click', function() {
         const id = this.getAttribute('data-id');
-        confirmDelete.href = `php/delete_bus.php?id=${encodeURIComponent(id)}`;
+        confirmDelete.href = `../php/delete_bus.php?id=${encodeURIComponent(id)}`;
     });
 });
 </script>
