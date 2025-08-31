@@ -1,5 +1,7 @@
 <?php
-include('../php/dbcon.php');
+require_once('../classes/Database.php');
+// Create database connection
+$connection = Database::getConnection();
 $stmt = $connection->prepare("
     SELECT f.ID, u.Name AS UserName, f.BusId, f.Rating, f.Comment
     FROM Feedback f
@@ -18,7 +20,7 @@ $feedbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin-style.css">
   <style>
     .btn-delete {
       background-color: #dc3545;
