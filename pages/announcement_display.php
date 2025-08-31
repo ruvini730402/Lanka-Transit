@@ -1,13 +1,20 @@
 <?php
-include('../php/dbcon.php');
-include('../php/announcement.php');
+session_start();
+require_once('../classes/Database.php');
+include('../classes/announcement.php');
+
+$connection = Database::getConnection();
 
 try {
     $announcementObj = new Announcement($connection);
     $announcements = $announcementObj->getAll();
 } catch (PDOException $e) {
-    die("Error fetching announcements: " . $e->getMessage());
+    $_SESSION['error_msg'] = "Error fetching announcements: " . $e->getMessage();
 }
+
+// Get any form data that might have been saved in session
+$form_data = isset($_SESSION['form_data']) ? $_SESSION['form_data'] : [];
+unset($_SESSION['form_data']);
 ?>
 
 <!DOCTYPE html>
@@ -19,8 +26,8 @@ try {
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin-style.css">
+    <?php include('../includes/toast_styles.php'); ?>
 </head>
 <body>
 
@@ -31,18 +38,7 @@ try {
 
     <h1 class="text-center mb-4">Announcements</h1>
 
-    <!-- Success Message -->
-    <?php if (isset($_GET['msg'])): ?>
-    <?php
-    $msg = $_GET['msg'];
-    $isDelete = stripos($msg, 'delete') !== false; // check if message contains "delete"
-    $alertClass = $isDelete ? 'alert-danger' : 'alert-success';
-    ?>
-    <div class="alert <?= $alertClass ?> alert-dismissible fade show" role="alert">
-        <?= htmlspecialchars($msg) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
+    <?php include('../includes/toast_messages.php'); ?>
 
     
 
@@ -113,7 +109,7 @@ try {
 </div>
 
 <!-- Add Announcement Modal -->
-<form action="php/insert_announcement.php" method="POST">
+<form action="../php/insert_announcement.php" method="POST">
     <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
