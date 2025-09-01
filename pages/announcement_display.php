@@ -66,7 +66,7 @@ unset($_SESSION['form_data']);
                     <td><?= htmlspecialchars($a['message']) ?></td>
                     <td><?= htmlspecialchars($a['created_at']) ?></td>
                     <td>
-                        <a href="php/update_announcement.php?id=<?= $a['ID'] ?>" class="btn btn-success btn-sm">Update</a>
+                        <a href="../php/update_announcement.php?id=<?= $a['ID'] ?>" class="btn btn-success btn-sm">Update</a>
                     </td>
                     <td>
                         <!-- Delete Button triggers Modal -->
@@ -90,7 +90,7 @@ unset($_SESSION['form_data']);
 
                               <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <a href="php/delete_announcement.php?id=<?= $a['ID'] ?>" class="btn btn-danger">Delete</a>
+                                <a href="../php/delete_announcement.php?id=<?= $a['ID'] ?>" class="btn btn-danger">Delete</a>
                               </div>
 
                             </div>
