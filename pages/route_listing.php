@@ -1,5 +1,8 @@
 <?php
-include('../php/dbcon.php');
+require_once('../classes/Database.php');
+include('../classes/announcement.php');
+
+$connection = Database::getConnection();
 
 class Route {
     private $conn;
@@ -22,7 +25,7 @@ $routes = $routeObj->getAllRoutes();
     <meta charset="UTF-8">
     <title>Route List</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin-style.css">
 </head>
 <body>
 <div class="container mt-4">
