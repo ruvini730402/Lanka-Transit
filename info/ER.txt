@@ -52,8 +52,9 @@ PK ID INT AUTO_INCREMENT
 FK RouteId INT (NULLABLE)
 FK AdminId INT (NULLABLE)
 BusNumber VARCHAR(7) NOT NULL UNIQUE
-Capacity INT NOT NULL
+Capacity INT NOT NULL CHECK (Capacity IN (49, 54))
 LastUpdate DATE
+CONSTRAINT chk_bus_capacity: Capacity limited to 49 or 54 seats
 
 Payment
 PK ID INT AUTO_INCREMENT
