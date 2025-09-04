@@ -5,7 +5,6 @@
  */
 
 require_once __DIR__ . '/../config/payhere_config.php';
-require_once __DIR__ . '/Database.php';
 
 class Payment {
     private $pdo;
