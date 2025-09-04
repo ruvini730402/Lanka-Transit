@@ -2,7 +2,7 @@ CLASS DIAGRAM REFERENCE - Lanka Transit Project
 
 === CLASSES FOR DIAGRAM ===
 
-Database (config/database.php)
+Database (classes/Database.php)
 │   - host: String
 │   - db_name: String
 │   - username: String

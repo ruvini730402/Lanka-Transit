@@ -5,26 +5,26 @@
 
 echo "Testing Payment System Database Connections...\n\n";
 
-// Test config/database.php connection
-echo "1. Testing config/database.php connection:\n";
-require_once 'config/database.php';
+// Test classes/Database.php connection
+echo "1. Testing classes/Database.php connection:\n";
+require_once 'classes/Database.php';
 
 try {
     $database = new Database();
     $pdo = $database->getConnection();
     
     if ($pdo) {
-        echo "✅ Config database connection successful\n";
+        echo "✅ Classes database connection successful\n";
         
         // Test Payment class initialization
-        echo "\n2. Testing Payment class with config database:\n";
+        echo "\n2. Testing Payment class with classes database:\n";
         require_once 'classes/Payment.php';
         
         $payment = new Payment($pdo);
-        echo "✅ Payment class initialized successfully with config database\n";
+        echo "✅ Payment class initialized successfully with classes database\n";
         
     } else {
-        echo "❌ Config database connection failed\n";
+        echo "❌ Classes database connection failed\n";
     }
 } catch (Exception $e) {
     echo "❌ Error: " . $e->getMessage() . "\n";
@@ -55,6 +55,6 @@ try {
 }
 
 echo "\n=== Test Complete ===\n";
-echo "Payment system should now use config/database.php\n";
-echo "User/Auth system should use classes/database[WRONG].php\n";
+echo "All systems now use classes/Database.php\n";
+echo "Single unified database connection\n";
 ?>
