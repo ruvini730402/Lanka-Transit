@@ -262,11 +262,6 @@ class Payment {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
-    /**
-     * Generate temporary email for guest users
-     */
-    private function generateTempEmail($name) {
-        return strtolower(str_replace(' ', '', $name)) . '@demo.com';
-    }
+
 }
 ?>
