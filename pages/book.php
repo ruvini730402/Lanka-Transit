@@ -113,8 +113,8 @@ try {
     // Store booking data in session
     $_SESSION['booking_data'] = $booking_data;
     
-    // Redirect to confirmation page
-    header('Location: confirmation.php');
+    // Redirect to payment page instead of confirmation
+    header('Location: payment.php');
     exit;
     
 } catch (Exception $e) {
