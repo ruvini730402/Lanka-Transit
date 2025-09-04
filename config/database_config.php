@@ -6,10 +6,10 @@
 
 class DatabaseConfig {
     // Database connection credentials
-    const DB_HOST = 'bosennoy016fmb5flv0m-mysql.services.clever-cloud.com';
-    const DB_NAME = 'bosennoy016fmb5flv0m';
-    const DB_USERNAME = 'ul9ivik7jhoj9kyh';
-    const DB_PASSWORD = 'iVbsGABNeLEWyG69bSqj';
+    const DB_HOST = '';
+    const DB_NAME = '';
+    const DB_USERNAME = '';
+    const DB_PASSWORD = '';
     
     // Database connection options
     const DB_OPTIONS = [
