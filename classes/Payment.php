@@ -14,7 +14,12 @@ class Payment {
     private $sandbox_mode;
     
     public function __construct($pdo = null) {
-        $this->pdo = $pdo ?? Database::getConnection();
+        if ($pdo) {
+            $this->pdo = $pdo;
+        } else {
+            $database = new Database();
+            $this->pdo = $database->getConnection();
+        }
         
         // Use configuration from PayHereConfig
         $this->merchant_id = PayHereConfig::MERCHANT_ID;

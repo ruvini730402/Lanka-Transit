@@ -68,7 +68,7 @@ if (!empty($nic) && !preg_match('/^(\d{9}[vVxX]|\d{12})$/', $nic)) {
 }
 
 try {
-    require_once '../classes/Database.php';
+    require_once '../classes/database[WRONG].php';
     $pdo = Database::getConnection();
     
     // Check if seat is already booked for this date

@@ -59,7 +59,8 @@ if (!empty($order_id)) {
 function createBookingRecord($bookingData, $paymentStatus, $order_id) {
     try {
         // Get database connection
-        $pdo = Database::getConnection();
+        $database = new Database();
+        $pdo = $database->getConnection();
         
         if (!$pdo) {
             throw new Exception("Database connection failed");
