@@ -52,7 +52,7 @@ class Payment {
             'amount' => $amount,
             'first_name' => $bookingData['passenger_name'],
             'last_name' => '',
-            'email' => $this->generateTempEmail($bookingData['passenger_name']),
+            'email' => null,
             'phone' => $bookingData['phone'],
             'address' => $bookingData['origin'],
             'city' => $bookingData['origin'],
@@ -261,7 +261,6 @@ class Payment {
         $stmt->execute([$order_id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
 
 }
 ?>
