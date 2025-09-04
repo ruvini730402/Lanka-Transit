@@ -5,6 +5,12 @@
 
 USE bosennoy016fmb5flv0m;
 
+-- Update any existing buses that don't meet the capacity constraint
+-- This will set invalid capacities to 49 (default regular bus)
+UPDATE Bus 
+SET Capacity = 49 
+WHERE Capacity NOT IN (49, 54);
+
 -- Add constraint to Bus table to limit capacity to only 49 and 54
 ALTER TABLE Bus 
 ADD CONSTRAINT chk_bus_capacity 
@@ -14,11 +20,6 @@ CHECK (Capacity IN (49, 54));
 ALTER TABLE Bus 
 COMMENT = 'Bus table with capacity limited to standard sizes: 49 seats or 54 seats';
 
--- Update any existing buses that don't meet the capacity constraint
--- This will set invalid capacities to 49 (default regular bus)
-UPDATE Bus 
-SET Capacity = 49 
-WHERE Capacity NOT IN (49, 54);
 
 -- Add index on capacity for efficient queries
 CREATE INDEX idx_bus_capacity ON Bus(Capacity);
