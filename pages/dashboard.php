@@ -28,7 +28,7 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id']) || !is_numeric($
     die('Access Denied. Redirecting to login...');
 }
 
-require_once '../config/database.php';
+require_once '../classes/Database.php';
 
 // Get user data from session
 $userId = (int)$_SESSION['user_id'];

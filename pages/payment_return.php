@@ -3,7 +3,7 @@
  * Payment Return Handler - User returns here after successful payment
  */
 session_start();
-require_once '../config/database.php';
+require_once '../classes/Database.php';
 require_once '../classes/Payment.php';
 
 $success = false;
