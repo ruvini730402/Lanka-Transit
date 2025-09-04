@@ -3,7 +3,7 @@
  * Payment Cancel Handler - User is redirected here when payment is cancelled
  */
 session_start();
-require_once '../classes/Database.php';
+require_once '../config/database.php';
 require_once '../classes/Payment.php';
 
 $order_id = $_GET['order_id'] ?? $_SESSION['payment_order_id'] ?? '';

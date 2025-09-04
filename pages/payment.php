@@ -3,7 +3,7 @@
  * Payment Page - PayHere Integration
  */
 session_start();
-require_once '../classes/Database.php';
+require_once '../config/database.php';
 require_once '../classes/Payment.php';
 
 // Check if booking data exists in session

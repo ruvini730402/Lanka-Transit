@@ -8,7 +8,7 @@
 ob_start();
 error_reporting(0);
 
-require_once '../classes/Database.php';
+require_once '../config/database.php';
 require_once '../classes/Payment.php';
 
 try {

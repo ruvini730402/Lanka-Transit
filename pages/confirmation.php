@@ -3,7 +3,7 @@
  * Booking Confirmation - Save to Database (Only after successful payment)
  */
 session_start();
-require_once '../classes/Database.php';
+require_once '../config/database.php';
 require_once '../classes/Payment.php';
 
 $order_id = $_GET['order_id'] ?? '';
