@@ -104,7 +104,6 @@ Payment
 │   - getPaymentStatusString(status_code): String
 │   - updateBookingStatus(booking_id, status): Boolean
 │   - getBookingIdByOrderId(order_id): int|null
-│   - generateTempEmail(name): String
 
 Seat
 │   - id: int

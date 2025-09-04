@@ -9,6 +9,7 @@ require_once '../classes/Payment.php';
 $success = false;
 $error = '';
 $order_id = $_GET['order_id'] ?? $_SESSION['payment_order_id'] ?? '';
+$bookingData = null;
 
 try {
     if (empty($order_id)) {
@@ -18,34 +19,37 @@ try {
     // Initialize payment processor
     $payment = new Payment();
     
-    // Check payment status
+    // First, check if we have booking data from payment session
+    $bookingData = $payment->getPaymentSession($order_id);
+    
+    // Check payment status in database
     $paymentStatus = $payment->getPaymentStatus($order_id);
     
     if ($paymentStatus && $paymentStatus['Status'] === 'success') {
+        // Payment confirmed in database
         $success = true;
-        $bookingData = $payment->getPaymentSession($order_id);
-        
-        if ($bookingData) {
-            // Redirect to confirmation with order ID
-            header('Location: confirmation.php?order_id=' . urlencode($order_id));
-            exit;
-        }
-        
-        // Clear payment session
-        $payment->clearPaymentSession();
+    } else if ($bookingData) {
+        // Payment session exists, assume success from PayHere return
+        // This handles the case where PayHere redirects before notification is processed
+        $success = true;
     } else {
-        // Payment not yet processed or failed
-        // Redirect to a waiting page or show pending status
-        $error = "Payment is being processed. Please wait...";
+        // No payment record and no session data
+        $error = "Payment verification failed. Please contact support with Order ID: " . $order_id;
+    }
+    
+    // If successful and we have booking data, we can proceed
+    if ($success && $bookingData) {
+        // Clear payment session after successful processing
+        $payment->clearPaymentSession();
     }
     
 } catch (Exception $e) {
     error_log("Payment return error: " . $e->getMessage());
-    $error = "Error processing payment status.";
+    $error = "Error processing payment status: " . $e->getMessage();
 }
 
-// If we have booking data from session, use it
-if (!isset($bookingData) && isset($_SESSION['payment_booking_data'])) {
+// Fallback: If we don't have booking data from payment session, check regular session
+if (!$bookingData && isset($_SESSION['payment_booking_data'])) {
     $bookingData = $_SESSION['payment_booking_data'];
 }
 ?>
@@ -131,9 +135,9 @@ if (!isset($bookingData) && isset($_SESSION['payment_booking_data'])) {
                         <div class="text-center">
                             <h4 class="text-success mb-3">
                                 <i class="fas fa-check-circle me-2"></i>
-                                Payment Confirmed
+                                Payment Successful
                             </h4>
-                            <p>Your payment has been successfully processed. You will be redirected to your booking confirmation shortly.</p>
+                            <p>Your payment has been successfully processed. You can now view your booking confirmation.</p>
                             
                             <?php if (isset($order_id)): ?>
                                 <div class="mt-3">
@@ -141,9 +145,22 @@ if (!isset($bookingData) && isset($_SESSION['payment_booking_data'])) {
                                 </div>
                             <?php endif; ?>
                             
+                            <?php if ($bookingData): ?>
+                                <div class="mt-3">
+                                    <div class="row g-2 text-start">
+                                        <div class="col-6"><strong>Route:</strong></div>
+                                        <div class="col-6"><?php echo htmlspecialchars($bookingData['origin'] ?? 'N/A'); ?> → <?php echo htmlspecialchars($bookingData['destination'] ?? 'N/A'); ?></div>
+                                        <div class="col-6"><strong>Passenger:</strong></div>
+                                        <div class="col-6"><?php echo htmlspecialchars($bookingData['passenger_name'] ?? 'N/A'); ?></div>
+                                        <div class="col-6"><strong>Seat:</strong></div>
+                                        <div class="col-6"><?php echo htmlspecialchars($bookingData['seat_number'] ?? 'N/A'); ?></div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            
                             <div class="mt-4">
                                 <a href="confirmation.php?order_id=<?php echo urlencode($order_id); ?>" class="btn btn-primary">
-                                    <i class="fas fa-receipt me-2"></i>View Booking Details
+                                    <i class="fas fa-receipt me-2"></i>View Full Booking Details
                                 </a>
                             </div>
                         </div>

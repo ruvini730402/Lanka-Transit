@@ -261,6 +261,87 @@ class Payment {
         $stmt->execute([$order_id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    
+    /**
+     * Create payment record for booking
+     * @param int $bookingId
+     * @param string $paymentMethod
+     * @param string $status
+     * @param float $amount
+     * @param string $transactionId
+     * @return bool
+     */
+    public function createPayment($bookingId, $paymentMethod, $status, $amount, $transactionId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO Payment (BookingId, PaymentMethod, Status, Amount, TransactionId, PaymentDate) 
+                VALUES (?, ?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE 
+                BookingId = VALUES(BookingId),
+                Status = VALUES(Status),
+                PaymentMethod = VALUES(PaymentMethod),
+                Amount = VALUES(Amount),
+                PaymentDate = NOW()
+            ");
+            
+            $result = $stmt->execute([
+                $bookingId,
+                $paymentMethod,
+                $status,
+                $amount,
+                $transactionId
+            ]);
+            
+            if ($result) {
+                error_log("Payment record created/updated for booking ID: $bookingId");
+                return true;
+            }
+            
+            return false;
+            
+        } catch (Exception $e) {
+            error_log("Payment creation error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get payment by booking ID
+     * @param int $bookingId
+     * @return array|null
+     */
+    public function getPaymentByBookingId($bookingId) {
+        $stmt = $this->pdo->prepare("
+            SELECT * FROM Payment 
+            WHERE BookingId = ? 
+            ORDER BY PaymentDate DESC 
+            LIMIT 1
+        ");
+        $stmt->execute([$bookingId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+    
+    /**
+     * Update payment status
+     * @param string $transactionId
+     * @param string $status
+     * @return bool
+     */
+    public function updatePaymentStatus($transactionId, $status) {
+        $stmt = $this->pdo->prepare("
+            UPDATE Payment 
+            SET Status = ?, PaymentDate = NOW() 
+            WHERE TransactionId = ?
+        ");
+        return $stmt->execute([$status, $transactionId]);
+    }
+    
+    /**
+     * Generate temporary email for guest users
+     * @param string $name
+     * @return string
+     */
+   
 
 }
 ?>
