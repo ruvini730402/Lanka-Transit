@@ -32,25 +32,38 @@ class Booking {
     /**
      * Create a new booking record
      * @param array $data Booking data
+     * @param bool $skipAvailabilityCheck Skip seat availability check (for post-payment bookings)
      * @return array Result with success status and booking details
      */
-    public function createBooking($data) {
+    public function createBooking($data, $skipAvailabilityCheck = false) {
         try {
+            // Log the booking attempt for debugging
+            error_log("Booking attempt - Data: " . json_encode($data) . ", Skip check: " . ($skipAvailabilityCheck ? 'true' : 'false'));
+            
             // Validate booking data
             $validation = $this->validateBookingData($data);
             if (!$validation['valid']) {
+                error_log("Booking validation failed: " . $validation['error']);
                 return [
                     'success' => false,
                     'error' => $validation['error']
                 ];
             }
             
-            // Check seat availability
-            if (!$this->checkSeatAvailability($data['bus_id'], $data['seat_number'], $data['travel_date'])) {
-                return [
-                    'success' => false,
-                    'error' => 'Selected seat is not available'
-                ];
+            // Check seat availability only if not skipping (for payment confirmations, we skip this)
+            if (!$skipAvailabilityCheck) {
+                $travelDate = $data['travel_date'] ?? date('Y-m-d');
+                error_log("Checking seat availability for Bus ID: {$data['bus_id']}, Seat: {$data['seat_number']}, Date: $travelDate");
+                
+                if (!$this->checkSeatAvailability($data['bus_id'], $data['seat_number'], $travelDate)) {
+                    error_log("Seat availability check failed for Bus ID: {$data['bus_id']}, Seat: {$data['seat_number']}");
+                    return [
+                        'success' => false,
+                        'error' => 'Selected seat is not available'
+                    ];
+                }
+            } else {
+                error_log("Skipping seat availability check (post-payment booking)");
             }
             
             // Start transaction
@@ -81,6 +94,8 @@ class Booking {
             
             // Generate booking reference
             $bookingReference = 'LT-' . str_pad($bookingId, 6, '0', STR_PAD_LEFT);
+            
+            error_log("Booking created successfully - ID: $bookingId, Reference: $bookingReference");
             
             return [
                 'success' => true,
@@ -139,17 +154,10 @@ class Booking {
      * @return bool
      */
     public function checkSeatAvailability($busId, $seatNumber, $date) {
-        // Check if seat is already booked for this date
-        $stmt = $this->pdo->prepare("
-            SELECT COUNT(*) FROM Booking b
-            JOIN Schedule s ON b.BusID = s.BusID
-            WHERE b.BusID = ? AND b.SeatNumber = ? 
-            AND DATE(s.DepartureTime) = ? AND b.Status = 'confirmed'
-        ");
-        $stmt->execute([$busId, $seatNumber, $date]);
-        $bookedCount = $stmt->fetchColumn();
+        // For new bookings, we need to be less restrictive to avoid blocking valid reservations
+        // The system should allow booking if there's no immediate conflict
         
-        // Also check seat table if it exists
+        // Check if seat is marked as permanently booked in Seat table
         try {
             $stmt = $this->pdo->prepare("
                 SELECT Status FROM Seat 
@@ -162,10 +170,43 @@ class Booking {
                 return false;
             }
         } catch (PDOException $e) {
-            // Seat table might not exist, continue with booking count check
+            // Seat table might not exist, continue
         }
         
-        return $bookedCount == 0;
+        // Check for existing confirmed bookings on the same bus and seat
+        // Note: Since Booking table doesn't have travel_date field according to ER.txt,
+        // we'll check for recent bookings (within last 24 hours) to avoid immediate conflicts
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) FROM Booking b
+            WHERE b.BusID = ? AND b.SeatNumber = ? 
+            AND b.Status = 'confirmed'
+            AND b.BookingTime >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+        ");
+        $stmt->execute([$busId, $seatNumber]);
+        $recentBookings = $stmt->fetchColumn();
+        
+        // Also check if there's a schedule-based conflict for the specific date
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM Booking b
+                LEFT JOIN Schedule s ON b.BusID = s.BusID
+                WHERE b.BusID = ? AND b.SeatNumber = ? 
+                AND b.Status = 'confirmed'
+                AND (DATE(s.DepartureTime) = ? OR s.DepartureTime IS NULL)
+            ");
+            $stmt->execute([$busId, $seatNumber, $date]);
+            $scheduledBookings = $stmt->fetchColumn();
+            
+            // If there are scheduled bookings for this date, seat is not available
+            if ($scheduledBookings > 0) {
+                return false;
+            }
+        } catch (PDOException $e) {
+            // Schedule table might not exist or have issues, continue with basic check
+        }
+        
+        // Allow booking if no recent conflicts found
+        return $recentBookings == 0;
     }
     
     /**

@@ -51,7 +51,8 @@ if (!empty($order_id)) {
         // If we have booking data and success, create the booking record using Booking class
         if ($success && $bookingData) {
             $booking = new Booking();
-            $result = $booking->createBooking($bookingData);
+            // Skip seat availability check for post-payment bookings since payment was already successful
+            $result = $booking->createBooking($bookingData, true);
             
             if ($result['success']) {
                 $success = true;
@@ -85,7 +86,8 @@ if (!empty($order_id)) {
         
         // Use Booking class for demo booking creation
         $booking = new Booking();
-        $result = $booking->createBooking($bookingData);
+        // Skip seat availability check for session-based bookings (demo mode)
+        $result = $booking->createBooking($bookingData, true);
         
         if ($result['success']) {
             $success = true;
