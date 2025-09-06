@@ -1,6 +1,11 @@
 <?php
 // Start the session at the top of the file
 session_start();
+
+// Include announcement class and fetch recent announcements
+require_once 'classes/Announcement.php';
+$announcement = new Announcement();
+$recentAnnouncements = $announcement->getRecentAnnouncements(3); // Get 3 most recent announcements
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,6 +64,58 @@ session_start();
             padding: 20px 0;
             width: 100%;
             text-align: center;
+        }
+        .announcements-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 60px 0;
+        }
+        .announcement-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 4px solid #800000;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .announcement-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .announcement-title {
+            color: #800000;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        .announcement-message {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .announcement-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .announcement-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #800000 0%, #4B0000 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        .no-announcements {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 40px;
         }
     </style>
 </head>
@@ -190,6 +247,63 @@ session_start();
                 </div>
             </div>
         </div>
+
+        <!-- Announcements Section -->
+        <?php if (!empty($recentAnnouncements)): ?>
+        <section class="announcements-section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="text-center mb-5">
+                            <h2 class="fw-bold" style="color: #800000;">
+                                <i class="fas fa-bullhorn me-3"></i>Latest Announcements
+                            </h2>
+                            <p class="lead text-muted">Stay updated with our latest news and important information</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <?php foreach ($recentAnnouncements as $announcement): ?>
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="announcement-card h-100">
+                            <div class="announcement-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <h5 class="announcement-title">
+                                <?php echo htmlspecialchars($announcement['title']); ?>
+                            </h5>
+                            <div class="announcement-message">
+                                <?php 
+                                $message = htmlspecialchars($announcement['message']);
+                                // Limit message length for card display
+                                if (strlen($message) > 150) {
+                                    $message = substr($message, 0, 150) . '...';
+                                }
+                                echo nl2br($message);
+                                ?>
+                            </div>
+                            <div class="announcement-date">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                <?php 
+                                $date = new DateTime($announcement['created_at']);
+                                echo $date->format('M j, Y g:i A'); 
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <!-- View All Announcements Link -->
+                <div class="text-center mt-4">
+                    <a href="pages/announcements.php" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-list me-2"></i>View All Announcements
+                    </a>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <!-- Features Section -->
         <section class="py-5 mt-5">

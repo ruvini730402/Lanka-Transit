@@ -51,6 +51,9 @@ Bus
 │   - capacity: int
 │   - lastUpdate: Date
 │   + searchBuses(origin, destination, travelDate, maxFare): Array
+│   + searchBusesWithFilters(origin, destination, travelDate, filters): Array
+│   + getFareRange(origin, destination): Array
+│   + getDepartureTimeRange(origin, destination): Array
 │   + getAvailableSeats(busId, travelDate): Array
 │   + isLadySeat(busId, seatNumber): Boolean
 │   + getBusDetails(busId): Array

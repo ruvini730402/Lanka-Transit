@@ -224,24 +224,6 @@ try {
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Auto-submit form after 3 seconds if user doesn't click
-        let countdown = 10;
-        const button = document.querySelector('.btn-payment');
-        const originalText = button.innerHTML;
-        
-        const timer = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                button.innerHTML = `<i class="fas fa-lock me-2"></i>Proceed to Payment (${countdown}s)`;
-            } else {
-                clearInterval(timer);
-                button.innerHTML = originalText;
-                // Auto-submit commented out for user control
-                // document.getElementById('paymentForm').submit();
-            }
-        }, 1000);
-    </script>
 </body>
 </html>
 

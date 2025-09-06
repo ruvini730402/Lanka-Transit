@@ -24,14 +24,25 @@ try {
     
     // Check payment status in database
     $paymentStatus = $payment->getPaymentStatus($order_id);
+    $paymentData = null;
     
     if ($paymentStatus && $paymentStatus['Status'] === 'success') {
         // Payment confirmed in database
         $success = true;
+        $paymentData = $paymentStatus;
     } else if ($bookingData) {
         // Payment session exists, assume success from PayHere return
         // This handles the case where PayHere redirects before notification is processed
         $success = true;
+        // Get payment data from session or create basic info
+        $paymentData = [
+            'OrderID' => $order_id,
+            'Amount' => $bookingData['amount'] ?? $bookingData['total_amount'] ?? 'N/A',
+            'Currency' => 'LKR',
+            'Status' => 'success',
+            'PaymentMethod' => 'PayHere',
+            'PaymentDate' => date('Y-m-d H:i:s')
+        ];
     } else {
         // No payment record and no session data
         $error = "Payment verification failed. Please contact support with Order ID: " . $order_id;
@@ -51,6 +62,25 @@ try {
 // Fallback: If we don't have booking data from payment session, check regular session
 if (!$bookingData && isset($_SESSION['payment_booking_data'])) {
     $bookingData = $_SESSION['payment_booking_data'];
+}
+
+// Additional fallback for amount if not found in payment data
+if ($success && $paymentData && ($paymentData['Amount'] === 'N/A' || empty($paymentData['Amount']))) {
+    // Try to get amount from booking data or session
+    $fallbackAmount = null;
+    
+    if ($bookingData) {
+        $fallbackAmount = $bookingData['amount'] ?? $bookingData['total_amount'] ?? $bookingData['fare'] ?? null;
+    }
+    
+    // Check session for amount
+    if (!$fallbackAmount && isset($_SESSION['payment_amount'])) {
+        $fallbackAmount = $_SESSION['payment_amount'];
+    }
+    
+    if ($fallbackAmount) {
+        $paymentData['Amount'] = $fallbackAmount;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -95,6 +125,15 @@ if (!$bookingData && isset($_SESSION['payment_booking_data'])) {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        #countdown {
+            font-weight: bold;
+            color: #28a745;
+            font-size: 1.1em;
+        }
+        .amount-display {
+            font-weight: 600;
+            color: #198754;
+        }
     </style>
 </head>
 <body>
@@ -115,7 +154,7 @@ if (!$bookingData && isset($_SESSION['payment_booking_data'])) {
                     <i class="fas fa-check-circle fa-4x text-success"></i>
                 </div>
                 <h1 class="display-4 fw-bold mb-3">Payment Successful!</h1>
-                <p class="lead mb-4">Redirecting to booking confirmation...</p>
+                <p class="lead mb-4">Redirecting to booking confirmation in <span id="countdown">3</span> seconds...</p>
             <?php else: ?>
                 <div class="mb-4">
                     <i class="fas fa-clock fa-4x text-warning"></i>
@@ -137,39 +176,85 @@ if (!$bookingData && isset($_SESSION['payment_booking_data'])) {
                                 <i class="fas fa-check-circle me-2"></i>
                                 Payment Successful
                             </h4>
-                            <p>Your payment has been successfully processed. You can now view your booking confirmation.</p>
+                            <p>Your payment has been successfully processed. Redirecting you to your booking confirmation...</p>
                             
-                            <?php if (isset($order_id)): ?>
+                            <?php if ($paymentData): ?>
+                                <div class="mt-4">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Details</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-2 text-start">
+                                                <div class="col-4"><strong>Order ID:</strong></div>
+                                                <div class="col-8"><code><?php echo htmlspecialchars($paymentData['OrderID'] ?? $order_id); ?></code></div>
+                                                
+                                                <div class="col-4"><strong>Amount:</strong></div>
+                                                <div class="col-8">
+                                                    <span class="amount-display">
+                                                    <?php 
+                                                    $amount = $paymentData['Amount'] ?? 'N/A';
+                                                    $currency = $paymentData['Currency'] ?? 'LKR';
+                                                    
+                                                    // Handle different amount formats
+                                                    if ($amount !== 'N/A' && is_numeric($amount)) {
+                                                        echo $currency . ' ' . number_format((float)$amount, 2);
+                                                    } else if ($amount !== 'N/A') {
+                                                        // Try to extract numeric value if it's a string with currency
+                                                        $numericAmount = preg_replace('/[^0-9.]/', '', $amount);
+                                                        if (is_numeric($numericAmount) && $numericAmount > 0) {
+                                                            echo $currency . ' ' . number_format((float)$numericAmount, 2);
+                                                        } else {
+                                                            echo $currency . ' ' . htmlspecialchars($amount);
+                                                        }
+                                                    } else {
+                                                        echo '<span class="text-muted">Amount not available</span>';
+                                                    }
+                                                    ?>
+                                                    </span>
+                                                </div>
+                                                
+                                                <div class="col-4"><strong>Status:</strong></div>
+                                                <div class="col-8">
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i><?php echo ucfirst($paymentData['Status'] ?? 'Success'); ?>
+                                                    </span>
+                                                </div>
+                                                
+                                                <div class="col-4"><strong>Method:</strong></div>
+                                                <div class="col-8"><?php echo htmlspecialchars($paymentData['PaymentMethod'] ?? 'PayHere'); ?></div>
+                                                
+                                                <?php if (isset($paymentData['PaymentDate'])): ?>
+                                                <div class="col-4"><strong>Date:</strong></div>
+                                                <div class="col-8"><?php echo date('M d, Y g:i A', strtotime($paymentData['PaymentDate'])); ?></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
                                 <div class="mt-3">
                                     <strong>Order ID:</strong> <code><?php echo htmlspecialchars($order_id); ?></code>
                                 </div>
                             <?php endif; ?>
-                            
-                            <?php if ($bookingData): ?>
-                                <div class="mt-3">
-                                    <div class="row g-2 text-start">
-                                        <div class="col-6"><strong>Route:</strong></div>
-                                        <div class="col-6"><?php echo htmlspecialchars($bookingData['origin'] ?? 'N/A'); ?> → <?php echo htmlspecialchars($bookingData['destination'] ?? 'N/A'); ?></div>
-                                        <div class="col-6"><strong>Passenger:</strong></div>
-                                        <div class="col-6"><?php echo htmlspecialchars($bookingData['passenger_name'] ?? 'N/A'); ?></div>
-                                        <div class="col-6"><strong>Seat:</strong></div>
-                                        <div class="col-6"><?php echo htmlspecialchars($bookingData['seat_number'] ?? 'N/A'); ?></div>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <div class="mt-4">
-                                <a href="confirmation.php?order_id=<?php echo urlencode($order_id); ?>" class="btn btn-primary">
-                                    <i class="fas fa-receipt me-2"></i>View Full Booking Details
-                                </a>
-                            </div>
                         </div>
                         
                         <script>
-                            // Auto-redirect after 3 seconds
-                            setTimeout(function() {
-                                window.location.href = 'confirmation.php?order_id=<?php echo urlencode($order_id); ?>';
-                            }, 3000);
+                            // Countdown and auto-redirect after 3 seconds
+                            let countdown = 3;
+                            const countdownElement = document.getElementById('countdown');
+                            
+                            const timer = setInterval(function() {
+                                countdown--;
+                                if (countdownElement) {
+                                    countdownElement.textContent = countdown;
+                                }
+                                
+                                if (countdown <= 0) {
+                                    clearInterval(timer);
+                                    window.location.href = 'confirmation.php?order_id=<?php echo urlencode($order_id); ?>';
+                                }
+                            }, 1000);
                         </script>
                     <?php else: ?>
                         <div class="text-center">

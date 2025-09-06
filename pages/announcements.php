@@ -1,167 +1,256 @@
 <?php
-require_once '../classes/Database.php';
+/**
+ * Announcements Page - Display all public announcements
+ */
+session_start();
+require_once '../classes/Announcement.php';
 
-$database = new Database();
-$connection = $database->getConnection();
-
-if ($connection) {
-    try {
-        // Fetch announcements directly from database
-        $stmt = $connection->prepare("SELECT * FROM announcements ORDER BY created_at DESC");
-        $stmt->execute();
-        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $announcements = [];
-        error_log("Error fetching announcements: " . $e->getMessage());
-    }
-} else {
-    $announcements = [];
-}
+$announcement = new Announcement();
+$allAnnouncements = $announcement->getAllAnnouncements();
+$totalCount = $announcement->getAnnouncementsCount();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Announcements</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Bootstrap CSS -->
+    <title>Announcements - Lanka Transit</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
     <style>
-        .btn-maroon-outline {
-            color: #800000;
-            border-color: #800000;
-        }
-        .btn-maroon-outline:hover {
-            background-color: #800000;
+        .hero-section {
+            background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
             color: white;
+            padding: 80px 0;
+        }
+        .announcement-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #800000;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .announcement-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .announcement-title {
+            color: #800000;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        .announcement-message {
+            color: #555;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+        .announcement-meta {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        .announcement-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .announcement-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #800000 0%, #4B0000 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            float: left;
+            margin-right: 20px;
+        }
+        .no-announcements {
+            text-align: center;
+            color: #6c757d;
+            padding: 60px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+        .stats-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            margin-top: -30px;
+            position: relative;
+            z-index: 10;
+        }
+        .content-section {
+            padding: 60px 0;
+            background: #f8f9fa;
         }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../index.php">
+                <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.php">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="announcements.php">Announcements</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="booking.php">
+                            <i class="fas fa-ticket-alt me-1"></i>Book Ticket
+                        </a>
+                    </li>
+                    <?php if (isset($_SESSION['email']) && isset($_SESSION['role'])): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?php echo $_SESSION['role'] === 'admin' ? '../Admin/admin.html' : 'dashboard.php'; ?>">
+                                <i class="fas fa-user me-1"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../auth/Logout.php">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login-form.php">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="register-form.php">Register</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-<div class="container mt-4">
-    <!-- Back Button -->
-    <a href="../index.php" class="btn btn-maroon-outline back-btn">&larr; Back</a>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <div class="mb-4">
+                <i class="fas fa-bullhorn fa-4x"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">Announcements</h1>
+            <p class="lead mb-4">Stay informed with our latest updates and important notices</p>
+        </div>
+    </section>
 
-
-    <h1 class="text-center mb-4">Announcements</h1>
-
-    <!-- Success Message -->
-    <?php if (isset($_GET['msg'])): ?>
-    <?php
-    $msg = $_GET['msg'];
-    $isDelete = stripos($msg, 'delete') !== false; // check if message contains "delete"
-    $alertClass = $isDelete ? 'alert-danger' : 'alert-success';
-    ?>
-    <div class="alert <?= $alertClass ?> alert-dismissible fade show" role="alert">
-        <?= htmlspecialchars($msg) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
-    
-
-    <!-- Add Button -->
-    <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-maroon" data-bs-toggle="modal" data-bs-target="#addModal">Add Announcement</button>
-    </div>
-
-    <!-- Announcements Table -->
-   <table class="table table-bordered table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Title</th>
-                <th>Content</th>
-                <th>Posted On</th>
-                <th>Update</th>
-                <th>Delete</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if (!empty($announcements)): ?>
-            <?php foreach ($announcements as $a): ?>
-                <tr>
-                    <td><?= htmlspecialchars($a['title']) ?></td>
-                    <td><?= htmlspecialchars($a['content']) ?></td>
-                    <td><?= htmlspecialchars($a['posted_date']) ?></td>
-                    <td>
-                        <a href="php/update_announcement.php?id=<?= $a['id'] ?>" class="btn btn-success btn-sm">Update</a>
-                    </td>
-                    <td>
-                        <!-- Delete Button triggers Modal -->
-                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal<?= $a['id'] ?>">
-                            Delete
-                        </button>
-
-                        <!-- Delete Confirmation Modal -->
-                        <div class="modal fade" id="deleteModal<?= $a['id'] ?>" tabindex="-1" aria-labelledby="deleteLabel<?= $a['id'] ?>" aria-hidden="true">
-                          <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-
-                              <div class="modal-header">
-                                <h5 class="modal-title" id="deleteLabel<?= $a['id'] ?>">Confirm Delete</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                              </div>
-
-                              <div class="modal-body">
-                                Are you sure you want to delete the announcement ?
-                              </div>
-
-                              <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <a href="php/delete_announcement.php?id=<?= $a['id'] ?>" class="btn btn-danger">Delete</a>
-                              </div>
-
-                            </div>
-                          </div>
-                        </div>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="5" class="text-center text-muted">No announcements found.</td>
-            </tr>
-        <?php endif; ?>
-        </tbody>
-    </table>
-</div>
-
-<!-- Add Announcement Modal -->
-<form action="php/insert_announcement.php" method="POST">
-    <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Announcement</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Stats Section -->
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="stats-card">
+                    <h3 class="text-primary mb-2"><?php echo $totalCount; ?></h3>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-newspaper me-2"></i>
+                        Total Announcements
+                    </p>
                 </div>
-
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Title</label>
-                        <input type="text" name="title" class="form-control" required minlength="3" maxlength="100">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Content</label>
-                        <textarea name="content" class="form-control" rows="4" required minlength="5" maxlength="1000"></textarea>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="submit" name="add_announcement" class="btn btn-maroon w-100">Add</button>
-                </div>
-
             </div>
         </div>
     </div>
-</form>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Announcements Content -->
+    <section class="content-section">
+        <div class="container">
+            <?php if (!empty($allAnnouncements)): ?>
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <?php foreach ($allAnnouncements as $announcement_item): ?>
+                            <div class="announcement-card">
+                                <div class="announcement-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                
+                                <div class="announcement-content">
+                                    <h3 class="announcement-title">
+                                        <?php echo htmlspecialchars($announcement_item['title']); ?>
+                                    </h3>
+                                    
+                                    <div class="announcement-message">
+                                        <?php echo nl2br(htmlspecialchars($announcement_item['message'])); ?>
+                                    </div>
+                                    
+                                    <div class="announcement-meta">
+                                        <div class="announcement-date">
+                                            <i class="fas fa-calendar-alt me-2"></i>
+                                            <?php 
+                                            $createdDate = new DateTime($announcement_item['created_at']);
+                                            echo 'Published: ' . $createdDate->format('F j, Y g:i A');
+                                            
+                                            // Show updated date if different from created date
+                                            if ($announcement_item['updated_at'] !== $announcement_item['created_at']) {
+                                                $updatedDate = new DateTime($announcement_item['updated_at']);
+                                                echo '<br><i class="fas fa-edit me-2"></i>Updated: ' . $updatedDate->format('F j, Y g:i A');
+                                            }
+                                            ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                
+                <!-- Back to Home -->
+                <div class="text-center mt-5">
+                    <a href="../index.php" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>Back to Home
+                    </a>
+                </div>
+                
+            <?php else: ?>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="no-announcements">
+                            <i class="fas fa-bullhorn fa-4x text-muted mb-4"></i>
+                            <h4 class="text-muted">No Announcements Available</h4>
+                            <p class="mb-4">There are currently no announcements to display. Please check back later for updates.</p>
+                            <a href="../index.php" class="btn btn-primary">
+                                <i class="fas fa-home me-2"></i>Return to Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
 
+    <!-- Footer -->
+    <footer class="text-white py-4" style="background-color: #800000;">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p>&copy; 2025 Lanka Transit. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
