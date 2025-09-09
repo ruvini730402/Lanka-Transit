@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
 	<link href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../assets/css/main.css' : 'assets/css/main.css'; ?>" rel="stylesheet">
 </head>
-<body style="padding-top: 80px;">
+<body style="padding-top: 60px;">
 	<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top" id="mainNavbar">
 		<div class="container">
 			<a class="navbar-brand d-flex align-items-center" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../index.php' : 'index.php'; ?>">
