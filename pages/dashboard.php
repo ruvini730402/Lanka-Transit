@@ -153,55 +153,17 @@ if ($userId && $conn) {
     }
 }
 
-// Fetch latest announcements - Using only complete_schema_with_data.sql data
+// Fetch latest announcements - Get the most recent announcements from database
 $latestAnnouncements = [];
 if ($conn) {
     try {
-        // Query specifically for the announcements that should be in complete_schema_with_data.sql
-        $stmt = $conn->prepare("SELECT title, message, created_at FROM Announcements WHERE title IN ('Service Update', 'Maintenance Notice', 'Holiday Special', 'Safety Protocol Update', 'Route Expansion', 'Customer Service') ORDER BY created_at DESC LIMIT 3");
+        // Get the 3 most recent announcements ordered by creation date (latest first)
+        $stmt = $conn->prepare("SELECT title, message, created_at FROM Announcements ORDER BY created_at DESC LIMIT 3");
         $stmt->execute();
         $latestAnnouncements = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // If those aren't found, fallback to hardcoded data from complete_schema_with_data.sql
-        if (empty($latestAnnouncements)) {
-            $latestAnnouncements = [
-                [
-                    'title' => 'Service Update',
-                    'message' => 'New bus route from Badulla to Matara now available with enhanced comfort features.',
-                    'created_at' => '2025-08-08 ' . date('H:i:s')
-                ],
-                [
-                    'title' => 'Maintenance Notice', 
-                    'message' => 'Scheduled maintenance on Route 1 buses every Sunday from 6 AM to 8 AM.',
-                    'created_at' => '2025-08-07 ' . date('H:i:s')
-                ],
-                [
-                    'title' => 'Holiday Special',
-                    'message' => 'Special discount rates available for advance bookings during holiday season.',
-                    'created_at' => '2025-08-06 ' . date('H:i:s')
-                ]
-            ];
-        }
     } catch (PDOException $e) {
         error_log("Error fetching announcements: " . $e->getMessage());
-        // Fallback to hardcoded data from complete_schema_with_data.sql
-        $latestAnnouncements = [
-            [
-                'title' => 'Service Update',
-                'message' => 'New bus route from Badulla to Matara now available with enhanced comfort features.',
-                'created_at' => '2025-08-08 ' . date('H:i:s')
-            ],
-            [
-                'title' => 'Maintenance Notice', 
-                'message' => 'Scheduled maintenance on Route 1 buses every Sunday from 6 AM to 8 AM.',
-                'created_at' => '2025-08-07 ' . date('H:i:s')
-            ],
-            [
-                'title' => 'Holiday Special',
-                'message' => 'Special discount rates available for advance bookings during holiday season.',
-                'created_at' => '2025-08-06 ' . date('H:i:s')
-            ]
-        ];
+        $latestAnnouncements = [];
     }
 }
 ?><!DOCTYPE html>
