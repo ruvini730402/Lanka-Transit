@@ -86,7 +86,7 @@ $bookingHistory = [];
 $recentBooking = null;
 
 if ($userId && $conn) {
-    // Get upcoming bookings (future dates)
+    // Get user's bookings - BookingTime appears to be used as travel date in this database
     $stmt = $conn->prepare("
         SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
                bus.BusNumber, r.Origin, r.Destination
@@ -94,21 +94,36 @@ if ($userId && $conn) {
         JOIN Bus bus ON b.BusID = bus.ID
         LEFT JOIN Route r ON bus.RouteId = r.ID
         WHERE b.UserId = ? AND b.Status = 'confirmed'
-        ORDER BY b.BookingTime DESC
-        LIMIT 10
+        ORDER BY b.BookingTime ASC
     ");
     $stmt->execute([$userId]);
     $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Debug: Log what we found
+    error_log("DEBUG: Found " . count($allBookings) . " bookings for user " . $userId);
+    if (!empty($allBookings)) {
+        error_log("DEBUG: First booking: " . print_r($allBookings[0], true));
+    }
+    
     $currentDate = date('Y-m-d');
+    $currentDateTime = date('Y-m-d H:i:s');
+    
     foreach ($allBookings as $booking) {
-        $bookingDate = date('Y-m-d', strtotime($booking['BookingTime']));
-        if ($bookingDate >= $currentDate) {
+        // Compare full datetime for more accurate results
+        $bookingDateTime = $booking['BookingTime'];
+        
+        // For upcoming: booking datetime should be in the future
+        if ($bookingDateTime > $currentDateTime) {
             $upcomingBookings[] = $booking;
         } else {
             $bookingHistory[] = $booking;
         }
     }
+    
+    // Debug: Log results
+    error_log("DEBUG: Upcoming bookings: " . count($upcomingBookings));
+    error_log("DEBUG: Historical bookings: " . count($bookingHistory));
+    error_log("DEBUG: Current datetime: " . $currentDateTime);
     
     // Get most recent booking for rebooking section
     if (!empty($allBookings)) {
@@ -315,7 +330,6 @@ if ($conn) {
           <li class="active"><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
           <li><a href="feedback.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
           <li><a href="incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
-          <li><a href="search.php"><i class="fas fa-search"></i> Search Buses</a></li>
         </ul>
       </nav>
       <div class="logout">
@@ -371,10 +385,10 @@ if ($conn) {
             <thead>
               <tr>
                 <th>Bus No.</th>
-                <th>Date</th>
+                <th>Travel Date & Time</th>
                 <th>From</th>
                 <th>To</th>
-                <th>Booked Seats</th>
+                <th>Seat</th>
                 <th>Fare (LKR)</th>
               </tr>
             </thead>
@@ -383,7 +397,7 @@ if ($conn) {
                 <?php foreach ($upcomingBookings as $booking): ?>
                 <tr>
                   <td><?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></td>
-                  <td><?= date('Y-m-d', strtotime($booking['BookingTime'])) ?></td>
+                  <td><?= date('M j, Y \a\t g:i A', strtotime($booking['BookingTime'])) ?></td>
                   <td><?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
