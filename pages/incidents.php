@@ -54,7 +54,6 @@ $database->closeConnection();
     }
     .container {
         max-width: 900px;
-        margin-top: 20px;
         padding: 0 15px;
     }
     .form-section {
@@ -107,6 +106,7 @@ $database->closeConnection();
       width: calc(100% - 250px) !important;
       padding: 0 !important;
       max-width: none !important;
+      margin-top: 0 !important;
     }
     
     .main-content {
@@ -114,6 +114,7 @@ $database->closeConnection();
       min-height: calc(100vh - 100px);
       padding: 20px !important;
       margin: 0 !important;
+      margin-top: 0 !important;
       width: 100%;
       overflow-x: hidden;
     }
@@ -129,58 +130,10 @@ $database->closeConnection();
     }
   </style>
     
-    .form-section {
-      margin-left: 0 !important;
-      margin-top: 0 !important;
-      margin-bottom: 0 !important;
-    }
-    
-    /* Remove all container padding and margins */
-    .container {
-      max-width: none !important;
-      margin-top: 0 !important;
-      padding: 0 !important;
-    }
-    
-    /* Ensure content starts at the edge */
-    div.container:not(.sidebar .container) {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      padding-top: 0 !important;
-      margin: 0 !important;
-    }
-    
-    /* Footer positioning fix */
-    footer {
-      position: relative !important;
-      clear: both !important;
-      width: 100% !important;
-      margin-left: 0 !important;
-      z-index: 1 !important;
-    }
-    
-    .footer-container {
-      margin-left: 250px;
-      padding: 20px;
-    }
-    
-    @media (max-width: 768px) {
-      .footer-container {
-        margin-left: 0;
-      }
-    }
-  </style>
+  
 </head>
 <body>
   <div class="container">
-    <!-- Add back navigation -->
-    <div class="back-navigation" style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-      <a href="../index.php" class="back-btn" style="display: inline-flex; align-items: center; padding: 8px 12px; background: #800000; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">
-        <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
-        Back to Home
-      </a>
-    </div>
-    
     <div class="sidebar">
       <div class="logo">
         <a href="../index.php">
