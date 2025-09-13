@@ -85,7 +85,7 @@ session_start();
                     <?php if (isset($_SESSION['email']) && isset($_SESSION['role'])): ?>
                         <!-- User is logged in -->
                         <li class="nav-item">
-                            <a class="nav-link" href="<?php echo $_SESSION['role'] === 'admin' ? 'Admin/admin.html' : 'pages/dashboard.php'; ?>">
+                            <a class="nav-link" href="<?php echo $_SESSION['role'] === 'admin' ? 'pages/admin.php' : 'pages/dashboard.php'; ?>">
                                 <i class="fas fa-user me-1"></i>Dashboard
                             </a>
                         </li>
