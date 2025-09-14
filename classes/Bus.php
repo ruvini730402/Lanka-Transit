@@ -1,13 +1,25 @@
 <?php
-require_once "Database.php";
+//require_once '../config/database.php';
 
+/**
+ * Bus Class
+ * Handles bus-related operations including search functionality
+ */
 class Bus {
     private $conn;
-
-    public function __construct() {
-        $this->conn = Database::getConnection();
+    private $table_name = "Bus";
+    
+    // Bus properties
+    public $id;
+    public $routeId;
+    public $adminId;
+    public $busNumber;
+    public $capacity;
+    public $lastUpdate;
+    
+    public function __construct($db) {
+        $this->conn = $db;
     }
-
     
     /**
      * Search buses with advanced filters
@@ -34,48 +46,12 @@ class Bus {
         
         if (!Database::validateInput($travelDate, 'date')) {
             return ['error' => 'Please enter a valid travel date in the correct format.'];
-
         }
-        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
-    }
-
-    // Get all buses
-    public function getAllBuses() {
-        $stmt = $this->conn->prepare("
-            SELECT b.ID, b.BusNumber, b.Capacity, b.LastUpdate, 
-                   r.ID AS RouteID, r.Origin, r.Destination,
-                   a.ID AS AdminID
-            FROM Bus b
-            LEFT JOIN Route r ON b.RouteId = r.ID
-            LEFT JOIN Admin a ON b.AdminId = a.ID
-            ORDER BY b.ID DESC
-        ");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    // Get single bus
-    public function getBus($id) {
-        $stmt = $this->conn->prepare("
-            SELECT b.ID, b.BusNumber, b.Capacity, b.LastUpdate, 
-                   b.RouteId, b.AdminId,
-                   r.Origin, r.Destination
-            FROM Bus b
-            LEFT JOIN Route r ON b.RouteId = r.ID
-            LEFT JOIN Admin a ON b.AdminId = a.ID
-            WHERE b.ID = ?
-        ");
-        $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // Add new bus
-    public function addBus($routeId, $adminId, $busNumber, $capacity, $lastUpdate) {
-        // Validate bus number format
-        if (!$this->validateBusNumber($busNumber)) {
-            throw new Exception("Invalid bus number format. Must be NB-#### (four numbers)");
+        
+        // Check if travel date is not in the past
+        if (strtotime($travelDate) < strtotime(date('Y-m-d'))) {
+            return ['error' => 'Travel date must be today or a future date. Please select a valid date.'];
         }
-
         
         // Build base query - Modified to include intermediate stops
         $query = "SELECT DISTINCT 
@@ -190,16 +166,8 @@ class Bus {
         } catch(PDOException $exception) {
             error_log("Search error: " . $exception->getMessage());
             return ['error' => 'We are experiencing technical difficulties. Please try your search again in a few moments.'];
-
         }
-
-        $stmt = $this->conn->prepare("
-            INSERT INTO Bus (RouteId, AdminId, BusNumber, Capacity, LastUpdate) 
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        return $stmt->execute([$routeId, $adminId, $busNumber, $capacity, $lastUpdate]);
     }
-
     
     /**
      * Get fare range for a specific route
@@ -297,75 +265,129 @@ class Bus {
                 ];
             }
             return ['success' => true, 'data' => $seats];
-
         }
-
-        // Validate bus capacity
-        if (!$this->validateCapacity($capacity)) {
-            throw new Exception("Invalid bus capacity. Must be either 49 or 54 seats");
+        
+        $query = "SELECT 
+                    s.SeatNumber,
+                    s.GenderPreference,
+                    s.IsLadySeat,
+                    CASE 
+                        WHEN b.ID IS NOT NULL THEN 'booked'
+                        ELSE 'available'
+                    END as status
+                  FROM Seat s
+                  LEFT JOIN Booking b ON s.BusID = b.BusID 
+                    AND s.SeatNumber = b.SeatNumber 
+                    AND b.Status = 'confirmed'
+                    AND DATE(b.BookingTime) = :travel_date
+                  WHERE s.BusID = :bus_id
+                  ORDER BY s.SeatNumber";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([
+                ':bus_id' => $busId,
+                ':travel_date' => $travelDate
+            ]);
+            
+            $seats = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $seats[] = [
+                    'seat_number' => $row['SeatNumber'],
+                    'gender_preference' => $row['GenderPreference'],
+                    'is_lady_seat' => (bool)$row['IsLadySeat'],
+                    'status' => $row['status']
+                ];
+            }
+            
+            return ['success' => true, 'data' => $seats];
+            
+        } catch(PDOException $exception) {
+            error_log("Seat availability error: " . $exception->getMessage());
+            return ['error' => 'Unable to load seat information. Please refresh the page and try again.'];
         }
-
-        // Validate route ID
-        if (!$this->validateRoute($routeId)) {
-            throw new Exception("Invalid route ID. The specified route does not exist");
-        }
-
-        $stmt = $this->conn->prepare("
-            UPDATE Bus 
-            SET RouteId = ?, AdminId = ?, BusNumber = ?, Capacity = ?, LastUpdate = ?
-            WHERE ID = ?
-        ");
-        return $stmt->execute([$routeId, $adminId, $busNumber, $capacity, $lastUpdate, $id]);
     }
-
-    // Delete bus
-    public function deleteBus($id) {
-        $stmt = $this->conn->prepare("DELETE FROM Bus WHERE ID = ?");
-        return $stmt->execute([$id]);
+    
+    /**
+     * Check if a seat is a lady seat
+     * @param int $busId
+     * @param string $seatNumber
+     * @return bool
+     */
+    public function isLadySeat($busId, $seatNumber) {
+        $busId = (int)$busId;
+        $seatNumber = Database::sanitizeInput($seatNumber);
+        
+        $query = "SELECT IsLadySeat FROM Seat WHERE BusID = :bus_id AND SeatNumber = :seat_number";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([
+                ':bus_id' => $busId,
+                ':seat_number' => $seatNumber
+            ]);
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ? (bool)$result['IsLadySeat'] : false;
+            
+        } catch(PDOException $exception) {
+            error_log("Lady seat check error: " . $exception->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get bus details by ID
+     * @param int $busId
+     * @return array
+     */
+    public function getBusDetails($busId) {
+        $busId = (int)$busId;
+        
+        $query = "SELECT 
+                    b.ID,
+                    b.BusNumber,
+                    b.Capacity,
+                    r.Origin,
+                    r.Destination,
+                    r.Stops,
+                    s.DepartureTime,
+                    s.ArrivalTime,
+                    s.Fare
+                  FROM " . $this->table_name . " b
+                  INNER JOIN Route r ON b.RouteId = r.ID
+                  INNER JOIN Schedule s ON b.ID = s.BusID
+                  WHERE b.ID = :bus_id";
+        
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':bus_id' => $busId]);
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result) {
+                return [
+                    'success' => true,
+                    'data' => [
+                        'bus_id' => $result['ID'],
+                        'bus_number' => $result['BusNumber'],
+                        'capacity' => $result['Capacity'],
+                        'origin' => $result['Origin'],
+                        'destination' => $result['Destination'],
+                        'stops' => $result['Stops'],
+                        'departure_time' => $result['DepartureTime'],
+                        'arrival_time' => $result['ArrivalTime'],
+                        'fare' => $result['Fare']
+                    ]
+                ];
+            } else {
+                return ['error' => 'Bus not found. This bus may no longer be available for booking.'];
+            }
+            
+        } catch(PDOException $exception) {
+            error_log("Bus details error: " . $exception->getMessage());
+            return ['error' => 'Unable to load bus details. Please try again.'];
+        }
     }
 }
-  // Validate bus number format (NB-####)
-    private function validateBusNumber($busNumber) {
-        return preg_match('/^NB-\d{4}$/', $busNumber);
-    }
-
-    // Validate bus capacity (must be 54 or 49)
-    private function validateCapacity($capacity) {
-        return in_array($capacity, [49, 54]);
-    }
-
-    // Validate if route exists
-    private function validateRoute($routeId) {
-        $stmt = $this->conn->prepare("SELECT ID FROM Route WHERE ID = ?");
-        $stmt->execute([$routeId]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
-    }
-
-    // Check if bus number already exists
-    private function isBusNumberDuplicate($busNumber, $excludeId = null) {
-        if ($excludeId) {
-            $stmt = $this->conn->prepare("SELECT ID FROM Bus WHERE BusNumber = ? AND ID != ?");
-            $stmt->execute([$busNumber, $excludeId]);
-        } else {
-            $stmt = $this->conn->prepare("SELECT ID FROM Bus WHERE BusNumber = ?");
-            $stmt->execute([$busNumber]);
-           // Check for duplicate bus number
-        if ($this->isBusNumberDuplicate($busNumber)) {
-            throw new Exception("Bus number already exists. Please use a different bus number");
-        }
-
-        // Validate bus capacity
-        if (!$this->validateCapacity($capacity)) {
-            throw new Exception("Invalid bus capacity. Must be either 49 or 54 seats");
-        }
-
-        // Validate route ID
-        if (!$this->validateRoute($routeId)) {
-            throw new Exception("Invalid route ID. The specified route does not exist");
-          
-          // Update bus
-    public function updateBus($id, $routeId, $adminId, $busNumber, $capacity, $lastUpdate) {
-        // Validate bus number format
-        if (!$this->validateBusNumber($busNumber)) {
-            throw new Exception("Invalid bus number format. Must be NB-#### (four numbers)");
 ?>

@@ -209,7 +209,7 @@
             <!-- Auto-redirect after 2 seconds -->
             <script>
               setTimeout(() => {
-                window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? 'admin.php' : 'dashboard.php'; ?>";
+                window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? '../Admin/admin.html' : 'dashboard.php'; ?>";
               }, 2000);
             </script>
           <?php endif; ?>
@@ -254,7 +254,7 @@
   <?php if (isset($_SESSION['role'])): ?>
   <script>
     setTimeout(() => {
-      window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? 'admin.php' : 'dashboard.php'; ?>";
+      window.location.href = "<?php echo ($_SESSION['role'] === 'admin') ? '../Admin/admin.html' : 'dashboard.php'; ?>";
     }, 2000);
   </script>
   <?php endif; ?>
