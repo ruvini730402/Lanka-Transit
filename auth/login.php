@@ -33,7 +33,7 @@ try {
         $redirectPage = $res['redirect'] ?? 'dashboard.php';
         
         if ($redirectPage === 'admin_dashboard.php') {
-            header("Location: ../pages/admin.php");
+            header("Location: ../Admin/admin.html");
         } else {
             header("Location: ../pages/dashboard.php");
         }
