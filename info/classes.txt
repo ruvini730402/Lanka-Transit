@@ -2,15 +2,13 @@ CLASS DIAGRAM REFERENCE - Lanka Transit Project
 
 === CLASSES FOR DIAGRAM ===
 
-Database (config/database.php)
-│   - host: String
-│   - db_name: String
-│   - username: String
-│   - password: String
+Database (classes/Database.php)
 │   - conn: PDO
-│   + getConnection(): PDO
-│   + sanitizeInput(data): String
-│   + validateInput(data, type): Boolean
+│   + getConnection(): PDO|null
+│   + closeConnection(): void
+│   + executeQuery(query, params): PDOStatement|false
+│   + sanitizeInput(data): String (static)
+│   + validateInput(data, type): Boolean (static)
 
 Auth
 │   - user: User
@@ -53,6 +51,9 @@ Bus
 │   - capacity: int
 │   - lastUpdate: Date
 │   + searchBuses(origin, destination, travelDate, maxFare): Array
+│   + searchBusesWithFilters(origin, destination, travelDate, filters): Array
+│   + getFareRange(origin, destination): Array
+│   + getDepartureTimeRange(origin, destination): Array
 │   + getAvailableSeats(busId, travelDate): Array
 │   + isLadySeat(busId, seatNumber): Boolean
 │   + getBusDetails(busId): Array
@@ -90,16 +91,22 @@ Booking
 │   + updateGender(bookingId, gender): Boolean
 
 Payment
-│   - id: int
-│   - bookingId: int
-│   - paymentMethod: String
-│   - status: String
-│   - amount: float
-│   - paymentDate: DateTime
-│   - transactionId: String
-│   + processPayment(bookingId, amount, method): Boolean
-│   + updatePaymentStatus(id, status): Boolean
-│   + getPaymentByBooking(bookingId): Array|null
+│   - pdo: PDO
+│   - merchant_id: String
+│   - merchant_secret: String
+│   - sandbox_mode: Boolean
+│   + __construct(pdo): void
+│   + generatePaymentForm(bookingData): Array
+│   + verifyPayment(notification_data): Boolean
+│   + processPaymentNotification(notification_data): Boolean
+│   + getPaymentStatus(order_id): Array|false
+│   + storePaymentSession(order_id, booking_data): void
+│   + getPaymentSession(order_id): Array|null
+│   + clearPaymentSession(): void
+│   - generateHash(order_id, amount, currency): String
+│   - getPaymentStatusString(status_code): String
+│   - updateBookingStatus(booking_id, status): Boolean
+│   - getBookingIdByOrderId(order_id): int|null
 
 Seat
 │   - id: int

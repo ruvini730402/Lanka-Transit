@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Include database configuration
-require_once '../config/database.php';
+require_once '../classes/Database.php';
 
 // Get database connection
 $database = new Database();

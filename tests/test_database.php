@@ -4,7 +4,7 @@
  * Tests database connectivity and table structure
  */
 
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../classes/Database.php';
 
 echo "<h1>Lanka Transit - Database Connection Tests</h1>";
 echo "<hr>";

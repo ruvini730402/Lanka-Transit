@@ -68,7 +68,7 @@ if (!empty($nic) && !preg_match('/^(\d{9}[vVxX]|\d{12})$/', $nic)) {
 }
 
 try {
-    require_once '../classes/Database.php';
+    require_once '../classes/database[WRONG].php';
     $pdo = Database::getConnection();
     
     // Check if seat is already booked for this date
@@ -113,8 +113,8 @@ try {
     // Store booking data in session
     $_SESSION['booking_data'] = $booking_data;
     
-    // Redirect to confirmation page
-    header('Location: confirmation.php');
+    // Redirect to payment page instead of confirmation
+    header('Location: payment.php');
     exit;
     
 } catch (Exception $e) {

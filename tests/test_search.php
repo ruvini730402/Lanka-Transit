@@ -1,10 +1,10 @@
 <?php
 /**
- * Test script for Lanka Transit search functionality
- * This script tests database connectivity and search operations
+ * Search Functionality Test
+ * Tests the bus search feature
  */
 
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/Bus.php';
 
 echo "<h2>Lanka Transit - Search Functionality Test</h2>";

@@ -1,9 +1,9 @@
 <?php
 /**
- * Test script for August 2025 data
+ * Complete Test Suite - August 2025
  */
 
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/Bus.php';
 
 echo "<h2>Lanka Transit - August 2025 Data Test</h2>";

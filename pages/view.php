@@ -8,7 +8,7 @@
 if (isset($_GET['api']) && $_GET['api'] === 'seats') {
     header('Content-Type: application/json');
     
-    require_once '../classes/Database.php';
+    require_once '../classes/database[WRONG].php';
     require_once '../classes/Bus.php';
     
     if (!isset($_GET['bus_id']) || !isset($_GET['date'])) {
@@ -127,7 +127,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'seats') {
 
                 <?php
                 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    require_once __DIR__ . '/../classes/Database.php';
+                    require_once __DIR__ . '/../classes/database[WRONG].php';
 
                     $id = trim($_POST['identifier']);
 

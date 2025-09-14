@@ -1,6 +1,6 @@
 <?php
 // Include database configuration
-require_once '../config/database.php';
+require_once '../classes/Database.php';
 
 // Get database connection
 $database = new Database();
@@ -11,11 +11,22 @@ if (!$conn) {
 }
 
 // Get form data
-$userId   = $_POST['user_id'] ?? null;
-$busId    = filter_var($_POST['bus_id'] ?? null, FILTER_VALIDATE_INT);
-$comment  = trim($_POST['comment'] ?? '');
-$rating   = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
+$userId    = $_POST['user_id'] ?? null;
+$bookingId = filter_var($_POST['booking_id'] ?? null, FILTER_VALIDATE_INT);
+$comment   = trim($_POST['comment'] ?? '');
+$rating    = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
 $createdDate = date("Y-m-d");
+
+// Get bus ID from booking
+$busId = null;
+if ($bookingId) {
+    $stmt = $conn->prepare("SELECT BusID FROM Booking WHERE ID = ?");
+    $stmt->execute([$bookingId]);
+    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($booking) {
+        $busId = $booking['BusID'];
+    }
+}
 
 // Additional validation
 if ($userId !== null && !is_numeric($userId)) {
@@ -27,8 +38,16 @@ if ($rating !== false && ($rating < 1 || $rating > 5)) {
 }
 
 // Validation
-if ($busId === false || $busId === null || $rating === false || $rating === null) {
-    $response = "❌ Missing required fields. Please fill out the form completely.";
+if ($bookingId === false || $bookingId === null || $busId === null || $rating === false || $rating === null) {
+    if ($bookingId === false || $bookingId === null) {
+        $response = "❌ Please select a trip to review.";
+    } elseif ($busId === null) {
+        $response = "❌ Invalid booking selection. Please try again.";
+    } elseif ($rating === false || $rating === null) {
+        $response = "❌ Please provide a rating for your trip.";
+    } else {
+        $response = "❌ Missing required fields. Please fill out the form completely.";
+    }
     $statusClass = "danger";
 } else {
     // Prepare SQL
