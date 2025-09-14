@@ -190,245 +190,7 @@ if ($conn) {
 
   <link rel="stylesheet" href="../assets/css/user-dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <style>
-    .announcements-container {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    
-    .announcement-card {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border: 1px solid #dee2e6;
-      border-left: 4px solid #800000;
-      border-radius: 8px;
-      padding: 20px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    
-    .announcement-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .announcement-header {
-      display: flex;
-      justify-content: between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .announcement-title {
-      color: #800000;
-      font-size: 18px;
-      font-weight: 600;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-    }
-    
-    .announcement-title i {
-      font-size: 16px;
-    }
-    
-    .announcement-date {
-      color: #6c757d;
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-    }
-    
-    .announcement-content {
-      color: #495057;
-      line-height: 1.6;
-    }
-    
-    .announcement-content p {
-      margin: 0;
-      font-size: 15px;
-    }
-    
-    .no-announcements {
-      text-align: center;
-      padding: 40px 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 2px dashed #dee2e6;
-    }
-    
-    .back-navigation {
-      position: fixed !important;
-      top: 20px !important;
-      left: 20px !important;
-      z-index: 1000 !important;
-    }
-    
-    .back-btn:hover {
-      background: #a00000 !important;
-      transform: translateY(-1px);
-    }
-    
-    @media (max-width: 768px) {
-      .announcement-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-      
-      .announcement-title {
-        font-size: 16px;
-      }
-      
-      .back-navigation {
-        display: none !important;
-      }
-      
-      .sidebar {
-        display: none !important; /* Hide sidebar on mobile */
-      }
-      
-      /* Show top navigation on mobile only */
-      .top-nav {
-        display: flex !important;
-      }
-      
-      .nav-tabs {
-        display: flex !important;
-      }
-      
-      .container {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-      }
-      
-      .main-content {
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-    }
-    
-    /* Top Navigation Bar - MOBILE ONLY */
-    .top-nav {
-      background: linear-gradient(135deg, #8B0000, #A52A2A);
-      color: white;
-      padding: 15px 20px;
-      display: none; /* Hidden on desktop */
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    
-    .top-nav .logo-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .logo-section img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-    
-    .top-nav .user-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .user-section img {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      border: 2px solid white;
-    }
-    
-    .nav-tabs {
-      display: none; /* Hidden on desktop */
-      justify-content: center;
-      background: #8B0000;
-      padding: 0;
-      margin: 0;
-      border-bottom: 3px solid #A52A2A;
-    }
-    
-    .nav-tabs a {
-      flex: 1;
-      text-align: center;
-      padding: 15px 10px;
-      color: white;
-      text-decoration: none;
-      border-right: 1px solid rgba(255,255,255,0.2);
-      transition: background-color 0.3s ease;
-      font-weight: 500;
-    }
-    
-    .nav-tabs a:last-child {
-      border-right: none;
-    }
-    
-    .nav-tabs a.active,
-    .nav-tabs a:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .nav-tabs a.active {
-      background: rgba(255,255,255,0.2);
-      border-bottom: 3px solid white;
-    }
-    
-    /* Dropdown functionality */
-    .user-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 100%;
-      background-color: white;
-      min-width: 120px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 1001;
-      margin-top: 5px;
-    }
-    
-    .dropdown-content a {
-      color: #333 !important;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 5px;
-    }
-    
-    .dropdown-content a:hover {
-      background-color: #f1f1f1;
-    }
-    
-    .user-dropdown.show .dropdown-content {
-      display: block;
-    }
-    
-    .user-section {
-      cursor: pointer;
-    }
-  </style>
+
 </head>
 <body>
   <div class="container">
@@ -468,21 +230,13 @@ if ($conn) {
       </a>
     </div>
     
-    <!-- Add back navigation -->
-    <div class="back-navigation" style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-      <a href="../index.php" class="back-btn" style="display: inline-flex; align-items: center; padding: 8px 12px; background: #800000; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">
-        <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
-        Back to Home
-      </a>
-    </div>
-    
     <div class="sidebar">
       <div class="logo">
         <a href="../index.php">
           <img src="../assets/images/uploads/dd.png" alt="LankaTransit Logo">
         </a>
       </div>
-    <hr style="height: 1px; background-color: #ccc; border: none; width: 100%; margin: 1px auto 15px auto;">
+    <hr class="sidebar-hr">
 
       <div class="user-profile">
         <div class="user-icon">
@@ -542,8 +296,8 @@ if ($conn) {
             <?php endforeach; ?>
           <?php else: ?>
             <div class="no-announcements">
-              <i class="fas fa-info-circle" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
-              <p style="color: #666; font-size: 16px;">No announcements available at this time.</p>
+              <i class="fas fa-info-circle no-announcements-icon"></i>
+              <p class="no-announcements-text">No announcements available at this time.</p>
             </div>
           <?php endif; ?>
         </div>
@@ -578,7 +332,7 @@ if ($conn) {
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6" style="text-align: center; color: #666;">No upcoming bookings found</td>
+                  <td colspan="6" class="table-empty-message">No upcoming bookings found</td>
                 </tr>
               <?php endif; ?>
             </tbody>
@@ -639,14 +393,14 @@ if ($conn) {
                 else:
               ?>
                 <tr>
-                  <td colspan="5" style="text-align: center; color: #666;">No frequent trips found</td>
+                  <td colspan="5" class="table-empty-message">No frequent trips found</td>
                 </tr>
               <?php 
                 endif;
               } else {
               ?>
                 <tr>
-                  <td colspan="5" style="text-align: center; color: #666;">Please log in to view frequent trips</td>
+                  <td colspan="5" class="table-empty-message">Please log in to view frequent trips</td>
                 </tr>
               <?php } ?>
             </tbody>
@@ -682,7 +436,7 @@ if ($conn) {
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6" style="text-align: center; color: #666;">No booking history found</td>
+                  <td colspan="6" class="table-empty-message">No booking history found</td>
                 </tr>
               <?php endif; ?>
             </tbody>
@@ -699,7 +453,7 @@ if ($conn) {
               <i class="far fa-calendar-alt rebooking-icon"></i>
               <div>
                 <p class="route"><?= htmlspecialchars($userPreferences['from']) ?> &rarr; <?= htmlspecialchars($userPreferences['to']) ?></p>
-                <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">
+                <p class="rebooking-hint">
                   Suggestion based on your <?= $userPreferences['totalBookings'] ?> previous bookings
                 </p>
               </div>
@@ -711,7 +465,7 @@ if ($conn) {
               <input type="hidden" name="max_price" value="<?= $userPreferences['maxPrice'] ?>">
               <input type="hidden" name="smart_search" value="1">
               <button class="rebook-btn">
-                <i class="fas fa-magic" style="margin-right: 5px;"></i>
+                <i class="fas fa-magic icon-with-margin"></i>
                 Search
               </button>
             </form>
@@ -731,7 +485,7 @@ if ($conn) {
               </div>
             </div>
             <a href="../index.php" class="rebook-btn">
-              <i class="fas fa-home" style="margin-right: 5px;"></i>
+              <i class="fas fa-home icon-with-margin"></i>
               Explore Routes
             </a>
           </div>
@@ -764,7 +518,7 @@ if ($conn) {
                 <p class="receipt-date">Make a booking to download receipts</p>
               </div>
             </div>
-            <span class="download-btn" style="opacity: 0.5; cursor: not-allowed;">No Receipt Available</span>
+            <span class="download-btn download-btn-disabled">No Receipt Available</span>
           </div>
           <?php endif; ?>
         </div>
