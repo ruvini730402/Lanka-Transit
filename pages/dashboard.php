@@ -89,14 +89,17 @@ if ($userId && $conn) {
     // Get user's bookings - BookingTime appears to be used as travel date in this database
     $stmt = $conn->prepare("
         SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-               bus.BusNumber, r.Origin, r.Destination
+               bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID,
+               f.ID as FeedbackID, f.Rating, f.Comment
         FROM Booking b
         JOIN Bus bus ON b.BusID = bus.ID
         LEFT JOIN Route r ON bus.RouteId = r.ID
+        LEFT JOIN Feedback f ON bus.ID = f.BusId AND f.UserId = ? 
+                              AND DATE(f.CreatedDate) = DATE(b.BookingTime)
         WHERE b.UserId = ? AND b.Status = 'confirmed'
         ORDER BY b.BookingTime ASC
     ");
-    $stmt->execute([$userId]);
+    $stmt->execute([$userId, $userId]);
     $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Debug: Log what we found
@@ -219,9 +222,6 @@ if ($conn) {
       <a href="dashboard.php" class="active">
         <i class="fas fa-tachometer-alt"></i> Dashboard
       </a>
-      <a href="feedback.php">
-        <i class="fas fa-comment-alt"></i> Feedback
-      </a>
       <a href="incidents.php">
         <i class="fas fa-exclamation-triangle"></i> Report Incident
       </a>
@@ -253,7 +253,6 @@ if ($conn) {
       <nav class="navigation">
         <ul>
           <li class="active"><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-          <li><a href="feedback.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
           <li><a href="incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
           <li><a href="cancel_booking.php"><i class="fas fa-times-circle"></i> Cancel Booking</a></li>
         </ul>
@@ -420,6 +419,7 @@ if ($conn) {
                 <th>To</th>
                 <th>Booked Seats</th>
                 <th>Fare (LKR)</th>
+                <th>Feedback</th>
               </tr>
             </thead>
             <tbody>
@@ -432,11 +432,27 @@ if ($conn) {
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
                   <td><?= number_format($booking['Fare'], 2) ?></td>
+                  <td>
+                    <?php if (!empty($booking['FeedbackID'])): ?>
+                      <div class="feedback-status">
+                        <span class="rating-stars">
+                          <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <i class="<?= $i <= $booking['Rating'] ? 'fas' : 'far' ?> fa-star"></i>
+                          <?php endfor; ?>
+                        </span>
+                        <small>Rated</small>
+                      </div>
+                    <?php else: ?>
+                      <button class="feedback-btn" onclick="openFeedbackModal(<?= $booking['ID'] ?>, '<?= htmlspecialchars($booking['BusNumber']) ?>', <?= $booking['BusID'] ?>)">
+                        <i class="fas fa-star"></i> Rate Trip
+                      </button>
+                    <?php endif; ?>
+                  </td>
                 </tr>
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6" class="table-empty-message">No booking history found</td>
+                  <td colspan="7" class="table-empty-message">No booking history found</td>
                 </tr>
               <?php endif; ?>
             </tbody>
@@ -526,6 +542,52 @@ if ($conn) {
       </div>
     </div>
   </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Rate Your Trip</h3>
+        <span class="close" onclick="closeFeedbackModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="trip-info">
+          <p><strong>Bus:</strong> <span id="modalBusNumber"></span></p>
+        </div>
+        <form id="feedbackForm">
+          <input type="hidden" id="bookingId" name="bookingId">
+          <input type="hidden" id="busId" name="busId">
+          
+          <div class="rating-section">
+            <label>Rate your experience:</label>
+            <div class="star-rating">
+              <input type="radio" name="rating" value="5" id="star5">
+              <label for="star5" class="star">★</label>
+              <input type="radio" name="rating" value="4" id="star4">
+              <label for="star4" class="star">★</label>
+              <input type="radio" name="rating" value="3" id="star3">
+              <label for="star3" class="star">★</label>
+              <input type="radio" name="rating" value="2" id="star2">
+              <label for="star2" class="star">★</label>
+              <input type="radio" name="rating" value="1" id="star1">
+              <label for="star1" class="star">★</label>
+            </div>
+          </div>
+          
+          <div class="comment-section">
+            <label for="comment">Comments (Optional):</label>
+            <textarea id="comment" name="comment" rows="4" placeholder="Share your experience..."></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeFeedbackModal()">Cancel</button>
+            <button type="submit" class="btn-submit">Submit Feedback</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="../assets/js/user-dashboard.js"></script>
   <script>
 // Dropdown functionality
@@ -541,7 +603,60 @@ window.onclick = function(event) {
             dropdown.classList.remove('show');
         }
     }
+    
+    // Close modal when clicking outside
+    if (event.target == document.getElementById('feedbackModal')) {
+        closeFeedbackModal();
+    }
 }
+
+// Feedback Modal Functions
+function openFeedbackModal(bookingId, busNumber, busId) {
+    document.getElementById('bookingId').value = bookingId;
+    document.getElementById('busId').value = busId;
+    document.getElementById('modalBusNumber').textContent = busNumber;
+    document.getElementById('feedbackModal').style.display = 'block';
+    
+    // Reset form
+    document.getElementById('feedbackForm').reset();
+}
+
+function closeFeedbackModal() {
+    document.getElementById('feedbackModal').style.display = 'none';
+}
+
+// Handle feedback form submission
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const rating = document.querySelector('input[name="rating"]:checked');
+    
+    if (!rating) {
+        alert('Please select a rating');
+        return;
+    }
+    
+    // Send feedback to backend
+    fetch('../pages/submit_feedback.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Thank you for your feedback!');
+            closeFeedbackModal();
+            location.reload(); // Refresh to show updated feedback status
+        } else {
+            alert('Error submitting feedback: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting feedback. Please try again.');
+    });
+});
 </script>
   
 </body>

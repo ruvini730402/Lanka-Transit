@@ -89,9 +89,6 @@ try {
         <a href="dashboard.php">
             <i class="fas fa-tachometer-alt"></i> Dashboard
         </a>
-        <a href="feedback.php">
-            <i class="fas fa-comment-alt"></i> Feedback
-        </a>
         <a href="incidents.php">
             <i class="fas fa-exclamation-triangle"></i> Report Incident
         </a>
@@ -118,7 +115,6 @@ try {
         <nav class="navigation">
             <ul>
                 <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="feedback.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
                 <li><a href="incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
                 <li class="active"><a href="cancel_booking.php"><i class="fas fa-times-circle"></i> Cancel Booking</a></li>
             </ul>
