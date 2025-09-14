@@ -8,6 +8,7 @@ $recentAnnouncements = $announcement->getRecentAnnouncements(3); // Get 3 most r
 include 'includes/header.php';
 ?>
 
+
 <!-- Main Content -->
     <div class="main-content">
         <!-- Hero Section -->
@@ -265,6 +266,111 @@ include 'includes/header.php';
             }
         }
     });
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .main-content {
+            flex: 1 0 auto;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+            color: white;
+            padding: 80px 0;
+        }
+        .search-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+        }
+        .btn-search {
+            background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        footer {
+            flex-shrink: 0;
+            background-color: #800000;
+            color: white;
+            padding: 20px 0;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
+                <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.php">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pages/booking.php">
+                            <i class="fas fa-ticket-alt me-1"></i>Book Ticket
+                        </a>
+                    </li>
+                    <?php if (isset($_SESSION['email']) && isset($_SESSION['role'])): ?>
+                        <!-- User is logged in -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?php echo $_SESSION['role'] === 'admin' ? 'pages/admin.php' : 'pages/dashboard.php'; ?>">
+                                <i class="fas fa-user me-1"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="auth/Logout.php">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
+                        </li>
+                    <?php else: ?>
+                        <!-- User is not logged in -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="pages/login-form.php">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="pages/register-form.php">Register</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </nav>
 </script>
 </body>
 </html>

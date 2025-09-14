@@ -9,15 +9,15 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="../assets/css/admin-style.css" />
 </head>
 <body>
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
-      <a class="navbar-brand fw-bold d-flex align-items-center" style="color: #800000;" href="index.php">
-        <img src="images/lanka-transit-logo.png" alt="Lanka Transit Logo" style="height: 50px; margin-right: 10px;">
+      <a class="navbar-brand fw-bold d-flex align-items-center" style="color: #800000;" href="../index.php">
+        <img src="../assets/images/lanka-transit-logo.png" alt="Lanka Transit Logo" style="height: 50px; margin-right: 10px;">
         Lanka Transit
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -25,9 +25,9 @@
       </button>
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="../index.php">Home</a></li>
 
-            <a class="nav-link text-danger d-flex align-items-center" href="php/logout.php">
+            <a class="nav-link text-danger d-flex align-items-center" href="../auth/Logout.php">
               <i class="fas fa-sign-out-alt me-1"></i>Logout
             </a>
           </li>
@@ -114,7 +114,7 @@
         <div class="card-custom bg-feedback">
           <h5>Feedbacks</h5>
           <p><strong>Feedbacks based on passenger experience</strong></p>
-          <a href="feedback.php" class="btn go-btn">Go</a>
+          <a href="feedback_display.php" class="btn go-btn">Go</a>
         </div>
       </div>
 
@@ -150,7 +150,7 @@
 
   <!-- Fetch Dashboard Stats -->
   <script>
-    fetch('php/dashboard_data.php')
+    fetch('../php/dashboard_data.php')
       .then(response => response.json())
       .then(data => {
         document.getElementById('bus-count').textContent = data.total_buses;
