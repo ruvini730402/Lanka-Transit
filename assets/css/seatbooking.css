@@ -1,9 +1,12 @@
+/* Hero Section */
 .hero-section {
   background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
   color: #ffffff;
   padding: 20px 0;
+  text-align: center;
 }
 
+/* Footer */
 .footer-full {
   width: 100%;
   background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
@@ -13,12 +16,14 @@
   box-sizing: border-box;
 }
 
+/* Global Styles */
 html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
 }
 
+/* Bus Interior Container */
 .bus-interior {
   background: linear-gradient(to bottom, #f0f0f0, #d9d9d9);
   border: 3px solid #333;
@@ -31,6 +36,7 @@ html, body {
   overflow: hidden;
 }
 
+/* Bus Front and Rear */
 .bus-front, .bus-rear {
   position: relative;
   height: 100px;
@@ -75,26 +81,29 @@ html, body {
   max-width: 200px;
 }
 
+/* Seat Grid */
 .seat-grid {
   display: grid;
-  gap: 20px;
-  padding: 25px;
+  gap: 15px;
+  padding: 20px;
 }
 
+/* Seat Styles */
 .seat {
-  background: linear-gradient(to bottom, #4CAF50, #388E3C);
-  border: 2px solid #2E7D32;
-  border-radius: 10px;
-  text-align: center;
-  font-weight: bold;
-  color: white;
-  cursor: pointer;
-  user-select: none;
-  line-height: 55px;
-  font-size: 16px;
   width: 55px;
   height: 55px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 5px;
+  border-radius: 10px;
+  border: 2px solid #2E7D32;
+  background: linear-gradient(to bottom, #4CAF50, #388E3C);
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 55px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
   box-shadow: 0 5px 10px rgba(0,0,0,0.3);
   position: relative;
 }
@@ -115,55 +124,61 @@ html, body {
   box-shadow: 0 8px 16px rgba(0,0,0,0.4);
 }
 
+.seat.available {
+  background: linear-gradient(to bottom, #4CAF50, #388E3C);
+  border: 2px solid #2E7D32;
+}
+
 .seat.lady-seat {
   border: 3px solid #ff3333;
   box-shadow: 0 5px 10px rgba(255,51,51,0.3);
 }
 
 .seat.selected {
-  background: linear-gradient(to bottom, #FFA500, #F57C00);
-  border-color: #EF6C00;
-  box-shadow: 0 0 15px #FFA500;
+  background: linear-gradient(to bottom, #FFC107, #F57C00);
+  border: 2px solid #EF6C00;
+  box-shadow: 0 0 15px rgba(255,193,7,0.5);
 }
 
 .seat.booked {
   cursor: not-allowed;
   pointer-events: none;
-  color: #fff;
   opacity: 0.9;
 }
 
 .seat.booked.female {
-  background: linear-gradient(to bottom, #ffb6c1, #f48fb1);
+  background: linear-gradient(to bottom, #ffb6c1, #f48fb1) !important;
+  border: 2px solid #f48fb1 !important;
 }
 
 .seat.booked.male {
-  background: linear-gradient(to bottom, #add8e6, #81d4fa);
+  background: linear-gradient(to bottom, #add8e6, #81d4fa) !important;
+  border: 2px solid #81d4fa !important;
 }
 
 .seat.booked.undisclosed {
-  background: linear-gradient(to bottom, #A9A9A9, #757575);
+  background: linear-gradient(to bottom, #A9A9A9, #757575) !important;
+  border: 2px solid #757575 !important;
 }
 
+/* Aisle */
 .aisle {
   width: 50px;
   height: 55px;
-  user-select: none;
-  pointer-events: none;
+  margin: 5px;
   background: repeating-linear-gradient(
-      45deg,
-      #ccc 0,
-      #ccc 6px,
-      #ddd 6px,
-      #ddd 12px
+    45deg,
+    #ccc 0,
+    #ccc 6px,
+    #ddd 6px,
+    #ddd 12px
   );
   border-radius: 5px;
+  user-select: none;
+  pointer-events: none;
 }
 
-.title-dark-blue {
-  color: #003366;
-}
-
+/* Legend Styles */
 .seat-legend {
   width: 20px;
   height: 20px;
@@ -189,28 +204,43 @@ html, body {
 }
 
 .seat-legend.lady-seat {
-  border: 2px solid #ff3333;
+  border: 3px solid #ff3333;
   background: #fff;
 }
 
 .seat-legend.selected {
-  background: linear-gradient(to bottom, #FFA500, #F57C00);
+  background: linear-gradient(to bottom, #FFC107, #F57C00);
 }
 
+/* Title Color */
+.title-dark-blue {
+  color: #003366;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .bus-interior {
-      transform: scale(0.85);
+    transform: scale(0.85);
   }
   .seat-grid {
-      gap: 15px;
+    gap: 10px;
   }
   .seat {
-      width: 50px;
-      height: 50px;
-      line-height: 50px;
-      font-size: 14px;
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 14px;
   }
   .aisle {
-      width: 40px;
+    width: 40px;
+    height: 50px;
+  }
+  .bus-front, .bus-rear {
+    font-size: 16px;
+    height: 80px;
+  }
+  .entrance-area, .rear-entrance, .driver-area {
+    padding: 8px;
+    font-size: 14px;
   }
 }

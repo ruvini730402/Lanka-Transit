@@ -10,30 +10,51 @@ const busId = urlParams.get('bus_id');
 const travelDate = urlParams.get('date');
 const departureTime = urlParams.get('departure') || '';
 
+// Validate URL parameters
+if (!busId || !travelDate) {
+  showMessage('Invalid bus ID or travel date. Please try again.', 'danger');
+  console.error('Missing parameters:', { busId, travelDate });
+}
+
 // Calculate if lady seats are free (within 3 hours of departure)
 let isLadySeatsFree = false;
 if (departureTime) {
-  const departure = new Date(`${travelDate}T${departureTime}:00`);
-  const threeHoursBefore = new Date(departure.getTime() - 3 * 60 * 60 * 1000);
-  const now = new Date();
-  isLadySeatsFree = now >= threeHoursBefore;
+  try {
+    const departure = new Date(`${travelDate}T${departureTime}:00`);
+    const threeHoursBefore = new Date(departure.getTime() - 3 * 60 * 60 * 1000);
+    const now = new Date();
+    isLadySeatsFree = now >= threeHoursBefore;
+  } catch (e) {
+    console.error('Error parsing departure time:', e);
+    showMessage('Invalid departure time format.', 'danger');
+  }
 }
 
-// Fetch booked seats from PHP
-async function fetchBookedSeats(model) {
+// Fetch bus capacity and booked seats
+async function fetchBusData() {
   try {
-    const response = await fetch(`view.php?api=seats&bus_id=${busId}&date=${travelDate}&model=${model}`);
+    const response = await fetch(`view.php?api=bus_details&bus_id=${encodeURIComponent(busId)}&date=${encodeURIComponent(travelDate)}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
     const data = await response.json();
     
     if (data.error) {
-      console.error('Error fetching seats:', data.error);
-      return [];
+      console.error('API error response:', data.error);
+      showMessage('Failed to load bus details: ' + data.error, 'danger');
+      return { capacity: 49, seats: [], available_seats: 49 };
     }
     
-    return data.seats || [];
+    console.log('Fetched bus data:', data); // Debug log
+    return {
+      capacity: parseInt(data.capacity) || 49,
+      seats: Array.isArray(data.seats) ? data.seats : [],
+      available_seats: parseInt(data.available_seats) || data.capacity
+    };
   } catch (error) {
-    console.error('Failed to fetch seat data:', error);
-    return [];
+    console.error('Failed to fetch bus data:', error.message);
+    showMessage('Error loading bus data. Please try again.', 'danger');
+    return { capacity: 49, seats: [], available_seats: 49 };
   }
 }
 
@@ -56,17 +77,19 @@ function createSeat(seatNum, seatData) {
     seat.disabled = true;
     seat.classList.add('booked');
     
-    // Color based on gender of booked passenger
-    if (seatInfo.gender_preference === 'female') {
+    // Apply gender-based styling
+    const gender = seatInfo.gender_preference ? seatInfo.gender_preference.toLowerCase() : 'undisclosed';
+    if (gender === 'female') {
       seat.classList.add('female');
-    } else if (seatInfo.gender_preference === 'male') {
+    } else if (gender === 'male') {
       seat.classList.add('male');
     } else {
       seat.classList.add('undisclosed');
     }
   } else {
+    seat.classList.add('available');
     seat.addEventListener('click', () => {
-      const gender = document.getElementById('gender').value;
+      const gender = document.getElementById('gender')?.value.toLowerCase();
       if (!gender) {
         showMessage("Please select gender before choosing a seat.", "danger");
         return;
@@ -77,34 +100,47 @@ function createSeat(seatNum, seatData) {
         return;
       }
 
-      // Deselect any previously selected
-      document.querySelectorAll('.seat.selected').forEach(s => {
-        s.classList.remove('selected');
-      });
+      // Toggle selection
+      if (selectedSeat === seatNum) {
+        seat.classList.remove('selected');
+        seat.classList.add('available');
+        selectedSeat = null;
+        selectedSeatInput.value = '';
+      } else {
+        document.querySelectorAll('.seat.selected').forEach(s => {
+          s.classList.remove('selected');
+          s.classList.add('available');
+        });
 
-      seat.classList.add('selected');
-      selectedSeat = seatNum;
-      selectedSeatInput.value = seatNum;
+        seat.classList.remove('available');
+        seat.classList.add('selected');
+        selectedSeat = seatNum;
+        selectedSeatInput.value = seatNum;
+      }
     });
   }
 
   return seat;
 }
 
-// Render all seats based on model
-async function renderSeats(model) {
-  const seatData = await fetchBookedSeats(model);
+// Render all seats based on capacity
+async function renderSeats() {
+  const { capacity, seats, available_seats } = await fetchBusData();
   seatMap.innerHTML = '';
   selectedSeat = null;
   selectedSeatInput.value = '';
-  selectedModelInput.value = model;
+  selectedModelInput.value = capacity;
 
-  let config;
-  if (model === '49') {
-    config = { left: 2, right: 2, rows: 12, hasLastFull: true, lastRightAdjust: 0 };
-  } else {
-    config = { left: 2, right: 3, rows: 11, hasLastFull: false, lastRightAdjust: -1 };
-  }
+  // Update available seats display
+  const availableSeatsDisplay = document.createElement('div');
+  availableSeatsDisplay.className = 'text-center mb-3';
+  availableSeatsDisplay.innerHTML = `<strong>Available Seats: ${available_seats}</strong>`;
+  seatMap.parentElement.insertBefore(availableSeatsDisplay, seatMap);
+
+  // Dynamic seat layout configuration
+  const config = capacity <= 49
+    ? { left: 2, right: 2, rows: Math.ceil(capacity / 4), hasLastFull: capacity % 4 === 0, lastRightAdjust: 0 }
+    : { left: 2, right: 3, rows: Math.ceil(capacity / 5), hasLastFull: capacity % 5 === 0, lastRightAdjust: -1 };
 
   seatMap.style.gridTemplateColumns = `repeat(${config.left}, 55px) 50px repeat(${config.right}, 55px)`;
   seatMap.style.gridAutoRows = '55px';
@@ -119,9 +155,9 @@ async function renderSeats(model) {
     }
 
     // Left seats
-    for (let i = 0; i < config.left; i++) {
+    for (let i = 0; i < config.left && seatNum < capacity; i++) {
       seatNum++;
-      seatMap.appendChild(createSeat(seatNum, seatData));
+      seatMap.appendChild(createSeat(seatNum, seats));
     }
 
     // Aisle or extra seat
@@ -129,21 +165,21 @@ async function renderSeats(model) {
       const aisle = document.createElement('div');
       aisle.className = 'aisle';
       seatMap.appendChild(aisle);
-    } else {
+    } else if (seatNum < capacity) {
       seatNum++;
-      seatMap.appendChild(createSeat(seatNum, seatData));
+      seatMap.appendChild(createSeat(seatNum, seats));
     }
 
     // Right seats
-    for (let i = 0; i < rightThis; i++) {
+    for (let i = 0; i < rightThis && seatNum < capacity; i++) {
       seatNum++;
-      seatMap.appendChild(createSeat(seatNum, seatData));
+      seatMap.appendChild(createSeat(seatNum, seats));
     }
   }
 }
 
 // Submit booking form
-document.getElementById('booking-form').addEventListener('submit', function (e) {
+document.getElementById('booking-form').addEventListener('submit', async function (e) {
   if (!selectedSeat) {
     e.preventDefault();
     showMessage("Please select a seat before booking.", "danger");
@@ -156,22 +192,26 @@ document.getElementById('booking-form').addEventListener('submit', function (e) 
 // Bootstrap Alert Helper
 function showMessage(message, type = 'info') {
   const messageDiv = document.getElementById('form-message');
-  messageDiv.innerHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  `;
-  setTimeout(() => {
-    const alertEl = document.querySelector('#form-message .alert');
-    if (alertEl) alertEl.remove();
-  }, 4000);
+  if (messageDiv) {
+    messageDiv.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    setTimeout(() => {
+      const alertEl = document.querySelector('#form-message .alert');
+      if (alertEl) alertEl.remove();
+    }, 4000);
+  }
 }
 
-// Event listener for model change
-busModelSelect.addEventListener('change', (e) => {
-  renderSeats(e.target.value);
-});
+// Event listener for model change (retained for potential future use)
+if (busModelSelect) {
+  busModelSelect.addEventListener('change', (e) => {
+    renderSeats();
+  });
+}
 
-// Initial render with default model
-renderSeats('49');
+// Initial render
+renderSeats();
