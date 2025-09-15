@@ -1,254 +1,280 @@
-Class Diagram - Lanka Transit Project (CURRENT IMPLEMENTATION)
+CLASS DIAGRAM REFERENCE - Lanka Transit Project
 
-=== CORE CLASSES ===
+=== CLASSES FOR DIAGRAM ===
 
-Database
-- host: String = "localhost"
-- db_name: String = "bosennoy016fmb5flv0m"
-- username: String = "root"
-- password: String = ""
-- conn: PDO
-+ __construct(): void
-+ getConnection(): PDO
-+ closeConnection(): void
-+ executeQuery(query, params): PDOStatement
-+ sanitizeInput(data): String
-+ validateInput(data, type): boolean
+Database (classes/Database.php)
+│   - conn: PDO
+│   + getConnection(): PDO|null
+│   + closeConnection(): void
+│   + executeQuery(query, params): PDOStatement|false
+│   + sanitizeInput(data): String (static)
+│   + validateInput(data, type): Boolean (static)
 
 Auth
-- conn: PDO
-+ __construct(db): void
-+ login(email, password): Array|boolean
-+ register(name, email, password, phone): boolean
-+ logout(): void
-+ isLoggedIn(): boolean
-+ getCurrentUser(): Array|null
-+ validateSession(): boolean
-+ hashPassword(password): String
-+ verifyPassword(password, hash): boolean
+│   - user: User
+│   - pdo: PDO
+│   + login(email, password): Array
+│   + logout(): void
+│   + isLoggedIn(): Boolean
+│   + validateSession(): Boolean
+│   + register(name, email, password, phone): Array
+User
+│   - id: int
+│   - name: String
+│   - email: String
+│   - passwordHash: String
+│   - phoneNumber: String
+│   - role: String
+│   - registrationDate: DateTime
+│   - resetToken: String (NULLABLE)
+│   - tokenExpiry: DateTime (NULLABLE)
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + findByEmail(email): Array|false
+│   + findByToken(token): Array|false
+│   + setResetToken(email, token, expiry): Boolean
+│   + updatePassword(userId, hashedPassword): Boolean
+│   + createUser(name, email, passwordHash, phone, role): Boolean
+│   + getUserById(id): Array|null
+│   + updateUser(id, data): Boolean
+│   + deleteUser(id): Boolean
+│   + login(email, password): Array
+│   + register(name, email, password, phone): Array
+│   + validateResetToken(token): Array|null
+│   + clearResetToken(userId): Boolean
 
 Bus
-- conn: PDO
-- table_name: String = "Bus"
-+ __construct(db): void
-+ searchBuses(origin, destination, travelDate, maxFare): Array
-+ getAvailableSeats(busId, travelDate): Array
-+ isLadySeat(busId, seatNumber): boolean
-+ getBusDetails(busId): Array
-+ getAllBuses(): Array
-+ addBus(routeId, adminId, busNumber, capacity): boolean
-+ updateBus(id, data): boolean
-+ deleteBus(id): boolean
+│   - id: int
+│   - routeId: int
+│   - adminId: int
+│   - busNumber: String
+│   - capacity: int
+│   - lastUpdate: Date
+│   + searchBuses(origin, destination, travelDate, maxFare): Array
+│   + searchBusesWithFilters(origin, destination, travelDate, filters): Array
+│   + getFareRange(origin, destination): Array
+│   + getDepartureTimeRange(origin, destination): Array
+│   + getAvailableSeats(busId, travelDate): Array
+│   + isLadySeat(busId, seatNumber): Boolean
+│   + getBusDetails(busId): Array
+│   + getAllBuses(): Array
+│   + addBus(routeId, adminId, busNumber, capacity): Boolean
+│   + updateBus(id, data): Boolean
+│   + deleteBus(id): Boolean
 
-User
-- conn: PDO
-- table_name: String = "User"
-+ __construct(db): void
-+ createUser(name, email, passwordHash, phone, role): boolean
-+ getUserById(id): Array|null
-+ getUserByEmail(email): Array|null
-+ updateUser(id, data): boolean
-+ deleteUser(id): boolean
-+ getAllUsers(): Array
+Booking
+│   - id: int
+│   - userId: int
+│   - busId: int
+│   - seatNumber: String
+│   - bookingTime: DateTime
+│   - status: String
+│   - phoneNumber: String
+│   - fare: float
+│   - gender: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + createBooking(data): Boolean
+│   + getBookingsByUser(userId): Array
+│   + updateBookingStatus(id, status): Boolean
+│   + checkSeatAvailability(busId, seatNumber, date): Boolean
+│   + validateBookingData(data): Array
+│   + processBooking(): void
+│   + validateInput(): Boolean
+│   + isSeatBooked(): Boolean
+│   + isLadySeatRestricted(): Boolean
+│   + saveBooking(): Boolean
+│   + isValidNIC(nic): Boolean
+│   + getTotalBookings(): int
+│   + createGenderRecord(bookingId, gender): Boolean
+│   + getGenderByBooking(bookingId): String|null
+│   + updateGender(bookingId, gender): Boolean
 
-=== DATABASE TABLE STRUCTURES (Current Schema) ===
+Payment
+│   - pdo: PDO
+│   - merchant_id: String
+│   - merchant_secret: String
+│   - sandbox_mode: Boolean
+│   + __construct(pdo): void
+│   + generatePaymentForm(bookingData): Array
+│   + verifyPayment(notification_data): Boolean
+│   + processPaymentNotification(notification_data): Boolean
+│   + getPaymentStatus(order_id): Array|false
+│   + storePaymentSession(order_id, booking_data): void
+│   + getPaymentSession(order_id): Array|null
+│   + clearPaymentSession(): void
+│   - generateHash(order_id, amount, currency): String
+│   - getPaymentStatusString(status_code): String
+│   - updateBookingStatus(booking_id, status): Boolean
+│   - getBookingIdByOrderId(order_id): int|null
 
-User Table
-- ID: int (PK, AUTO_INCREMENT)
-- Name: varchar(100) NOT NULL
-- Email: varchar(60) NOT NULL UNIQUE
-- PasswordHash: varchar(255) NOT NULL
-- PhoneNumber: varchar(10) NOT NULL
-- Role: enum('administrator','guest user','registered user') DEFAULT 'registered user'
-- RegistrationDate: timestamp DEFAULT CURRENT_TIMESTAMP
+Seat
+│   - id: int
+│   - busId: int
+│   - seatNumber: String
+│   - status: String
+│   - genderPreference: String
+│   - isLadySeat: Boolean
+│   + getSeatsByBus(busId): Array
+│   + updateSeatStatus(id, status): Boolean
+│   + getAvailableSeats(busId): Array
+│   + getLadySeats(busId): Array
 
-Admin Table
-- ID: int (PK, AUTO_INCREMENT)
-- Email: varchar(60) NOT NULL UNIQUE
-- PasswordHash: varchar(255) NOT NULL
-- Name: varchar(100) NOT NULL
-- PhoneNumber: varchar(10) NOT NULL
+BookingCancellation
+│   - id: int
+│   - bookingId: int
+│   - userId: int
+│   - cancellationReason: String
+│   - requestedAt: DateTime
+│   - status: String
+│   - processedBy: int
+│   - processedAt: DateTime
+│   + createCancellationRequest(bookingId, userId, reason): Boolean
+│   + getCancellationsByUser(userId): Array
+│   + getCancellationsByStatus(status): Array
+│   + processCancellation(id, adminId, status): Boolean
+│   + getCancellationDetails(id): Array|null
 
-Booking Table
-- ID: int (PK, AUTO_INCREMENT)
-- UserId: int (FK to User.ID, NULLABLE for guest bookings)
-- BusID: int (FK to Bus.ID) NOT NULL
-- SeatNumber: varchar(6) NOT NULL
-- PhoneNumber: varchar(10) NOT NULL
-- Fare: decimal(10,2) NOT NULL
-- Status: enum('confirmed','cancelled','completed') DEFAULT 'confirmed'
-- BookingTime: timestamp DEFAULT CURRENT_TIMESTAMP
+Route
+│   - id: int
+│   - origin: String
+│   - destination: String
+│   - stops: String
+│   + getAllRoutes(): Array
+│   + getRouteById(id): Array|null
+│   + createRoute(origin, destination, stops): Boolean
+│   + updateRoute(id, data): Boolean
+│   + deleteRoute(id): Boolean
+│   + getRoutesByOriginDestination(origin, destination): Array
 
-Bus Table
-- ID: int (PK, AUTO_INCREMENT)
-- RouteId: int (FK to Route.ID, NULLABLE)
-- AdminId: int (FK to Admin.ID, NULLABLE)
-- BusNumber: varchar(20) NOT NULL UNIQUE
-- Capacity: int NOT NULL
-- LastUpdate: date DEFAULT CURRENT_DATE
+Schedule
+│   - id: int
+│   - busId: int
+│   - departureTime: DateTime
+│   - arrivalTime: DateTime
+│   - fare: float
+│   + getSchedulesByBus(busId): Array
+│   + createSchedule(busId, departureTime, arrivalTime, fare): Boolean
+│   + updateSchedule(id, data): Boolean
+│   + deleteSchedule(id): Boolean
+│   + getSchedulesByRoute(origin, destination, date): Array
 
-Route Table
-- ID: int (PK, AUTO_INCREMENT)
-- Origin: varchar(50) NOT NULL
-- Destination: varchar(50) NOT NULL
-- Stops: text (NULLABLE)
--- Active Routes: 1='Badulla to Matara', 2='Matara to Badulla'
+Admin
+│   - id: int
+│   - email: String
+│   - passwordHash: String
+│   - name: String
+│   - phoneNumber: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + login(email, password): Array
+│   + getAllAdmins(): Array
+│   + createAdmin(email, password, name, phone): Boolean
+│   + updateAdmin(id, data): Boolean
+│   + deleteAdmin(id): Boolean
+│   + changePassword(id, newPassword): Boolean
+│   + createAdminRecord(adminId): Boolean
+│   + getAdminActivity(adminId): Array
 
-Payment Table
-- ID: int (PK, AUTO_INCREMENT)
-- BookingId: int (FK to Booking.ID) NOT NULL
-- PaymentMethod: varchar(50) DEFAULT 'Demo Payment'
-- Status: enum('success','failed','pending') DEFAULT 'pending'
-- Amount: decimal(10,2) NOT NULL
-- PaymentDate: timestamp DEFAULT CURRENT_TIMESTAMP
-- TransactionId: varchar(100) UNIQUE
+Incident
+│   - id: int
+│   - userId: int
+│   - adminId: int
+│   - bookingId: int
+│   - routeId: int
+│   - description: String
+│   - status: String
+│   - reportedDate: Date
+│   - resolvedDate: Date
+│   + reportIncident(userId, description, bookingId): Boolean
+│   + getIncidentsByUser(userId): Array
+│   + getIncidentsByStatus(status): Array
+│   + updateIncidentStatus(id, status, adminId): Boolean
+│   + getIncidentDetails(id): Array|null
 
-Incident Table
-- ID: int (PK, AUTO_INCREMENT)
-- UserId: int (FK to User.ID, NULLABLE)
-- AdminId: int (FK to Admin.ID, NULLABLE)
-- BookingId: int (FK to Booking.ID, NULLABLE)
-- RouteId: int (FK to Route.ID, NULLABLE)
-- Description: text NOT NULL
-- Status: enum('submitted','in progress','resolved') DEFAULT 'submitted'
-- ReportedDate: date DEFAULT CURRENT_DATE
-- ResolvedDate: date (NULLABLE)
+Feedback
+│   - id: int
+│   - userId: int
+│   - busId: int
+│   - comment: String
+│   - rating: int
+│   - createdDate: Date
+│   + submitFeedback(userId, busId, comment, rating): Boolean
+│   + getFeedbackByBus(busId): Array
+│   + getFeedbackByUser(userId): Array
+│   + getAllFeedback(): Array
+│   + deleteFeedback(id): Boolean
 
-Feedback Table
-- ID: int (PK, AUTO_INCREMENT)
-- UserId: int (FK to User.ID, NULLABLE)
-- BusId: int (FK to Bus.ID, NULLABLE)
-- Comment: text
-- Rating: int (1-5)
-- CreatedDate: date DEFAULT CURRENT_DATE
+Location
+│   - uniqueId: int
+│   - name: String
+│   - type: String
+│   + getAllLocations(): Array
+│   + getLocationsByType(type): Array
+│   + createLocation(name, type): Boolean
+│   + updateLocation(id, data): Boolean
+│   + deleteLocation(id): Boolean
 
-Seat Table
-- ID: int (PK, AUTO_INCREMENT)
-- BusID: int (FK to Bus.ID) NOT NULL
-- SeatNumber: varchar(6) NOT NULL
-- Status: enum('available','booked') DEFAULT 'available'
-- GenderPreference: enum('male','female','general') DEFAULT 'general'
-- IsLadySeat: boolean DEFAULT FALSE
+Announcement
+│   - id: int
+│   - title: String
+│   - message: String
+│   - createdAt: DateTime
+│   - updatedAt: DateTime
+│   + createAnnouncement(title, message): Boolean
+│   + getAllAnnouncements(): Array
+│   + updateAnnouncement(id, title, message): Boolean
+│   + deleteAnnouncement(id): Boolean
+│   + getRecentAnnouncements(limit): Array
 
-Announcements Table
-- ID: int (PK, AUTO_INCREMENT)
-- title: varchar(200) NOT NULL
-- message: text NOT NULL
-- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
-- updated_at: timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+=== RELATIONSHIPS FOR DIAGRAM ===
 
-=== EXTENDED SCHEMA TABLES ===
+COMPOSITION:
+   Auth ◆──── User (Auth contains User)
+   Auth ◆──── Database (Auth uses Database)
+   
+DEPENDENCY:
+   User -----> Database (User depends on Database)
+   Bus -----> Database (Bus depends on Database)
+   Booking -----> Database (Booking depends on Database)
+   Payment -----> Database (Payment depends on Database)
+   Seat -----> Database (Seat depends on Database)
+   BookingCancellation -----> Database (BookingCancellation depends on Database)
+   Route -----> Database (Route depends on Database)
+   Schedule -----> Database (Schedule depends on Database)
+   Admin -----> Database (Admin depends on Database)
+   Incident -----> Database (Incident depends on Database)
+   Feedback -----> Database (Feedback depends on Database)
+   Location -----> Database (Location depends on Database)
+   Announcement -----> Database (Announcement depends on Database)
 
-User_2 Table (Password Reset Extension)
-- user_id: int (PK, FK to User.ID)
-- reset_token: varchar(255) (NULLABLE)
-- token_expiry: datetime (NULLABLE)
-- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
-- updated_at: timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+ASSOCIATION:
+   User ──── Booking (1:many - User has many Bookings)
+   User ──── BookingCancellation (1:many - User has many Cancellation requests)
+   User ──── Incident (1:many - User can report many Incidents)
+   User ──── Feedback (1:many - User can give many Feedback)
+   Bus ──── Booking (1:many - Bus has many Bookings)
+   Bus ──── Seat (1:many - Bus has many Seats)
+   Bus ──── Schedule (1:many - Bus has many Schedules)
+   Bus ──── Feedback (1:many - Bus receives many Feedback)
+   Bus ──── Route (many:1 - Many Buses belong to one Route)
+   Route ──── Location (many:many - Routes connect multiple Locations)
+   Route ──── Incident (1:many - Route can have many Incidents)
+   Schedule ──── Bus (many:1 - Many Schedules belong to one Bus)
+   Booking ──── Payment (1:1 - Booking has one Payment)
+   Booking ──── BookingCancellation (1:many - Booking can have multiple cancellation requests)
+   Booking ──── Incident (1:many - Booking can have related Incidents)
+   Admin ──── Bus (1:many - Admin manages many Buses)
+   Admin ──── BookingCancellation (1:many - Admin processes many cancellation requests)
+   Admin ──── Incident (1:many - Admin handles many Incidents)
+   Admin ──── Announcement (1:many - Admin creates many Announcements)
 
-Booking_2 Table (Gender Tracking Extension)
-- booking_id: int (PK, FK to Booking.ID)
-- gender: enum('male','female','undisclosed') DEFAULT 'undisclosed'
-- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
-- updated_at: timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+=== DIAGRAM SYMBOLS ===
 
-Admin_2 Table (Admin Metadata Extension)
-- admin_id: int (PK, FK to Admin.ID)
-- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
-- updated_at: timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+◆──── Composition (contains/owns)
+-----> Dependency (uses/depends on)
+──── Association (related to)
 
-=== IMPLEMENTED FUNCTIONALITY ===
-
-✅ **Authentication System:**
-- User login/logout (auth/login.php, auth/Logout.php)
-- User registration with validation (auth/register.php)
-- Password reset functionality (auth/reset_password.php, auth/send_reset_link.php)
-- Session management and role-based access
-- Admin authentication separate from user auth
-
-✅ **Bus Management:**
-- Search buses by route and date (pages/search.php)
-- View bus details and capacity (pages/bus-details.php)
-- Admin bus management (Admin/buslisting.php, Admin/php/Bus.php)
-- Seat availability checking
-- Lady seat restrictions
-
-✅ **Booking System:**
-- Guest and registered user bookings (pages/booking.php)
-- Seat selection interface (pages/seatbooking.php)
-- Payment processing (pages/payment.php)
-- Booking confirmation (pages/confirmation.php)
-- PDF ticket generation (pages/ticket_pdf.php)
-
-✅ **User Dashboard:**
-- User dashboard with booking history (pages/dashboard.php)
-- View personal bookings and status
-- Submit feedback (pages/feedback.php, pages/submit_feedback.php)
-- Report incidents (pages/incidents.php, pages/submit_incidents.php)
-- View announcements (pages/announcements.php)
-
-✅ **Admin Panel:**
-- Admin dashboard with statistics (Admin/admin.html, Admin/php/Dashboard.php)
-- User management (Admin/user_display.php, Admin/php/User.php)
-- Booking overview (Admin/user_bookings.php, Admin/php/Booking.php)
-- Incident management (pages/manage_incidents.php, pages/update_incidents.php)
-- Announcement system (Admin/announcement_display.php, Admin/php/announcement.php)
-- Feedback monitoring (Admin/feedback.php)
-
-✅ **Database Features:**
-- PDO with prepared statements (classes/Database.php)
-- Input sanitization and validation
-- Transaction support for booking process
-- Proper foreign key relationships
-- ENUM constraints for data integrity
-- Comprehensive error handling and logging
-
-✅ **File Organization:**
-- MVC structure with separation of concerns
-- Centralized database configuration (config/database.php)
-- Organized assets (assets/css/, assets/js/, assets/images/)
-- Test suite (tests/ directory)
-- Authentication middleware (classes/Auth.php)
-
-=== CURRENT WORKFLOW PATTERNS ===
-
-**User Registration/Login Flow:**
-1. User registers via auth/register.php
-2. Login through auth/login.php with session creation
-3. Access user dashboard and booking features
-4. Logout via auth/Logout.php
-
-**Booking Process Flow:**
-1. Search buses via pages/search.php
-2. Select bus and view details (pages/bus-details.php)
-3. Choose seats in seatbooking interface (pages/seatbooking.php)
-4. Process payment (pages/payment.php)
-5. Confirm booking and generate ticket (pages/confirmation.php)
-6. Download PDF ticket (pages/ticket_pdf.php)
-
-**Incident Management Flow:**
-1. Users report incidents via pages/incidents.php
-2. Incidents stored with 'submitted' status in database
-3. Admins view and manage via pages/manage_incidents.php
-4. Status updates processed through pages/update_incidents.php
-5. Resolved incidents get ResolvedDate timestamp
-
-**Admin Management Flow:**
-1. Admin login through dedicated admin interface
-2. Access admin dashboard (Admin/admin.html)
-3. Manage buses, users, bookings, and incidents
-4. Create/update system announcements
-5. Monitor feedback and system activity
-
-=== DATABASE RELATIONSHIPS (Active) ===
-
-- User (1) ←→ (0..n) Booking (Users can make multiple bookings)
-- User (1) ←→ (0..1) User_2 (Password reset data)
-- Booking (1) ←→ (1) Payment (Each booking has payment record)
-- Booking (1) ←→ (0..1) Booking_2 (Gender tracking)
-- Booking (n) ←→ (1) Bus (Multiple bookings per bus)
-- Bus (1) ←→ (0..n) Seat (Each bus has multiple seats)
-- User (1) ←→ (0..n) Feedback (Users submit feedback)
-- User (1) ←→ (0..n) Incident (Users report incidents)
-- Admin (1) ←→ (0..n) Incident (Admins resolve incidents)
-- Admin (1) ←→ (0..1) Admin_2 (Admin metadata)
+CARDINALITY:
+1:1 (one to one)
+1:many (one to many)

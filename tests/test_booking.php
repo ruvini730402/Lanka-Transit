@@ -2,7 +2,7 @@
 /**
  * Test booking functionality
  */
-require_once '../config/database.php';
+require_once '../classes/Database.php';
 
 // Simulate POST data
 $_SERVER['REQUEST_METHOD'] = 'POST';
