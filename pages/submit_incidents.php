@@ -22,12 +22,17 @@ if (!$conn) {
 
 // Sanitize and receive POST input
 $description = trim($_POST['description'] ?? '');
+$bookingId = filter_var($_POST['booking_id'] ?? null, FILTER_VALIDATE_INT);
 
 // Validate input
 $errors = [];
 
 if (empty($description) || strlen($description) < 10) {
     $errors[] = "Description must be at least 10 characters.";
+}
+
+if (!$bookingId || $bookingId === false) {
+    $errors[] = "Please select a trip for this incident.";
 }
 
 // Prepare result
@@ -44,10 +49,10 @@ if (!empty($errors)) {
     $reportedDate = date('Y-m-d');
 
     // Insert into database
-    $stmt = $conn->prepare("INSERT INTO Incident (Description, Status, ReportedDate) VALUES (?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO Incident (BookingId, Description, Status, ReportedDate) VALUES (?, ?, ?, ?)");
 
     try {
-        $stmt->execute([$description, $status, $reportedDate]);
+        $stmt->execute([$bookingId, $description, $status, $reportedDate]);
         
         // Get the inserted incident ID for reference
         $incidentId = $conn->lastInsertId();

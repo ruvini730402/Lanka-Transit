@@ -26,6 +26,21 @@ $stmt->execute([$userId]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 $username = $user ? htmlspecialchars($user['Name']) : 'User';
 
+// --- Fetching User's Bookings for Trip Selection ---
+$userBookings = [];
+$stmt = $conn->prepare("
+    SELECT b.ID, b.BookingTime, b.SeatNumber, b.Fare, 
+           bus.BusNumber, r.Origin, r.Destination
+    FROM Booking b
+    JOIN Bus bus ON b.BusID = bus.ID
+    LEFT JOIN Route r ON bus.RouteId = r.ID
+    WHERE b.UserId = ? AND b.Status = 'confirmed'
+    ORDER BY b.BookingTime DESC
+    LIMIT 20
+");
+$stmt->execute([$userId]);
+$userBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // --- Fetching Incident Records ---
 $incidentRows = [];
 
@@ -127,8 +142,28 @@ $database->closeConnection();
       <h3>📝 Report an Incident</h3>
       <form action="submit_incidents.php" method="POST">
         <div class="mb-3">
-          <br>
-          <label class="form-label">Description of the Incident</label>
+          <label class="form-label"><strong>Select Trip</strong></label>
+          <div style="position: relative;">
+            <select class="form-control" name="booking_id" required style="appearance: none; background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 4 5%22><path fill=%22%23666%22 d=%22M2 0L0 2h4zm0 5L0 3h4z%22/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px; padding-right: 40px; color: #6c757d;">
+              <option value="" disabled selected hidden>Select a trip for this incident</option>
+              <?php if (!empty($userBookings)): ?>
+                <?php foreach ($userBookings as $booking): ?>
+                  <option value="<?= htmlspecialchars($booking['ID']) ?>" style="color: #333;">
+                    🚌 <?= htmlspecialchars($booking['BusNumber']) ?> - 
+                    <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → 
+                    <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?> 
+                    (<?= date('M j, Y', strtotime($booking['BookingTime'])) ?>) - 
+                    Seat <?= htmlspecialchars($booking['SeatNumber']) ?>
+                  </option>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <option value="" disabled>No bookings found</option>
+              <?php endif; ?>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label"><strong>Description of the Incident</strong></label>
           <textarea class="form-control" name="description" rows="4" required placeholder="Describe what happened in detail..."></textarea>
         </div>
           <button type="submit" class="btn btn-custom" style="background-color: #800000; color: white;">Submit Incident</button>
