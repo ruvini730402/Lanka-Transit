@@ -1,7 +1,7 @@
 <?php
 /**
  * Bus Booking Handler
- * Processes seat booking using Booking and Bus classes
+ * Processes seat booking with pending status and requires confirmation
  */
 session_start();
 
@@ -111,39 +111,99 @@ try {
         }
     }
 
-    // Create booking using Booking class
-    $result = $booking->createBooking($booking_data, false);
+    // Start transaction
+    $pdo->beginTransaction();
 
-    if (!$result['success']) {
-        $_SESSION['error'] = $result['error'] ?? "Failed to create booking.";
-        header('Location: seatbooking.php?' . http_build_query($_GET));
-        exit;
+    // Create or get user
+    $user_id = $booking->createOrGetUser($booking_data);
+    if (!$user_id) {
+        throw new Exception("Failed to create or retrieve user");
     }
 
-    // Store booking data in session
-    $_SESSION['booking_data'] = [
-        'passenger_name' => $booking_data['passenger_name'],
-        'phone' => $booking_data['phone'],
-        'gender' => $booking_data['gender'],
-        'nic' => $booking_data['nic'],
-        'origin' => $booking_data['origin'],
-        'destination' => $booking_data['destination'],
-        'travel_date' => $booking_data['travel_date'],
-        'bus_id' => $booking_data['bus_id'],
-        'bus_number' => $booking_data['bus_number'],
-        'seat_number' => $booking_data['seat_number'],
-        'fare' => $booking_data['fare'],
-        'departure_time' => $booking_data['departure_time'],
-        'arrival_time' => $booking_data['arrival_time'],
-        'booking_id' => $result['booking_id'],
-        'booking_reference' => $result['booking_reference']
-    ];
+    // Create booking with pending status
+    $stmt = $pdo->prepare("
+        INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status, BookingTime, Origin, Destination)
+        VALUES (?, ?, ?, ?, ?, 'pending', NOW(), ?, ?)
+    ");
+    $result = $stmt->execute([
+        $user_id,
+        $booking_data['bus_id'],
+        $booking_data['seat_number'],
+        $booking_data['phone'],
+        $booking_data['fare'],
+        $booking_data['origin'],
+        $booking_data['destination']
+    ]);
 
-    // Redirect to confirmation page
-    header('Location: confirmation.php');
-    exit;
+    if (!$result) {
+        throw new Exception("Failed to save booking");
+    }
+
+    $booking_id = $pdo->lastInsertId();
+
+    // Create gender record
+    if (!empty($booking_data['gender'])) {
+        if (!$booking->createGenderRecord($booking_id, $booking_data['gender'])) {
+            throw new Exception("Failed to save gender record");
+        }
+    }
+
+    // Update seat status to booked
+    if (!$booking->updateSeatStatus($booking_data['bus_id'], $booking_data['seat_number'], 'booked')) {
+        throw new Exception("Failed to update seat status");
+    }
+
+    // Commit transaction
+    $pdo->commit();
+
+    // Generate booking reference
+    $booking_reference = 'LT-' . str_pad($booking_id, 6, '0', STR_PAD_LEFT);
+
+    // Placeholder for confirmation step (e.g., payment processing)
+    // Assuming payment or confirmation happens here
+    // For now, we'll simulate a successful confirmation
+    // In a real scenario, this would involve payment gateway integration
+    $confirmation_success = true; // Replace with actual confirmation logic (e.g., payment API call)
+
+    if ($confirmation_success) {
+        // Confirm the booking
+        if (!$booking->updateBookingStatus($booking_id, 'confirmed')) {
+            throw new Exception("Failed to confirm booking");
+        }
+
+        // Store booking data in session
+        $_SESSION['booking_data'] = [
+            'passenger_name' => $booking_data['passenger_name'],
+            'phone' => $booking_data['phone'],
+            'gender' => $booking_data['gender'],
+            'nic' => $booking_data['nic'],
+            'origin' => $booking_data['origin'],
+            'destination' => $booking_data['destination'],
+            'travel_date' => $booking_data['travel_date'],
+            'bus_id' => $booking_data['bus_id'],
+            'bus_number' => $booking_data['bus_number'],
+            'seat_number' => $booking_data['seat_number'],
+            'fare' => $booking_data['fare'],
+            'departure_time' => $booking_data['departure_time'],
+            'arrival_time' => $booking_data['arrival_time'],
+            'booking_id' => $booking_id,
+            'booking_reference' => $booking_reference
+        ];
+
+        // Redirect to confirmation page
+        header('Location: confirmation.php');
+        exit;
+    } else {
+        // If confirmation fails, cancel the booking
+        $booking->updateBookingStatus($booking_id, 'cancelled');
+        $booking->updateSeatStatus($booking_data['bus_id'], $booking_data['seat_number'], 'available');
+        throw new Exception("Booking confirmation failed.");
+    }
 
 } catch (Exception $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     error_log("Booking error: " . $e->getMessage());
     $_SESSION['error'] = "Booking system error: " . $e->getMessage();
     header('Location: seatbooking.php?' . http_build_query($_GET));
