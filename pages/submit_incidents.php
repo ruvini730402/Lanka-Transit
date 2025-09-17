@@ -1,4 +1,17 @@
 <?php
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo "<script>
+        alert('❌ Please login to report incidents.');
+        window.location.href = '../auth/login.php';
+    </script>";
+    exit();
+}
+
+$userId = $_SESSION['user_id'];
+
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405); // Method Not Allowed
@@ -35,6 +48,27 @@ if (!$bookingId || $bookingId === false) {
     $errors[] = "Please select a trip for this incident.";
 }
 
+// Verify the booking belongs to the current user using phone number
+if ($bookingId && empty($errors)) {
+    // Get user's phone number
+    $stmt = $conn->prepare("SELECT PhoneNumber FROM User WHERE ID = ?");
+    $stmt->execute([$userId]);
+    $userInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$userInfo || !$userInfo['PhoneNumber']) {
+        $errors[] = "User phone number not found.";
+    } else {
+        // Verify booking belongs to user AND is a past booking (incidents can only be reported for completed trips)
+        $stmt = $conn->prepare("SELECT ID, BookingTime FROM Booking WHERE ID = ? AND PhoneNumber = ? AND Status IN ('confirmed', 'completed') AND BookingTime < NOW()");
+        $stmt->execute([$bookingId, $userInfo['PhoneNumber']]);
+        $bookingData = $stmt->fetch();
+        if (!$bookingData) {
+            $errors[] = "Invalid booking selection. You can only report incidents for completed trips.";
+            error_log("Security: User $userId attempted to report incident for unauthorized/future booking $bookingId");
+        }
+    }
+}
+
 // Prepare result
 $response = "";
 $statusClass = "";
@@ -57,6 +91,9 @@ if (!empty($errors)) {
         // Get the inserted incident ID for reference
         $incidentId = $conn->lastInsertId();
 
+        // Log successful incident creation
+        error_log("Incident created successfully - ID: $incidentId, UserID: $userId, BookingID: $bookingId");
+        
         $response = "✅ Incident reported successfully. Your Incident ID is: INC-$incidentId";
         $statusClass = "success";
     } catch (PDOException $e) {

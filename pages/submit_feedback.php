@@ -28,14 +28,30 @@ try {
     
     // Validation
     if (!$bookingId || !$busId || !$rating || $rating < 1 || $rating > 5) {
+        error_log("Feedback validation failed - BookingId: $bookingId, BusId: $busId, Rating: $rating");
         echo json_encode(['success' => false, 'message' => 'Invalid data provided']);
         exit();
     }
     
-    // Verify the booking belongs to the user
-    $stmt = $conn->prepare("SELECT ID FROM Booking WHERE ID = ? AND UserId = ? AND BusID = ?");
-    $stmt->execute([$bookingId, $userId, $busId]);
+    // Get user's phone number from database
+    $stmt = $conn->prepare("SELECT PhoneNumber FROM User WHERE ID = ?");
+    $stmt->execute([$userId]);
+    $userInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$userInfo || !$userInfo['PhoneNumber']) {
+        error_log("User phone number not found for UserId: $userId");
+        echo json_encode(['success' => false, 'message' => 'User phone number not found']);
+        exit();
+    }
+    
+    $userPhoneNumber = $userInfo['PhoneNumber'];
+    error_log("Feedback submission attempt - UserId: $userId, Phone: $userPhoneNumber, BookingId: $bookingId, BusId: $busId");
+    
+    // Verify the booking belongs to the user using phone number (consistent with dashboard)
+    $stmt = $conn->prepare("SELECT ID FROM Booking WHERE ID = ? AND PhoneNumber = ? AND BusID = ?");
+    $stmt->execute([$bookingId, $userPhoneNumber, $busId]);
     if (!$stmt->fetch()) {
+        error_log("Booking verification failed - BookingId: $bookingId, Phone: $userPhoneNumber, BusId: $busId");
         echo json_encode(['success' => false, 'message' => 'Booking not found or access denied']);
         exit();
     }
@@ -44,11 +60,11 @@ try {
     $stmt = $conn->prepare("
         SELECT f.ID 
         FROM Feedback f 
-        JOIN Booking b ON f.BusId = b.BusID AND f.UserId = b.UserId
-        WHERE b.ID = ? AND f.UserId = ? AND f.BusId = ? 
+        JOIN Booking b ON f.BusId = b.BusID AND f.UserId = ?
+        WHERE b.ID = ? AND f.BusId = ? AND b.PhoneNumber = ?
         AND DATE(f.CreatedDate) = DATE(b.BookingTime)
     ");
-    $stmt->execute([$bookingId, $userId, $busId]);
+    $stmt->execute([$userId, $bookingId, $busId, $userPhoneNumber]);
     
     if ($stmt->fetch()) {
         echo json_encode(['success' => false, 'message' => 'You have already submitted feedback for this trip']);

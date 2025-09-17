@@ -130,7 +130,7 @@ try {
         <div class="cancellation-container">
             <div class="form-card">
                 <h2 class="form-title">Booking Cancellation Form</h2>
-                <p class="form-subtitle">We understand plans can change. Submit your cancellation request and we'll process it promptly.</p>
+                <p class="form-subtitle">Cancel your upcoming trips if plans change. Note: Only future bookings can be cancelled.</p>
 
                 <?php if ($error): ?>
                     <div class="alert alert-danger">
@@ -146,25 +146,27 @@ try {
 
                 <form method="POST" action="cancel_booking.php">
                     <div class="form-group">
-                        <label for="booking_id" class="form-label">Select Your Booking</label>
+                        <label for="booking_id" class="form-label">Select Your Upcoming Booking</label>
                         <select class="form-select" id="booking_id" name="booking_id" required>
-                            <option value="">-- Select a Booking to Cancel --</option>
+                            <option value="">-- Select a Future Booking to Cancel --</option>
                             <?php if (!empty($bookings)): ?>
                                 <?php foreach ($bookings as $booking): ?>
                                     <option value="<?= $booking['booking_id'] ?>">
                                         <?= htmlspecialchars($booking['Origin'] ?? 'Unknown') ?> to <?= htmlspecialchars($booking['Destination'] ?? 'Unknown') ?> 
                                         - Seat: <?= $booking['SeatNumber'] ?> 
                                         - Rs. <?= number_format($booking['Fare'], 2) ?>
-                                        - Booked: <?= date('M j, Y', strtotime($booking['BookingTime'])) ?>
+                                        - Travel: <?= date('M j, Y g:i A', strtotime($booking['BookingTime'])) ?>
                                     </option>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <option value="demo1">Colombo to Kandy - Seat: 12 - Rs. 1,500.00 - Jan 15, 2025</option>
-                                <option value="demo2">Galle to Colombo - Seat: 8 - Rs. 800.00 - Jan 20, 2025</option>
+                                <option value="" disabled>No upcoming bookings found. Only future bookings can be cancelled.</option>
                             <?php endif; ?>
                         </select>
                         <?php if (empty($bookings)): ?>
-                            <small class="text-muted">Demo bookings shown - your actual bookings will appear when available.</small>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                Only future bookings can be cancelled. Past or completed trips cannot be cancelled.
+                            </small>
                         <?php endif; ?>
                     </div>
 

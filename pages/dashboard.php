@@ -679,8 +679,14 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Feedback response:', data); // Debug logging
         if (data.success) {
             alert('Thank you for your feedback!');
             closeFeedbackModal();
@@ -691,7 +697,7 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error submitting feedback. Please try again.');
+        alert('Error submitting feedback. Please try again. Check console for details.');
     });
 });
 </script>
