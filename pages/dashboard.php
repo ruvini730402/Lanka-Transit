@@ -46,7 +46,7 @@ if (!$conn) {
     exit();
 }
 
-$stmt = $conn->prepare("SELECT Name FROM User WHERE ID = ?");
+$stmt = $conn->prepare("SELECT Name, PhoneNumber FROM User WHERE ID = ?");
 $stmt->execute([$userId]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -60,6 +60,7 @@ if (!$user) {
 
 // Update username from database (most current)
 $username = htmlspecialchars($user['Name']);
+$userPhoneNumber = $user['PhoneNumber'] ?? null;
 
 // Additional security: Regenerate session ID to prevent session hijacking
 session_regenerate_id(true);
@@ -80,94 +81,70 @@ if (!isset($database)) {
     $conn = $database->getConnection();
 }
 
-// Fetch user's bookings
+// Fetch booking history based on user's phone number
 $upcomingBookings = [];
 $bookingHistory = [];
 $recentBooking = null;
+$userPreferences = ['isReturningCustomer' => false, 'totalBookings' => 0];
 
-if ($userId && $conn) {
-    // Get user's bookings - BookingTime appears to be used as travel date in this database
-    $stmt = $conn->prepare("
-        SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-               bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID,
-               f.ID as FeedbackID, f.Rating, f.Comment
-        FROM Booking b
-        JOIN Bus bus ON b.BusID = bus.ID
-        LEFT JOIN Route r ON bus.RouteId = r.ID
-        LEFT JOIN Feedback f ON bus.ID = f.BusId AND f.UserId = ? 
-                              AND DATE(f.CreatedDate) = DATE(b.BookingTime)
-        WHERE b.UserId = ? AND b.Status = 'confirmed'
-        ORDER BY b.BookingTime ASC
-    ");
-    $stmt->execute([$userId, $userId]);
-    $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Debug: Log what we found
-    error_log("DEBUG: Found " . count($allBookings) . " bookings for user " . $userId);
-    if (!empty($allBookings)) {
-        error_log("DEBUG: First booking: " . print_r($allBookings[0], true));
-    }
-    
-    $currentDate = date('Y-m-d');
-    $currentDateTime = date('Y-m-d H:i:s');
-    
-    foreach ($allBookings as $booking) {
-        // Compare full datetime for more accurate results
-        $bookingDateTime = $booking['BookingTime'];
+if ($userPhoneNumber && $conn) {
+    try {
+        // Get user's bookings using phone number from Booking table
+        // Join with Bus and Route tables to get complete booking details
+        $stmt = $conn->prepare("
+            SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
+                   bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID,
+                   f.ID as FeedbackID, f.Rating, f.Comment
+            FROM Booking b
+            JOIN Bus bus ON b.BusID = bus.ID
+            LEFT JOIN Route r ON bus.RouteId = r.ID
+            LEFT JOIN Feedback f ON f.BusId = bus.ID 
+                                  AND f.UserId = ? 
+                                  AND DATE(f.CreatedDate) = DATE(b.BookingTime)
+            WHERE b.PhoneNumber = ? AND b.Status IN ('confirmed', 'completed')
+            ORDER BY b.BookingTime ASC
+        ");
+        $stmt->execute([$userId, $userPhoneNumber]);
+        $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // For upcoming: booking datetime should be in the future
-        if ($bookingDateTime > $currentDateTime) {
-            $upcomingBookings[] = $booking;
-        } else {
-            $bookingHistory[] = $booking;
-        }
-    }
-    
-    // Debug: Log results
-    error_log("DEBUG: Upcoming bookings: " . count($upcomingBookings));
-    error_log("DEBUG: Historical bookings: " . count($bookingHistory));
-    error_log("DEBUG: Current datetime: " . $currentDateTime);
-    
-    // Get most recent booking for rebooking section
-    if (!empty($allBookings)) {
-        $recentBooking = $allBookings[0];
-    }
-    
-    // Smart rebooking algorithm - analyze user's booking patterns
-    $userPreferences = [];
-    if (count($allBookings) >= 2) { // User has multiple bookings - returning customer
-        // Calculate user's favorite routes and preferences
-        $routeFrequency = [];
-        $totalFares = [];
+        // Separate bookings into upcoming and history based on booking time
+        $currentDateTime = date('Y-m-d H:i:s');
         
         foreach ($allBookings as $booking) {
-            $route = $booking['Origin'] . ' → ' . $booking['Destination'];
-            $routeFrequency[$route] = ($routeFrequency[$route] ?? 0) + 1;
-            $totalFares[] = floatval($booking['Fare']);
+            $bookingDateTime = $booking['BookingTime'];
+            
+            // Compare booking time with current time to determine if it's upcoming or past
+            if ($bookingDateTime > $currentDateTime) {
+                // Future bookings go to upcoming
+                $upcomingBookings[] = $booking;
+            } else {
+                // Past bookings go to history
+                $bookingHistory[] = $booking;
+            }
         }
         
-        // Find most frequent route
-        $mostFrequentRoute = array_keys($routeFrequency, max($routeFrequency))[0];
-        list($favoriteFrom, $favoriteTo) = explode(' → ', $mostFrequentRoute);
+        // Sort upcoming bookings by time (earliest first)
+        usort($upcomingBookings, function($a, $b) {
+            return strtotime($a['BookingTime']) - strtotime($b['BookingTime']);
+        });
         
-        // Calculate average and max price user typically pays
-        $avgPrice = round(array_sum($totalFares) / count($totalFares), 2);
-        $maxPrice = max($totalFares);
+        // Sort booking history by time (latest first)
+        usort($bookingHistory, function($a, $b) {
+            return strtotime($b['BookingTime']) - strtotime($a['BookingTime']);
+        });
         
-        $userPreferences = [
-            'from' => $favoriteFrom,
-            'to' => $favoriteTo,
-            'avgPrice' => $avgPrice,
-            'maxPrice' => $maxPrice,
-            'totalBookings' => count($allBookings),
-            'isReturningCustomer' => true
-        ];
-    } else {
-        // First time user or single booking
-        $userPreferences = [
-            'isReturningCustomer' => false,
-            'totalBookings' => count($allBookings)
-        ];
+        // Set recent booking for other sections if needed
+        if (!empty($allBookings)) {
+            $recentBooking = $allBookings[0];
+        }
+        
+        // Log for debugging
+        error_log("DEBUG: Found " . count($allBookings) . " total bookings for phone " . $userPhoneNumber);
+        error_log("DEBUG: " . count($upcomingBookings) . " upcoming bookings, " . count($bookingHistory) . " past bookings");
+        
+    } catch (PDOException $e) {
+        error_log("Error fetching bookings: " . $e->getMessage());
+        $bookingHistory = [];
     }
 }
 
@@ -339,74 +316,6 @@ if ($conn) {
         </div>
       </div>
 
-      <!-- Schedule a Frequent Trip -->
-      <div class="section">
-        <h2><i class="fas fa-route section-icon"></i> Schedule a Frequent Trip</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Origin</th>
-                <th>Destination</th>
-                <th>Last Used</th>
-                <th>Times Booked</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php 
-              if ($userId && $conn) {
-                // Get frequent routes
-                $stmt = $conn->prepare("
-                  SELECT r.Origin, r.Destination, MAX(b.BookingTime) as LastUsed, COUNT(*) as TimesBooked
-                  FROM Booking b
-                  JOIN Bus bus ON b.BusID = bus.ID
-                  LEFT JOIN Route r ON bus.RouteId = r.ID
-                  WHERE b.UserId = ? AND r.Origin IS NOT NULL
-                  GROUP BY r.Origin, r.Destination
-                  ORDER BY COUNT(*) DESC, MAX(b.BookingTime) DESC
-                  LIMIT 3
-                ");
-                $stmt->execute([$userId]);
-                $frequentRoutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                if (!empty($frequentRoutes)):
-                  foreach ($frequentRoutes as $route):
-              ?>
-                <tr>
-                  <td><?= htmlspecialchars($route['Origin']) ?></td>
-                  <td><?= htmlspecialchars($route['Destination']) ?></td>
-                  <td><?= date('Y-m-d', strtotime($route['LastUsed'])) ?></td>
-                  <td><?= $route['TimesBooked'] ?></td>
-                  <td>
-                    <form action="search.php" method="get">
-                      <input type="hidden" name="origin" value="<?= htmlspecialchars($route['Origin']) ?>">
-                      <input type="hidden" name="destination" value="<?= htmlspecialchars($route['Destination']) ?>">
-                      <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
-                      <button class="rebook-btn">Book Again</button>
-                    </form>
-                  </td>
-                </tr>
-              <?php 
-                  endforeach;
-                else:
-              ?>
-                <tr>
-                  <td colspan="5" class="table-empty-message">No frequent trips found</td>
-                </tr>
-              <?php 
-                endif;
-              } else {
-              ?>
-                <tr>
-                  <td colspan="5" class="table-empty-message">Please log in to view frequent trips</td>
-                </tr>
-              <?php } ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <div class="section">
         <h2><i class="fas fa-book-reader section-icon"></i> My Booking History</h2>
         <div class="table-responsive">
@@ -461,76 +370,201 @@ if ($conn) {
       </div>
 
       <div class="section">
-        <h2><i class="fas fa-redo section-icon"></i>Rebooking</h2>
-        <div class="rebooking-card-wrapper">
-          <?php if ($userPreferences['isReturningCustomer']): ?>
-          <div class="rebooking-card">
-            <div class="rebooking-details">
-              <i class="far fa-calendar-alt rebooking-icon"></i>
-              <div>
-                <p class="route"><?= htmlspecialchars($userPreferences['from']) ?> &rarr; <?= htmlspecialchars($userPreferences['to']) ?></p>
-                <p class="rebooking-hint">
-                  Suggestion based on your <?= $userPreferences['totalBookings'] ?> previous bookings
-                </p>
-              </div>
-            </div>
-            <form action="search.php" method="get">
-              <input type="hidden" name="from_city" value="<?= htmlspecialchars($userPreferences['from']) ?>">
-              <input type="hidden" name="to_city" value="<?= htmlspecialchars($userPreferences['to']) ?>">
-              <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
-              <input type="hidden" name="max_price" value="<?= $userPreferences['maxPrice'] ?>">
-              <input type="hidden" name="smart_search" value="1">
-              <button class="rebook-btn">
-                <i class="fas fa-magic icon-with-margin"></i>
-                Search
-              </button>
-            </form>
-          </div>
-          <?php else: ?>
-          <div class="rebooking-card">
-            <div class="rebooking-details">
-              <i class="fas fa-star rebooking-icon"></i>
-              <div>
-                <?php if ($userPreferences['totalBookings'] == 0): ?>
-                <p class="route">Welcome to Lanka Transit!</p>
-                <p class="last-traveled">Start your journey with us - explore our routes and find your perfect trip</p>
-                <?php else: ?>
-                <p class="route">Building your preferences...</p>
-                <p class="last-traveled">Make a few more bookings to unlock recommendations</p>
-                <?php endif; ?>
-              </div>
-            </div>
-            <a href="../index.php" class="rebook-btn">
-              <i class="fas fa-home icon-with-margin"></i>
-              Explore Routes
-            </a>
-          </div>
-          <?php endif; ?>
+        <h2><i class="fas fa-redo section-icon"></i> Rebook a Frequent Trip</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Last Used</th>
+                <th>Times Booked</th>
+                <th>Avg Fare (LKR)</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php 
+              // Get top 5 frequent routes based on user's phone number, ordered by booking count
+              $frequentRoutes = [];
+              if ($userPhoneNumber && $conn) {
+                  try {
+                      // Query to get top 5 most frequent routes for the user
+                      $stmt = $conn->prepare("
+                          SELECT r.Origin, r.Destination, 
+                                 MAX(b.BookingTime) as LastUsed, 
+                                 COUNT(*) as TimesBooked,
+                                 AVG(b.Fare) as AvgFare
+                          FROM Booking b
+                          JOIN Bus bus ON b.BusID = bus.ID
+                          LEFT JOIN Route r ON bus.RouteId = r.ID
+                          WHERE b.PhoneNumber = ? 
+                            AND b.Status IN ('confirmed', 'completed')
+                            AND r.Origin IS NOT NULL 
+                            AND r.Destination IS NOT NULL
+                          GROUP BY r.Origin, r.Destination
+                          ORDER BY COUNT(*) DESC, MAX(b.BookingTime) DESC
+                          LIMIT 5
+                      ");
+                      $stmt->execute([$userPhoneNumber]);
+                      $frequentRoutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                      
+                      // Log for debugging
+                      error_log("DEBUG: Found " . count($frequentRoutes) . " frequent routes for rebooking, phone " . $userPhoneNumber);
+                      
+                  } catch (PDOException $e) {
+                      error_log("Error fetching frequent routes for rebooking: " . $e->getMessage());
+                      $frequentRoutes = [];
+                  }
+              }
+              
+              if (!empty($frequentRoutes)): ?>
+                <?php foreach ($frequentRoutes as $index => $route): ?>
+                <tr>
+                  <td>
+                    <?= htmlspecialchars($route['Origin']) ?>
+                    <?php if ($index === 0): ?>
+                      <span class="badge" style="background: #4B0000; color: white; font-size: 0.7rem; margin-left: 5px;">MOST FREQUENT</span>
+                    <?php endif; ?>
+                  </td>
+                  <td><?= htmlspecialchars($route['Destination']) ?></td>
+                  <td><?= date('M j, Y', strtotime($route['LastUsed'])) ?></td>
+                  <td>
+                    <strong style="color: #4B0000;"><?= $route['TimesBooked'] ?></strong>
+                    <?= $route['TimesBooked'] == 1 ? 'trip' : 'trips' ?>
+                  </td>
+                  <td><?= number_format($route['AvgFare'], 2) ?></td>
+                  <td>
+                    <form action="search.php" method="post" style="margin: 0;">
+                      <input type="hidden" name="origin" value="<?= htmlspecialchars($route['Origin']) ?>">
+                      <input type="hidden" name="destination" value="<?= htmlspecialchars($route['Destination']) ?>">
+                      <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
+                      <input type="hidden" name="max_fare" value="<?= ceil($route['AvgFare'] * 1.2) ?>">
+                      <button type="submit" class="rebook-btn">
+                        <?php if ($index === 0): ?>
+                          <i class="fas fa-star icon-with-margin"></i>
+                          Book Again
+                        <?php else: ?>
+                          <i class="fas fa-redo icon-with-margin"></i>
+                          Rebook
+                        <?php endif; ?>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="6" class="table-empty-message">
+                    <div style="text-align: center; padding: 40px;">
+                      <i class="fas fa-route" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
+                      <p style="margin: 0; color: #666;">No frequent trips found</p>
+                      <small style="color: #888;">Make some bookings to see your frequent routes here!</small>
+                      <div style="margin-top: 15px;">
+                        <a href="../index.php" class="rebook-btn" style="display: inline-block; text-decoration: none;">
+                          <i class="fas fa-search icon-with-margin"></i>
+                          Search Routes
+                        </a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
         </div>
-        
+        <p class="hint">
+          <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+          Your favorite routes, sorted by how often you travel. Click "Book Again" to find buses.
+        </p>
       </div>
 
       <div class="section">
         <h2><i class="fas fa-receipt section-icon"></i> Receipts</h2>
         <div class="receipt-card-wrapper">
-          <?php if ($recentBooking): ?>
-          <div class="receipt-card">
-            <div class="receipt-details">
-              <i class="far fa-file-alt receipt-icon"></i>
-              <div>
-                <p class="receipt-booking-id">Bus #<?= htmlspecialchars($recentBooking['BusNumber'] ?? 'N/A') ?></p>
-                <p class="receipt-date">Date: <?= date('d F Y', strtotime($recentBooking['BookingTime'])) ?> • <?= htmlspecialchars($recentBooking['Origin'] ?? 'N/A') ?> &rarr; <?= htmlspecialchars($recentBooking['Destination'] ?? 'N/A') ?></p>
+          <?php 
+          // Get all bookings for receipts based on user's phone number
+          $receiptBookings = [];
+          if ($userPhoneNumber && $conn) {
+              try {
+                  // Get all confirmed/completed bookings for receipt generation
+                  $stmt = $conn->prepare("
+                      SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
+                             bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID
+                      FROM Booking b
+                      JOIN Bus bus ON b.BusID = bus.ID
+                      LEFT JOIN Route r ON bus.RouteId = r.ID
+                      WHERE b.PhoneNumber = ? 
+                        AND b.Status IN ('confirmed', 'completed')
+                      ORDER BY b.BookingTime DESC
+                      LIMIT 10
+                  ");
+                  $stmt->execute([$userPhoneNumber]);
+                  $receiptBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                  
+                  // Log for debugging
+                  error_log("DEBUG: Found " . count($receiptBookings) . " bookings for receipts, phone " . $userPhoneNumber);
+                  
+              } catch (PDOException $e) {
+                  error_log("Error fetching receipt bookings: " . $e->getMessage());
+                  $receiptBookings = [];
+              }
+          }
+          ?>
+          
+          <?php if (!empty($receiptBookings)): ?>
+            <div style="display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+              <?php foreach ($receiptBookings as $booking): ?>
+              <div class="receipt-card">
+                <div class="receipt-details">
+                  <i class="far fa-file-alt receipt-icon"></i>
+                  <div>
+                    <p class="receipt-booking-id">
+                      <strong>Bus #<?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></strong>
+                      <span style="font-size: 0.85em; color: #666; margin-left: 8px;">
+                        <?= 'LT-' . str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>
+                      </span>
+                    </p>
+                    <p class="receipt-date">
+                      <i class="fas fa-calendar-check" style="margin-right: 5px; color: #4a90e2;"></i>
+                      <?= date('d M Y', strtotime($booking['BookingTime'])) ?>
+                      <span style="margin: 0 8px;">•</span>
+                      <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?>
+                    </p>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                      <i class="fas fa-chair" style="margin-right: 5px;"></i>
+                      Seat: <?= htmlspecialchars($booking['SeatNumber']) ?>
+                      <span style="margin: 0 8px;">•</span>
+                      <i class="fas fa-money-bill-wave" style="margin-right: 5px;"></i>
+                      LKR <?= number_format($booking['Fare'], 2) ?>
+                    </p>
+                  </div>
+                </div>
+                <a href="ticket_pdf.php?ref=LT-<?= str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=<?= urlencode($userPhoneNumber) ?>&origin=<?= urlencode($booking['Origin'] ?? '') ?>&destination=<?= urlencode($booking['Destination'] ?? '') ?>&date=<?= urlencode(date('Y-m-d', strtotime($booking['BookingTime']))) ?>&bus=<?= urlencode($booking['BusNumber'] ?? '') ?>&seat=<?= urlencode($booking['SeatNumber']) ?>&fare=<?= urlencode($booking['Fare']) ?>" 
+                   class="download-btn" target="_blank">
+                  <i class="fas fa-download" style="margin-right: 5px;"></i>
+                  Download PDF
+                </a>
               </div>
+              <?php endforeach; ?>
             </div>
-            <a href="ticket_pdf.php?ref=LT-<?= str_pad($recentBooking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=&origin=<?= urlencode($recentBooking['Origin'] ?? '') ?>&destination=<?= urlencode($recentBooking['Destination'] ?? '') ?>&date=<?= urlencode(date('Y-m-d', strtotime($recentBooking['BookingTime']))) ?>&bus=<?= urlencode($recentBooking['BusNumber'] ?? '') ?>&seat=<?= urlencode($recentBooking['SeatNumber']) ?>&fare=<?= urlencode($recentBooking['Fare']) ?>" 
-               class="download-btn">Download PDF</a>
-          </div>
+            
+            <?php if (count($receiptBookings) >= 10): ?>
+            <div style="text-align: center; margin-top: 15px;">
+              <small style="color: #666;">
+                <i class="fas fa-info-circle"></i>
+                Showing latest 10 bookings. Contact support for older receipts.
+              </small>
+            </div>
+            <?php endif; ?>
+            
           <?php else: ?>
+          <!-- No bookings found -->
           <div class="receipt-card">
             <div class="receipt-details">
               <i class="far fa-file-alt receipt-icon"></i>
               <div>
-                <p class="receipt-booking-id">No recent bookings</p>
+                <p class="receipt-booking-id">No bookings found</p>
                 <p class="receipt-date">Make a booking to download receipts</p>
               </div>
             </div>
@@ -538,7 +572,10 @@ if ($conn) {
           </div>
           <?php endif; ?>
         </div>
-        <p class="hint">Download your ticket receipts in PDF format for reference or refunds.</p>
+        <p class="hint">
+          <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+          Download PDF receipts for your bookings with all travel details included.
+        </p>
       </div>
     </div>
   </div>
