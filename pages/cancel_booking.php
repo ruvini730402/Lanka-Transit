@@ -15,6 +15,7 @@ $username = $_SESSION['username'] ?? 'User';
 $error = '';
 $success = '';
 $bookings = [];
+$cancellationHistory = [];
 
 try {
     $cancellationService = new BookingCancellation();
@@ -25,9 +26,9 @@ try {
         $reason = trim($_POST['cancellation_reason']);
         
         if (empty($bookingId)) {
-            $error = 'Please select a booking to cancel';
+            $error = 'Please select a trip to cancel';
         } elseif (empty($reason)) {
-            $error = 'Please provide a cancellation reason';
+            $error = 'Please tell us why you need to cancel this booking';
         } else {
             $result = $cancellationService->submitCancellation($bookingId, $userId, $reason);
             if ($result['success']) {
@@ -41,8 +42,11 @@ try {
     // Get user's bookings
     $bookings = $cancellationService->getUserBookings($userId);
     
+    // Get user's cancellation history
+    $cancellationHistory = $cancellationService->getUserCancellationHistory($userId);
+    
 } catch (Exception $e) {
-    $error = "An error occurred. Please try again.";
+    $error = "Something went wrong. Please try again or contact support if the issue persists.";
     error_log("Error in cancel_booking.php: " . $e->getMessage());
 }
 ?>
@@ -127,9 +131,11 @@ try {
 
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Booking Cancellation Form Container -->
         <div class="cancellation-container">
             <div class="form-card">
-                <h2 class="form-title">Booking Cancellation Form</h2>
+                <h3>❌ Cancel a Booking</h3>
+                <hr class="section-divider">
                 <p class="form-subtitle">Cancel your upcoming trips if plans change. Note: Only future bookings can be cancelled.</p>
 
                 <?php if ($error): ?>
@@ -183,6 +189,118 @@ try {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Cancellation History Container -->
+        <div class="cancellation-container">
+            <div class="form-card">
+                <h3>� Cancellation History</h3>
+                <hr class="section-divider">
+                <p class="form-subtitle">Track the status of your booking cancellation requests. Admins will update the status as they process your requests.</p>
+
+                <?php if (!empty($cancellationHistory)): ?>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Request #</th>
+                                    <th>Trip Details</th>
+                                    <th>Seat & Fare</th>
+                                    <th>Reason</th>
+                                    <th>Requested Date</th>
+                                    <th>Status</th>
+                                    <th>Admin Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($cancellationHistory as $cancellation): ?>
+                                    <tr>
+                                        <td>
+                                            <strong>CR-<?= $cancellation['cancellation_id'] ?></strong>
+                                        </td>
+                                        <td>
+                                            <div class="trip-info">
+                                                <strong>Bus: <?= htmlspecialchars($cancellation['BusNumber'] ?? 'N/A') ?></strong><br>
+                                                <span class="text-muted">
+                                                    <?= htmlspecialchars($cancellation['Origin'] ?? 'Unknown') ?> → 
+                                                    <?= htmlspecialchars($cancellation['Destination'] ?? 'Unknown') ?>
+                                                </span><br>
+                                                <small class="text-muted">
+                                                    Travel: <?= date('M j, Y g:i A', strtotime($cancellation['BookingTime'])) ?>
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong>Seat: <?= $cancellation['SeatNumber'] ?></strong><br>
+                                            <span class="text-success">Rs. <?= number_format($cancellation['Fare'], 2) ?></span>
+                                        </td>
+                                        <td>
+                                            <div class="reason-text">
+                                                <?= htmlspecialchars($cancellation['CancellationReason']) ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?= date('M j, Y', strtotime($cancellation['RequestedAt'])) ?><br>
+                                            <small class="text-muted"><?= date('g:i A', strtotime($cancellation['RequestedAt'])) ?></small>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            $statusClass = '';
+                                            $statusIcon = '';
+                                            switch (strtolower($cancellation['cancellation_status'])) {
+                                                case 'pending':
+                                                    $statusClass = 'status-pending';
+                                                    $statusIcon = 'fas fa-clock';
+                                                    break;
+                                                case 'approved':
+                                                    $statusClass = 'status-approved';
+                                                    $statusIcon = 'fas fa-check-circle';
+                                                    break;
+                                                case 'rejected':
+                                                    $statusClass = 'status-rejected';
+                                                    $statusIcon = 'fas fa-times-circle';
+                                                    break;
+                                                case 'processed':
+                                                    $statusClass = 'status-processed';
+                                                    $statusIcon = 'fas fa-check-double';
+                                                    break;
+                                                default:
+                                                    $statusClass = 'status-unknown';
+                                                    $statusIcon = 'fas fa-question-circle';
+                                            }
+                                            ?>
+                                            <span class="status-badge <?= $statusClass ?>">
+                                                <i class="<?= $statusIcon ?>"></i>
+                                                <?= ucfirst($cancellation['cancellation_status']) ?>
+                                            </span>
+                                            <?php if ($cancellation['ProcessedAt']): ?>
+                                                <br><small class="text-muted">
+                                                    Processed: <?= date('M j, Y', strtotime($cancellation['ProcessedAt'])) ?>
+                                                </small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($cancellation['AdminNotes']): ?>
+                                                <div class="admin-notes">
+                                                    <?= htmlspecialchars($cancellation['AdminNotes']) ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <span class="text-muted">No notes yet</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="no-data-message">
+                        <i class="fas fa-inbox"></i>
+                        <h4>No Cancellation Requests Yet</h4>
+                        <p>You haven't submitted any booking cancellation requests. When you do, they'll appear here with their status updates.</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

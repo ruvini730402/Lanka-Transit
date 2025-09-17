@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 
 // Check authentication
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Please login to submit feedback']);
+    echo json_encode(['success' => false, 'message' => 'Please log in to share your feedback']);
     exit();
 }
 
@@ -14,7 +14,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 if (!$conn) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+    echo json_encode(['success' => false, 'message' => 'Unable to connect to our system. Please try again later.']);
     exit();
 }
 
@@ -29,7 +29,7 @@ try {
     // Validation
     if (!$bookingId || !$busId || !$rating || $rating < 1 || $rating > 5) {
         error_log("Feedback validation failed - BookingId: $bookingId, BusId: $busId, Rating: $rating");
-        echo json_encode(['success' => false, 'message' => 'Invalid data provided']);
+        echo json_encode(['success' => false, 'message' => 'Please fill in all required fields and select a rating from 1-5 stars']);
         exit();
     }
     
@@ -40,7 +40,7 @@ try {
     
     if (!$userInfo || !$userInfo['PhoneNumber']) {
         error_log("User phone number not found for UserId: $userId");
-        echo json_encode(['success' => false, 'message' => 'User phone number not found']);
+        echo json_encode(['success' => false, 'message' => 'Your account information is incomplete. Please contact support.']);
         exit();
     }
     
@@ -52,7 +52,7 @@ try {
     $stmt->execute([$bookingId, $userPhoneNumber, $busId]);
     if (!$stmt->fetch()) {
         error_log("Booking verification failed - BookingId: $bookingId, Phone: $userPhoneNumber, BusId: $busId");
-        echo json_encode(['success' => false, 'message' => 'Booking not found or access denied']);
+        echo json_encode(['success' => false, 'message' => 'We cannot verify this booking. Please ensure you select one of your trips.']);
         exit();
     }
     
@@ -67,7 +67,7 @@ try {
     $stmt->execute([$userId, $bookingId, $busId, $userPhoneNumber]);
     
     if ($stmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'You have already submitted feedback for this trip']);
+        echo json_encode(['success' => false, 'message' => 'You have already shared feedback for this trip. Thank you!']);
         exit();
     }
     
@@ -78,13 +78,13 @@ try {
     ");
     
     if ($stmt->execute([$userId, $busId, $rating, $comment])) {
-        echo json_encode(['success' => true, 'message' => 'Feedback submitted successfully']);
+        echo json_encode(['success' => true, 'message' => 'Thank you for sharing your feedback! Your input helps us improve our service.']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to submit feedback']);
+        echo json_encode(['success' => false, 'message' => 'We encountered an issue saving your feedback. Please try again.']);
     }
     
 } catch (Exception $e) {
     error_log("Feedback submission error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'An error occurred while submitting feedback']);
+    echo json_encode(['success' => false, 'message' => 'Something went wrong while saving your feedback. Please try again later.']);
 }
 ?>

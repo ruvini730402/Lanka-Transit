@@ -17,7 +17,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 if (!$conn) {
-    die("❌ Connection failed: Unable to connect to database");
+    die("Unable to connect to our system. Please try again later.");
 }
 
 // Get username from database for sidebar

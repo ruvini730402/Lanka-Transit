@@ -4,7 +4,7 @@ session_start();
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     echo "<script>
-        alert('❌ Please login to report incidents.');
+        alert('Please log in to report incidents.');
         window.location.href = '../auth/login.php';
     </script>";
     exit();
@@ -16,7 +16,7 @@ $userId = $_SESSION['user_id'];
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405); // Method Not Allowed
     echo "<script>
-        alert('❌ Invalid request method.');
+        alert('Invalid request. Please try again.');
         window.location.href = 'incidents.php';
     </script>";
     exit;
@@ -30,7 +30,7 @@ $database = new Database();
 $conn = $database->getConnection();
 
 if (!$conn) {
-    die("Connection failed: Unable to connect to database");
+    die("Unable to connect to our system. Please try again later.");
 }
 
 // Sanitize and receive POST input
@@ -41,11 +41,11 @@ $bookingId = filter_var($_POST['booking_id'] ?? null, FILTER_VALIDATE_INT);
 $errors = [];
 
 if (empty($description) || strlen($description) < 10) {
-    $errors[] = "Description must be at least 10 characters.";
+    $errors[] = "Please provide a detailed description (at least 10 characters).";
 }
 
 if (!$bookingId || $bookingId === false) {
-    $errors[] = "Please select a trip for this incident.";
+    $errors[] = "Please select a completed trip to report the incident.";
 }
 
 // Verify the booking belongs to the current user using phone number
@@ -56,14 +56,14 @@ if ($bookingId && empty($errors)) {
     $userInfo = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$userInfo || !$userInfo['PhoneNumber']) {
-        $errors[] = "User phone number not found.";
+        $errors[] = "Your account information is incomplete. Please contact support.";
     } else {
         // Verify booking belongs to user AND is a past booking (incidents can only be reported for completed trips)
         $stmt = $conn->prepare("SELECT ID, BookingTime FROM Booking WHERE ID = ? AND PhoneNumber = ? AND Status IN ('confirmed', 'completed') AND BookingTime < NOW()");
         $stmt->execute([$bookingId, $userInfo['PhoneNumber']]);
         $bookingData = $stmt->fetch();
         if (!$bookingData) {
-            $errors[] = "Invalid booking selection. You can only report incidents for completed trips.";
+            $errors[] = "Please select one of your completed trips. Incidents can only be reported for past journeys.";
             error_log("Security: User $userId attempted to report incident for unauthorized/future booking $bookingId");
         }
     }
@@ -94,12 +94,12 @@ if (!empty($errors)) {
         // Log successful incident creation
         error_log("Incident created successfully - ID: $incidentId, UserID: $userId, BookingID: $bookingId");
         
-        $response = "✅ Incident reported successfully. Your Incident ID is: INC-$incidentId";
+        $response = "Your incident has been reported successfully. Reference ID: INC-$incidentId. We will investigate and get back to you soon.";
         $statusClass = "success";
     } catch (PDOException $e) {
         // Log the actual error for debugging
         error_log("Incident submission error: " . $e->getMessage());
-        $response = "❌ Failed to submit incident. Database error: " . $e->getMessage();
+        $response = "We encountered an issue while reporting your incident. Please try again later.";
         $statusClass = "danger";
     }
 }

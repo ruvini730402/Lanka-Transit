@@ -588,6 +588,11 @@ if ($conn) {
         <span class="close" onclick="closeFeedbackModal()">&times;</span>
       </div>
       <div class="modal-body">
+        <!-- Notification area for feedback -->
+        <div id="feedbackNotification" class="notification" style="display: none;">
+          <span id="feedbackNotificationMessage"></span>
+        </div>
+        
         <div class="trip-info">
           <p><strong>Bus:</strong> <span id="modalBusNumber"></span></p>
         </div>
@@ -660,6 +665,30 @@ function openFeedbackModal(bookingId, busNumber, busId) {
 
 function closeFeedbackModal() {
     document.getElementById('feedbackModal').style.display = 'none';
+    // Clear any notifications when closing
+    hideNotification();
+}
+
+// Function to show notifications in the modal
+function showNotification(message, type) {
+    const notification = document.getElementById('feedbackNotification');
+    const notificationMessage = document.getElementById('feedbackNotificationMessage');
+    
+    notificationMessage.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+    
+    // Auto-hide after 5 seconds for success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            hideNotification();
+        }, 5000);
+    }
+}
+
+function hideNotification() {
+    const notification = document.getElementById('feedbackNotification');
+    notification.style.display = 'none';
 }
 
 // Handle feedback form submission
@@ -670,9 +699,15 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
     const rating = document.querySelector('input[name="rating"]:checked');
     
     if (!rating) {
-        alert('Please select a rating');
+        showNotification('Please select a rating before submitting your feedback', 'error');
         return;
     }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('.btn-submit');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
     
     // Send feedback to backend
     fetch('../pages/submit_feedback.php', {
@@ -688,16 +723,26 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
     .then(data => {
         console.log('Feedback response:', data); // Debug logging
         if (data.success) {
-            alert('Thank you for your feedback!');
-            closeFeedbackModal();
-            location.reload(); // Refresh to show updated feedback status
+            showNotification(data.message || 'Thank you for your feedback!', 'success');
+            // Reset form after successful submission
+            this.reset();
+            // Refresh the page after a short delay to show updated feedback status
+            setTimeout(() => {
+                closeFeedbackModal();
+                location.reload();
+            }, 2000);
         } else {
-            alert('Error submitting feedback: ' + (data.message || 'Unknown error'));
+            showNotification(data.message || 'Unable to submit feedback. Please try again.', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error submitting feedback. Please try again. Check console for details.');
+        showNotification('Unable to submit feedback at the moment. Please check your connection and try again.', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     });
 });
 </script>

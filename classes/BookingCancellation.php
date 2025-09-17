@@ -82,7 +82,7 @@ class BookingCancellation {
             if (!$user || !$user['PhoneNumber']) {
                 return [
                     'success' => false,
-                    'error' => 'User phone number not found'
+                    'error' => 'Your account information is incomplete. Please contact support.'
                 ];
             }
             
@@ -97,7 +97,7 @@ class BookingCancellation {
                 error_log("Security: User $userId attempted to cancel unauthorized/past booking $bookingId");
                 return [
                     'success' => false,
-                    'error' => 'Invalid booking selection. You can only cancel future bookings that belong to you.'
+                    'error' => 'Please select one of your upcoming trips. Only future bookings can be cancelled.'
                 ];
             }
             
@@ -111,20 +111,95 @@ class BookingCancellation {
                 error_log("Cancellation request submitted successfully - BookingID: $bookingId, UserID: $userId");
                 return [
                     'success' => true,
-                    'message' => 'Cancellation request submitted successfully! We will process your request within 24 hours.'
+                    'message' => 'Your cancellation request has been submitted successfully! We will process your request and notify you soon.'
                 ];
             } else {
                 return [
                     'success' => false,
-                    'error' => 'Failed to submit cancellation request'
+                    'error' => 'Unable to submit your cancellation request at the moment. Please try again.'
                 ];
             }
         } catch (Exception $e) {
             error_log("Error submitting cancellation: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => 'An error occurred while processing your request'
+                'error' => 'Something went wrong while processing your request. Please try again later.'
             ];
+        }
+    }
+    
+    /**
+     * Get user's cancellation history
+     * @param int $userId
+     * @return array
+     */
+    public function getUserCancellationHistory($userId) {
+        try {
+            // Get user's phone number first
+            $sql = "SELECT PhoneNumber FROM User WHERE ID = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$user || !$user['PhoneNumber']) {
+                error_log("User phone number not found for userId: $userId");
+                return [];
+            }
+            
+            $userPhoneNumber = $user['PhoneNumber'];
+            error_log("DEBUG: Looking for cancellations for phone: $userPhoneNumber, userId: $userId");
+            
+            // Query to get user's cancellation history with booking details
+            // Simplified query to avoid column existence check
+            $sql = "SELECT 
+                        bc.ID as cancellation_id,
+                        bc.BookingID,
+                        bc.CancellationReason,
+                        bc.RequestedAt,
+                        bc.Status as cancellation_status,
+                        bc.ProcessedAt,
+                        '' as AdminNotes,
+                        b.SeatNumber,
+                        b.Fare,
+                        b.BookingTime,
+                        bus.BusNumber,
+                        r.Origin,
+                        r.Destination
+                    FROM BookingCancellation bc
+                    JOIN Booking b ON bc.BookingID = b.ID
+                    LEFT JOIN Bus bus ON b.BusID = bus.ID
+                    LEFT JOIN Route r ON bus.RouteId = r.ID
+                    WHERE bc.UserID = ? AND b.PhoneNumber = ?
+                    ORDER BY bc.RequestedAt DESC";
+                    
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$userId, $userPhoneNumber]);
+            $cancellations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Log for debugging
+            error_log("DEBUG: Found " . count($cancellations) . " cancellation records for user " . $userId);
+            error_log("DEBUG: Query executed with userId: $userId, phone: $userPhoneNumber");
+            
+            if (empty($cancellations)) {
+                // Let's check if there are any cancellations at all for this user
+                $debugSql = "SELECT COUNT(*) as count FROM BookingCancellation WHERE UserID = ?";
+                $debugStmt = $this->pdo->prepare($debugSql);
+                $debugStmt->execute([$userId]);
+                $debugResult = $debugStmt->fetch(PDO::FETCH_ASSOC);
+                error_log("DEBUG: Total cancellations for userId $userId: " . $debugResult['count']);
+                
+                // Check if there are any bookings for this phone number
+                $debugSql2 = "SELECT COUNT(*) as count FROM Booking WHERE PhoneNumber = ?";
+                $debugStmt2 = $this->pdo->prepare($debugSql2);
+                $debugStmt2->execute([$userPhoneNumber]);
+                $debugResult2 = $debugStmt2->fetch(PDO::FETCH_ASSOC);
+                error_log("DEBUG: Total bookings for phone $userPhoneNumber: " . $debugResult2['count']);
+            }
+            
+            return $cancellations;
+        } catch (Exception $e) {
+            error_log("Error fetching cancellation history: " . $e->getMessage());
+            return [];
         }
     }
 }
