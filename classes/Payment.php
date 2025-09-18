@@ -22,9 +22,9 @@ class Payment {
         }
         
         // Use configuration from PayHereConfig
-        $this->merchant_id = PayHereConfig::MERCHANT_ID;
-        $this->merchant_secret = PayHereConfig::MERCHANT_SECRET;
-        $this->sandbox_mode = PayHereConfig::SANDBOX_MODE;
+        $this->merchant_id = PayHereConfig::getMerchantId();
+        $this->merchant_secret = PayHereConfig::getMerchantSecret();
+        $this->sandbox_mode = PayHereConfig::isSandbox();
     }
     
     /**
@@ -39,7 +39,7 @@ class Payment {
         $hash = $this->generateHash($order_id, $amount, $currency);
         
         // Get base URL for callbacks
-        $base_url = PayHereConfig::BASE_URL;
+        $base_url = PayHereConfig::getBaseUrl();
         
         $formData = [
             'merchant_id' => $this->merchant_id,
@@ -48,7 +48,7 @@ class Payment {
             'notify_url' => PayHereConfig::getNotifyUrl(),
             'order_id' => $order_id,
             'items' => 'Bus Ticket - ' . $bookingData['origin'] . ' to ' . $bookingData['destination'],
-            'currency' => PayHereConfig::CURRENCY,
+            'currency' => PayHereConfig::getCurrency(),
             'amount' => $amount,
             'first_name' => $bookingData['passenger_name'],
             'last_name' => '',
