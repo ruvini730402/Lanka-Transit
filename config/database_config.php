@@ -25,7 +25,11 @@ class DatabaseConfig {
      * @return string
      */
     public static function getHost() {
-        return EnvLoader::get('DB_HOST', 'localhost');
+        $host = EnvLoader::get('DB_HOST');
+        if (empty($host)) {
+            throw new Exception('DB_HOST environment variable is required');
+        }
+        return $host;
     }
     
     /**
@@ -33,7 +37,11 @@ class DatabaseConfig {
      * @return string
      */
     public static function getDatabaseName() {
-        return EnvLoader::get('DB_NAME', 'lanka_transit');
+        $dbName = EnvLoader::get('DB_NAME');
+        if (empty($dbName)) {
+            throw new Exception('DB_NAME environment variable is required');
+        }
+        return $dbName;
     }
     
     /**
@@ -41,7 +49,11 @@ class DatabaseConfig {
      * @return string
      */
     public static function getUsername() {
-        return EnvLoader::get('DB_USERNAME', 'root');
+        $username = EnvLoader::get('DB_USERNAME');
+        if (empty($username)) {
+            throw new Exception('DB_USERNAME environment variable is required');
+        }
+        return $username;
     }
     
     /**
@@ -49,6 +61,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getPassword() {
+        // Password can be empty for some local setups, so we don't throw an error
         return EnvLoader::get('DB_PASSWORD', '');
     }
     

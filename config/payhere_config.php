@@ -25,7 +25,11 @@ class PayHereConfig {
      * @return string
      */
     public static function getMerchantId() {
-        return EnvLoader::get('PAYHERE_MERCHANT_ID', '1231682');
+        $merchantId = EnvLoader::get('PAYHERE_MERCHANT_ID');
+        if (empty($merchantId)) {
+            throw new Exception('PAYHERE_MERCHANT_ID environment variable is required');
+        }
+        return $merchantId;
     }
     
     /**
@@ -33,7 +37,11 @@ class PayHereConfig {
      * @return string
      */
     public static function getMerchantSecret() {
-        return EnvLoader::get('PAYHERE_MERCHANT_SECRET', 'MzMwMDI1MTI4MjEyNjc2ODY2MDQ0MjQ4NjEyODc1NDE0MTExMjc3NQ==');
+        $merchantSecret = EnvLoader::get('PAYHERE_MERCHANT_SECRET');
+        if (empty($merchantSecret)) {
+            throw new Exception('PAYHERE_MERCHANT_SECRET environment variable is required');
+        }
+        return $merchantSecret;
     }
     
     /**
@@ -50,7 +58,11 @@ class PayHereConfig {
      * @return string
      */
     public static function getBaseUrl() {
-        return EnvLoader::get('BASE_URL', 'http://localhost:3000');
+        $baseUrl = EnvLoader::get('BASE_URL');
+        if (empty($baseUrl)) {
+            throw new Exception('BASE_URL environment variable is required');
+        }
+        return $baseUrl;
     }
     
     /**
