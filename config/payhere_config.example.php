@@ -1,16 +1,13 @@
 <?php
 /**
- * PayHere Configuration
- * Uses environment variables for secure credential management
+ * PayHere Configuration Template
+ * This file is safe for GitHub. Copy to payhere_config.php and configure.
  * 
  * Configuration Priority:
  * 1. Environment Variables (Production)
  * 2. .env file (Development)
  * 3. Local config files (Local development)
  */
-
-require_once __DIR__ . '/env_loader.php';
-
 class PayHereConfig {
     // PayHere URLs
     const SANDBOX_URL = 'https://sandbox.payhere.lk/pay/checkout';
@@ -25,7 +22,7 @@ class PayHereConfig {
      * @return string
      */
     public static function getMerchantId() {
-        return EnvLoader::get('PAYHERE_MERCHANT_ID', '1231682');
+        return $_ENV['PAYHERE_MERCHANT_ID'] ?? self::getLocalConfig('merchant_id') ?? 'your-merchant-id';
     }
     
     /**
@@ -33,7 +30,7 @@ class PayHereConfig {
      * @return string
      */
     public static function getMerchantSecret() {
-        return EnvLoader::get('PAYHERE_MERCHANT_SECRET', 'MzMwMDI1MTI4MjEyNjc2ODY2MDQ0MjQ4NjEyODc1NDE0MTExMjc3NQ==');
+        return $_ENV['PAYHERE_MERCHANT_SECRET'] ?? self::getLocalConfig('merchant_secret') ?? 'your-merchant-secret';
     }
     
     /**
@@ -41,7 +38,7 @@ class PayHereConfig {
      * @return bool
      */
     public static function isSandbox() {
-        $sandbox = EnvLoader::get('PAYHERE_SANDBOX', 'true');
+        $sandbox = $_ENV['PAYHERE_SANDBOX'] ?? self::getLocalConfig('sandbox') ?? 'true';
         return filter_var($sandbox, FILTER_VALIDATE_BOOLEAN);
     }
     
@@ -50,7 +47,7 @@ class PayHereConfig {
      * @return string
      */
     public static function getBaseUrl() {
-        return EnvLoader::get('BASE_URL', 'http://localhost:3000');
+        return $_ENV['BASE_URL'] ?? self::getLocalConfig('base_url') ?? 'http://localhost';
     }
     
     /**
@@ -117,6 +114,20 @@ class PayHereConfig {
             )
         );
         return $hash;
+    }
+    
+    /**
+     * Fallback to local config file if exists (not in repo)
+     * @param string $key
+     * @return mixed|null
+     */
+    private static function getLocalConfig($key) {
+        $localConfigFile = __DIR__ . '/local_payhere_config.php';
+        if (file_exists($localConfigFile)) {
+            $config = include $localConfigFile;
+            return $config[$key] ?? null;
+        }
+        return null;
     }
 }
 ?>

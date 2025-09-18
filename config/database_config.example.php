@@ -1,16 +1,13 @@
 <?php
 /**
- * Database Configuration
- * Uses environment variables for secure credential management
+ * Database Configuration Template
+ * This file is safe for GitHub. Copy to database_config.php and configure.
  * 
  * Configuration Priority:
  * 1. Environment Variables (Production)
  * 2. .env file (Development)
  * 3. Local config files (Local development)
  */
-
-require_once __DIR__ . '/env_loader.php';
-
 class DatabaseConfig {
     // Database connection credentials
     const DB_OPTIONS = [
@@ -25,7 +22,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getHost() {
-        return EnvLoader::get('DB_HOST', 'localhost');
+        return $_ENV['DB_HOST'] ?? self::getLocalConfig('host') ?? 'localhost';
     }
     
     /**
@@ -33,7 +30,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getDatabaseName() {
-        return EnvLoader::get('DB_NAME', 'lanka_transit');
+        return $_ENV['DB_NAME'] ?? self::getLocalConfig('database') ?? 'lanka_transit';
     }
     
     /**
@@ -41,7 +38,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getUsername() {
-        return EnvLoader::get('DB_USERNAME', 'root');
+        return $_ENV['DB_USERNAME'] ?? self::getLocalConfig('username') ?? 'root';
     }
     
     /**
@@ -49,7 +46,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getPassword() {
-        return EnvLoader::get('DB_PASSWORD', '');
+        return $_ENV['DB_PASSWORD'] ?? self::getLocalConfig('password') ?? '';
     }
     
     /**
@@ -57,7 +54,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getCharset() {
-        return EnvLoader::get('DB_CHARSET', 'utf8mb4');
+        return $_ENV['DB_CHARSET'] ?? 'utf8mb4';
     }
     
     /**
@@ -74,6 +71,20 @@ class DatabaseConfig {
      */
     public static function getOptions() {
         return self::DB_OPTIONS;
+    }
+    
+    /**
+     * Fallback to local config file if exists (not in repo)
+     * @param string $key
+     * @return mixed|null
+     */
+    private static function getLocalConfig($key) {
+        $localConfigFile = __DIR__ . '/local_database_config.php';
+        if (file_exists($localConfigFile)) {
+            $config = include $localConfigFile;
+            return $config[$key] ?? null;
+        }
+        return null;
     }
 }
 ?>

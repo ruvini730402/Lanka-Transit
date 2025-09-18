@@ -1,0 +1,129 @@
+---
+# Lanka Transit - Smart cPanel Deployment Configuration
+# This file enables automatic deployment with secure configuration management
+# Deployment Path: /home/anagatha/public_html/transit.uvacell.com
+
+deployment:
+  tasks:
+    # Set deployment paths
+    - export DEPLOYPATH=/home/anagatha/public_html/transit.uvacell.com
+    - export CONFIGPATH=$DEPLOYPATH/config
+    
+    # Create deployment directories
+    - /bin/mkdir -p $DEPLOYPATH $CONFIGPATH
+    
+    # =================================================================
+    # SECURE CONFIGURATION DEPLOYMENT
+    # =================================================================
+    
+    # Copy template configuration files to production
+    - /bin/cp config/database_config.example.php $CONFIGPATH/database_config.php
+    - /bin/cp config/payhere_config.example.php $CONFIGPATH/payhere_config.php
+    
+    # Copy environment loader
+    - /bin/cp config/env_loader.php $CONFIGPATH/
+    
+    # Create production environment file from cPanel environment variables
+    - echo "# Lanka Transit - Production Environment Configuration" > $DEPLOYPATH/.env
+    - echo "# Generated automatically during deployment" >> $DEPLOYPATH/.env
+    - echo "" >> $DEPLOYPATH/.env
+    - echo "# Database Configuration" >> $DEPLOYPATH/.env
+    - echo "DB_HOST=${DB_HOST:-bosennoy016fmb5flv0m-mysql.services.clever-cloud.com}" >> $DEPLOYPATH/.env
+    - echo "DB_NAME=${DB_NAME:-bosennoy016fmb5flv0m}" >> $DEPLOYPATH/.env
+    - echo "DB_USERNAME=${DB_USERNAME:-ul9ivik7jhoj9kyh}" >> $DEPLOYPATH/.env
+    - echo "DB_PASSWORD=${DB_PASSWORD:-iVbsGABNeLEWyG69bSqj}" >> $DEPLOYPATH/.env
+    - echo "DB_CHARSET=utf8mb4" >> $DEPLOYPATH/.env
+    - echo "" >> $DEPLOYPATH/.env
+    - echo "# PayHere Configuration" >> $DEPLOYPATH/.env
+    - echo "PAYHERE_MERCHANT_ID=${PAYHERE_MERCHANT_ID:-1231682}" >> $DEPLOYPATH/.env
+    - echo "PAYHERE_MERCHANT_SECRET=${PAYHERE_MERCHANT_SECRET:-MzMwMDI1MTI4MjEyNjc2ODY2MDQ0MjQ4NjEyODc1NDE0MTExMjc3NQ==}" >> $DEPLOYPATH/.env
+    - echo "PAYHERE_SANDBOX=${PAYHERE_SANDBOX:-false}" >> $DEPLOYPATH/.env
+    - echo "" >> $DEPLOYPATH/.env
+    - echo "# Application Configuration" >> $DEPLOYPATH/.env
+    - echo "BASE_URL=${BASE_URL:-https://transit.uvacell.com}" >> $DEPLOYPATH/.env
+    - echo "APP_ENV=production" >> $DEPLOYPATH/.env
+    - echo "DEBUG=${DEBUG:-false}" >> $DEPLOYPATH/.env
+    - echo "APP_NAME=Lanka Transit" >> $DEPLOYPATH/.env
+    
+    # =================================================================
+    # APPLICATION FILES DEPLOYMENT
+    # =================================================================
+    
+    # Deploy main application files
+    - /bin/cp index.php $DEPLOYPATH/
+    - /bin/cp test_search.php $DEPLOYPATH/
+    - /bin/cp package.xml $DEPLOYPATH/
+    
+    # Deploy application directories
+    - /bin/cp -R pages $DEPLOYPATH/
+    - /bin/cp -R assets $DEPLOYPATH/
+    - /bin/cp -R includes $DEPLOYPATH/
+    - /bin/cp -R classes $DEPLOYPATH/
+    - /bin/cp -R info $DEPLOYPATH/
+    
+    # Deploy additional config files (schema, sample data)
+    - /bin/cp config/schema.sql $CONFIGPATH/ 2>/dev/null || true
+    - /bin/cp config/sample_data.sql $CONFIGPATH/ 2>/dev/null || true
+    
+    # =================================================================
+    # SECURITY CONFIGURATION
+    # =================================================================
+    
+    # Create .htaccess for config directory protection
+    - echo "# Lanka Transit - Config Directory Protection" > $CONFIGPATH/.htaccess
+    - echo "Order Allow,Deny" >> $CONFIGPATH/.htaccess
+    - echo "Deny from all" >> $CONFIGPATH/.htaccess
+    - echo "<Files \"*.sql\">" >> $CONFIGPATH/.htaccess
+    - echo "Allow from all" >> $CONFIGPATH/.htaccess
+    - echo "</Files>" >> $CONFIGPATH/.htaccess
+    
+    # Create main .htaccess for security
+    - echo "# Lanka Transit - Security Configuration" > $DEPLOYPATH/.htaccess
+    - echo "RewriteEngine On" >> $DEPLOYPATH/.htaccess
+    - echo "" >> $DEPLOYPATH/.htaccess
+    - echo "# Protect environment files" >> $DEPLOYPATH/.htaccess
+    - echo "<Files \".env*\">" >> $DEPLOYPATH/.htaccess
+    - echo "Order Allow,Deny" >> $DEPLOYPATH/.htaccess
+    - echo "Deny from all" >> $DEPLOYPATH/.htaccess
+    - echo "</Files>" >> $DEPLOYPATH/.htaccess
+    - echo "" >> $DEPLOYPATH/.htaccess
+    - echo "# Security headers" >> $DEPLOYPATH/.htaccess
+    - echo "Header always set X-Content-Type-Options nosniff" >> $DEPLOYPATH/.htaccess
+    - echo "Header always set X-Frame-Options DENY" >> $DEPLOYPATH/.htaccess
+    - echo "Header always set X-XSS-Protection \"1; mode=block\"" >> $DEPLOYPATH/.htaccess
+    
+    # =================================================================
+    # PERMISSIONS CONFIGURATION
+    # =================================================================
+    
+    # Set secure permissions for configuration
+    - /bin/chmod 700 $CONFIGPATH
+    - /bin/chmod 600 $CONFIGPATH/*.php
+    - /bin/chmod 600 $DEPLOYPATH/.env
+    - /bin/chmod 644 $CONFIGPATH/.htaccess
+    - /bin/chmod 644 $DEPLOYPATH/.htaccess
+    
+    # Set standard web permissions for application files
+    - /bin/find $DEPLOYPATH -name "*.php" -not -path "*/config/*" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -name "*.css" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -name "*.js" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -name "*.html" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -name "*.xml" -exec chmod 644 {} \;
+    
+    # Set directory permissions
+    - /bin/find $DEPLOYPATH -type d -not -path "*/config" -exec chmod 755 {} \;
+    
+    # Set SQL files as readable (for database setup)
+    - /bin/chmod 644 $CONFIGPATH/*.sql 2>/dev/null || true
+    
+    # =================================================================
+    # DEPLOYMENT VERIFICATION
+    # =================================================================
+    
+    # Create deployment info file
+    - echo "Lanka Transit - Deployment Information" > $DEPLOYPATH/deployment.info
+    - echo "Deployed: $(date)" >> $DEPLOYPATH/deployment.info
+    - echo "Environment: Production" >> $DEPLOYPATH/deployment.info
+    - echo "Domain: transit.uvacell.com" >> $DEPLOYPATH/deployment.info
+    - echo "Security: Enabled" >> $DEPLOYPATH/deployment.info
+    - /bin/chmod 644 $DEPLOYPATH/deployment.info
