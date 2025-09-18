@@ -1,2 +1,76 @@
-config/database_config.php
-config/payhere_config.php
+# Lanka Transit - Secure Configuration
+
+# Actual configuration files (keep templates only)
+config/local_*_config.php
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and debugging
+*.log
+logs/
+debug.log
+error.log
+
+# Cache and temporary files
+cache/
+temp/
+tmp/
+*.tmp
+*.cache
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing and development
+/tests/test_*.php
+/tests/sample_*.php
+phpunit.xml
+.phpunit.result.cache
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Archive files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# IDE specific files
+.project
+.buildpath
+.settings/
+nbproject/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Vendor directory (if using Composer)
+vendor/
+.gitignore
