@@ -1,154 +1,32 @@
 ---
-# Lanka Transit - Smart cPanel Deployment Configuration
-# This file enables automatic deployment with secure configuration management
-# Deployment Path: /home/anagatha/public_html/transit.uvacell.com
+# Lanka Transit - Simplified cPanel Deployment
+# Deploy the exact same structure as development environment
 
 deployment:
   tasks:
-    # Set deployment paths
+    # Set deployment path
     - export DEPLOYPATH=/home/anagatha/public_html/transit.uvacell.com
-    - export CONFIGPATH=$DEPLOYPATH/config
     
-    # Create deployment directories
-    - /bin/mkdir -p $DEPLOYPATH $CONFIGPATH
+    # Create deployment directory
+    - /bin/mkdir -p $DEPLOYPATH
     
-    # Clean previous deployment (optional - uncomment for fresh deployment)
-    # - /bin/rm -rf $DEPLOYPATH/* 2>/dev/null || true
+    # Copy everything except excluded files/folders
+    - /bin/cp -R * $DEPLOYPATH/
     
-    # =================================================================
-    # SECURE CONFIGURATION DEPLOYMENT
-    # =================================================================
+    # Remove development and git files from production
+    - /bin/rm -rf $DEPLOYPATH/.git
+    - /bin/rm -rf $DEPLOYPATH/tests
+    - /bin/rm -f $DEPLOYPATH/.gitignore
+    - /bin/rm -f $DEPLOYPATH/.cpanel.yml
     
-    # Copy template configuration files to production
-    - /bin/cp config/database_config.example.php $CONFIGPATH/database_config.php 2>/dev/null || /bin/cp config/database_config.php $CONFIGPATH/database_config.php
-    - /bin/cp config/payhere_config.example.php $CONFIGPATH/payhere_config.php 2>/dev/null || /bin/cp config/payhere_config.php $CONFIGPATH/payhere_config.php
-    
-    # Copy environment loader
-    - /bin/cp config/env_loader.php $CONFIGPATH/
-    
-    # Create production environment file from cPanel environment variables
-    - echo "# Lanka Transit - Production Environment Configuration" > $DEPLOYPATH/.env
-    - echo "# Generated automatically during deployment" >> $DEPLOYPATH/.env
-    - echo "" >> $DEPLOYPATH/.env
-    - echo "# Database Configuration" >> $DEPLOYPATH/.env
-    - echo "DB_HOST=${DB_HOST:-bosennoy016fmb5flv0m-mysql.services.clever-cloud.com}" >> $DEPLOYPATH/.env
-    - echo "DB_NAME=${DB_NAME:-bosennoy016fmb5flv0m}" >> $DEPLOYPATH/.env
-    - echo "DB_USERNAME=${DB_USERNAME:-ul9ivik7jhoj9kyh}" >> $DEPLOYPATH/.env
-    - echo "DB_PASSWORD=${DB_PASSWORD:-iVbsGABNeLEWyG69bSqj}" >> $DEPLOYPATH/.env
-    - echo "DB_CHARSET=utf8mb4" >> $DEPLOYPATH/.env
-    - echo "" >> $DEPLOYPATH/.env
-    - echo "# PayHere Configuration" >> $DEPLOYPATH/.env
-    - echo "PAYHERE_MERCHANT_ID=${PAYHERE_MERCHANT_ID:-1231682}" >> $DEPLOYPATH/.env
-    - echo "PAYHERE_MERCHANT_SECRET=${PAYHERE_MERCHANT_SECRET:-MzMwMDI1MTI4MjEyNjc2ODY2MDQ0MjQ4NjEyODc1NDE0MTExMjc3NQ==}" >> $DEPLOYPATH/.env
-    - echo "PAYHERE_SANDBOX=${PAYHERE_SANDBOX:-false}" >> $DEPLOYPATH/.env
-    - echo "" >> $DEPLOYPATH/.env
-    - echo "# Application Configuration" >> $DEPLOYPATH/.env
-    - echo "BASE_URL=${BASE_URL:-https://transit.uvacell.com}" >> $DEPLOYPATH/.env
+    # Update environment for production
     - echo "APP_ENV=production" >> $DEPLOYPATH/.env
-    - echo "DEBUG=${DEBUG:-false}" >> $DEPLOYPATH/.env
-    - echo "APP_NAME=Lanka Transit" >> $DEPLOYPATH/.env
+    - echo "BASE_URL=https://transit.uvacell.com" >> $DEPLOYPATH/.env
     
-    # =================================================================
-    # APPLICATION FILES DEPLOYMENT
-    # =================================================================
-    
-    # Deploy main application files
-    - /bin/cp index.php $DEPLOYPATH/ || echo "Error: index.php copy failed"
-    - /bin/cp .env.example $DEPLOYPATH/ || echo "Warning: .env.example copy failed"
-    - /bin/cp README.md $DEPLOYPATH/ || echo "Warning: README.md copy failed"
-    - /bin/cp LICENSE $DEPLOYPATH/ || echo "Warning: LICENSE copy failed"
-    
-    # Deploy application directories
-    - /bin/cp -R pages $DEPLOYPATH/ || echo "Warning: pages/ copy failed"
-    - /bin/cp -R assets $DEPLOYPATH/ || echo "Warning: assets/ copy failed"
-    - /bin/cp -R includes $DEPLOYPATH/ || echo "Warning: includes/ copy failed"
-    - /bin/cp -R classes $DEPLOYPATH/ || echo "Warning: classes/ copy failed"
-    - /bin/cp -R auth $DEPLOYPATH/ || echo "Warning: auth/ copy failed"
-    - /bin/cp -R Admin $DEPLOYPATH/ || echo "Warning: Admin/ copy failed"
-    - /bin/cp -R PHPMailer $DEPLOYPATH/ || echo "Warning: PHPMailer/ copy failed"
-    - /bin/cp -R info $DEPLOYPATH/ || echo "Warning: info/ copy failed"
-    
-    # Exclude development files from deployment
-    - /bin/rm -rf $DEPLOYPATH/tests 2>/dev/null || true
-    - /bin/rm -rf $DEPLOYPATH/.git 2>/dev/null || true
-    - /bin/rm -rf $DEPLOYPATH/.gitignore 2>/dev/null || true
-    - /bin/rm -rf $DEPLOYPATH/.cpanel.yml 2>/dev/null || true
-    
-    # Deploy additional config files (schema, sample data)
-    - /bin/cp config/schema.sql $CONFIGPATH/ 2>/dev/null || true
-    - /bin/cp config/complete_schema_with_data.sql $CONFIGPATH/ 2>/dev/null || true
-    - /bin/cp config/sep_oct_sample_data.sql $CONFIGPATH/ 2>/dev/null || true
-    
-    # =================================================================
-    # SECURITY CONFIGURATION
-    # =================================================================
-    
-    # Create .htaccess for config directory protection
-    - echo "# Lanka Transit - Config Directory Protection" > $CONFIGPATH/.htaccess
-    - echo "Order Allow,Deny" >> $CONFIGPATH/.htaccess
-    - echo "Deny from all" >> $CONFIGPATH/.htaccess
-    - echo "<Files \"*.sql\">" >> $CONFIGPATH/.htaccess
-    - echo "Allow from all" >> $CONFIGPATH/.htaccess
-    - echo "</Files>" >> $CONFIGPATH/.htaccess
-    
-    # Create main .htaccess for security
-    - echo "# Lanka Transit - Security Configuration" > $DEPLOYPATH/.htaccess
-    - echo "RewriteEngine On" >> $DEPLOYPATH/.htaccess
-    - echo "" >> $DEPLOYPATH/.htaccess
-    - echo "# Protect environment files" >> $DEPLOYPATH/.htaccess
-    - echo "<Files \".env*\">" >> $DEPLOYPATH/.htaccess
-    - echo "Order Allow,Deny" >> $DEPLOYPATH/.htaccess
-    - echo "Deny from all" >> $DEPLOYPATH/.htaccess
-    - echo "</Files>" >> $DEPLOYPATH/.htaccess
-    - echo "" >> $DEPLOYPATH/.htaccess
-    - echo "# Security headers" >> $DEPLOYPATH/.htaccess
-    - echo "Header always set X-Content-Type-Options nosniff" >> $DEPLOYPATH/.htaccess
-    - echo "Header always set X-Frame-Options DENY" >> $DEPLOYPATH/.htaccess
-    - echo "Header always set X-XSS-Protection \"1; mode=block\"" >> $DEPLOYPATH/.htaccess
-    
-    # =================================================================
-    # PERMISSIONS CONFIGURATION
-    # =================================================================
-    
-    # Set secure permissions for configuration
-    - /bin/chmod 700 $CONFIGPATH
-    - /bin/chmod 600 $CONFIGPATH/*.php
+    # Set basic permissions
+    - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
     - /bin/chmod 600 $DEPLOYPATH/.env
-    - /bin/chmod 644 $CONFIGPATH/.htaccess
-    - /bin/chmod 644 $DEPLOYPATH/.htaccess
     
-    # Set standard web permissions for application files
-    - /bin/find $DEPLOYPATH -name "*.php" -not -path "*/config/*" -exec chmod 644 {} \;
-    - /bin/find $DEPLOYPATH -name "*.css" -exec chmod 644 {} \;
-    - /bin/find $DEPLOYPATH -name "*.js" -exec chmod 644 {} \;
-    - /bin/find $DEPLOYPATH -name "*.html" -exec chmod 644 {} \;
-    - /bin/find $DEPLOYPATH -name "*.xml" -exec chmod 644 {} \;
-    
-    # Set directory permissions
-    - /bin/find $DEPLOYPATH -type d -not -path "*/config" -exec chmod 755 {} \;
-    
-    # Set SQL files as readable (for database setup)
-    - /bin/chmod 644 $CONFIGPATH/*.sql 2>/dev/null || true
-    
-    # =================================================================
-    # DEPLOYMENT VERIFICATION AND LOGGING
-    # =================================================================
-    
-    # Create deployment info file
-    - echo "Lanka Transit - Deployment Information" > $DEPLOYPATH/deployment.info
-    - echo "Deployed: $(date)" >> $DEPLOYPATH/deployment.info
-    - echo "Environment: Production" >> $DEPLOYPATH/deployment.info
-    - echo "Domain: transit.uvacell.com" >> $DEPLOYPATH/deployment.info
-    - echo "Security: Enabled" >> $DEPLOYPATH/deployment.info
-    - echo "Git Commit: ${GIT_COMMIT_SHA:-unknown}" >> $DEPLOYPATH/deployment.info
-    - /bin/chmod 644 $DEPLOYPATH/deployment.info
-    
-    # Verify critical files exist
-    - test -f $DEPLOYPATH/index.php && echo "✓ index.php deployed" || echo "✗ index.php missing"
-    - test -d $DEPLOYPATH/classes && echo "✓ classes/ deployed" || echo "✗ classes/ missing"
-    - test -d $DEPLOYPATH/auth && echo "✓ auth/ deployed" || echo "✗ auth/ missing"
-    - test -d $DEPLOYPATH/Admin && echo "✓ Admin/ deployed" || echo "✗ Admin/ missing"
-    - test -d $DEPLOYPATH/pages && echo "✓ pages/ deployed" || echo "✗ pages/ missing"
-    - test -f $DEPLOYPATH/.env && echo "✓ .env configured" || echo "✗ .env missing"
-    - test -f $CONFIGPATH/database_config.php && echo "✓ database config deployed" || echo "✗ database config missing"
-    - test -f $CONFIGPATH/payhere_config.php && echo "✓ payhere config deployed" || echo "✗ payhere config missing"
+    # Create deployment info
+    - echo "Lanka Transit deployed on $(date)" > $DEPLOYPATH/deployment.info
