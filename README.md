@@ -318,4 +318,5 @@ This project is licensed under the GNU General Public License v3.0 (GPL-3.0). Se
 
 **Lanka Transit** - Connecting Sri Lanka, one journey at a time. 🇱🇰
 
-Built with ❤️ for Sri Lankan public transport by [Ruvini730402](https://github.com/ruvini730402)
+Built with ❤️ for Sri Lankan public transport
+Ashan J.
