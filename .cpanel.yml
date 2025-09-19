@@ -13,6 +13,10 @@ deployment:
     # Copy everything except excluded files/folders
     - /bin/cp -R * $DEPLOYPATH/
     
+    # Copy diagnostic files for troubleshooting
+    - /bin/cp debug_index.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp diagnostic.php $DEPLOYPATH/ 2>/dev/null || true
+    
     # Remove development and git files from production
     - /bin/rm -rf $DEPLOYPATH/.git
     - /bin/rm -rf $DEPLOYPATH/tests
@@ -20,8 +24,11 @@ deployment:
     - /bin/rm -f $DEPLOYPATH/.cpanel.yml
     
     # Update environment for production
+    - echo "" >> $DEPLOYPATH/.env
+    - echo "# Production overrides" >> $DEPLOYPATH/.env
     - echo "APP_ENV=production" >> $DEPLOYPATH/.env
     - echo "BASE_URL=https://transit.uvacell.com" >> $DEPLOYPATH/.env
+    - echo "DEBUG=false" >> $DEPLOYPATH/.env
     
     # Set basic permissions
     - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
