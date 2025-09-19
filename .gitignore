@@ -22,27 +22,8 @@ logs/
 debug.log
 error.log
 
-# Cache and temporary files
-cache/
-temp/
-tmp/
-*.tmp
-*.cache
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
 # Testing and development
-/tests/test_*.php
-/tests/sample_*.php
-phpunit.xml
-.phpunit.result.cache
 
 # Backup files
 *.bak
