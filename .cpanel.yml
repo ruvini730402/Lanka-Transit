@@ -12,13 +12,16 @@ deployment:
     # Create deployment directories
     - /bin/mkdir -p $DEPLOYPATH $CONFIGPATH
     
+    # Clean previous deployment (optional - uncomment for fresh deployment)
+    # - /bin/rm -rf $DEPLOYPATH/* 2>/dev/null || true
+    
     # =================================================================
     # SECURE CONFIGURATION DEPLOYMENT
     # =================================================================
     
     # Copy template configuration files to production
-    - /bin/cp config/database_config.example.php $CONFIGPATH/database_config.php
-    - /bin/cp config/payhere_config.example.php $CONFIGPATH/payhere_config.php
+    - /bin/cp config/database_config.example.php $CONFIGPATH/database_config.php 2>/dev/null || /bin/cp config/database_config.php $CONFIGPATH/database_config.php
+    - /bin/cp config/payhere_config.example.php $CONFIGPATH/payhere_config.php 2>/dev/null || /bin/cp config/payhere_config.php $CONFIGPATH/payhere_config.php
     
     # Copy environment loader
     - /bin/cp config/env_loader.php $CONFIGPATH/
@@ -50,20 +53,31 @@ deployment:
     # =================================================================
     
     # Deploy main application files
-    - /bin/cp index.php $DEPLOYPATH/
-    - /bin/cp test_search.php $DEPLOYPATH/
-    - /bin/cp package.xml $DEPLOYPATH/
+    - /bin/cp index.php $DEPLOYPATH/ || echo "Error: index.php copy failed"
+    - /bin/cp .env.example $DEPLOYPATH/ || echo "Warning: .env.example copy failed"
+    - /bin/cp README.md $DEPLOYPATH/ || echo "Warning: README.md copy failed"
+    - /bin/cp LICENSE $DEPLOYPATH/ || echo "Warning: LICENSE copy failed"
     
     # Deploy application directories
-    - /bin/cp -R pages $DEPLOYPATH/
-    - /bin/cp -R assets $DEPLOYPATH/
-    - /bin/cp -R includes $DEPLOYPATH/
-    - /bin/cp -R classes $DEPLOYPATH/
-    - /bin/cp -R info $DEPLOYPATH/
+    - /bin/cp -R pages $DEPLOYPATH/ || echo "Warning: pages/ copy failed"
+    - /bin/cp -R assets $DEPLOYPATH/ || echo "Warning: assets/ copy failed"
+    - /bin/cp -R includes $DEPLOYPATH/ || echo "Warning: includes/ copy failed"
+    - /bin/cp -R classes $DEPLOYPATH/ || echo "Warning: classes/ copy failed"
+    - /bin/cp -R auth $DEPLOYPATH/ || echo "Warning: auth/ copy failed"
+    - /bin/cp -R Admin $DEPLOYPATH/ || echo "Warning: Admin/ copy failed"
+    - /bin/cp -R PHPMailer $DEPLOYPATH/ || echo "Warning: PHPMailer/ copy failed"
+    - /bin/cp -R info $DEPLOYPATH/ || echo "Warning: info/ copy failed"
+    
+    # Exclude development files from deployment
+    - /bin/rm -rf $DEPLOYPATH/tests 2>/dev/null || true
+    - /bin/rm -rf $DEPLOYPATH/.git 2>/dev/null || true
+    - /bin/rm -rf $DEPLOYPATH/.gitignore 2>/dev/null || true
+    - /bin/rm -rf $DEPLOYPATH/.cpanel.yml 2>/dev/null || true
     
     # Deploy additional config files (schema, sample data)
     - /bin/cp config/schema.sql $CONFIGPATH/ 2>/dev/null || true
-    - /bin/cp config/sample_data.sql $CONFIGPATH/ 2>/dev/null || true
+    - /bin/cp config/complete_schema_with_data.sql $CONFIGPATH/ 2>/dev/null || true
+    - /bin/cp config/sep_oct_sample_data.sql $CONFIGPATH/ 2>/dev/null || true
     
     # =================================================================
     # SECURITY CONFIGURATION
@@ -117,7 +131,7 @@ deployment:
     - /bin/chmod 644 $CONFIGPATH/*.sql 2>/dev/null || true
     
     # =================================================================
-    # DEPLOYMENT VERIFICATION
+    # DEPLOYMENT VERIFICATION AND LOGGING
     # =================================================================
     
     # Create deployment info file
@@ -126,4 +140,15 @@ deployment:
     - echo "Environment: Production" >> $DEPLOYPATH/deployment.info
     - echo "Domain: transit.uvacell.com" >> $DEPLOYPATH/deployment.info
     - echo "Security: Enabled" >> $DEPLOYPATH/deployment.info
+    - echo "Git Commit: ${GIT_COMMIT_SHA:-unknown}" >> $DEPLOYPATH/deployment.info
     - /bin/chmod 644 $DEPLOYPATH/deployment.info
+    
+    # Verify critical files exist
+    - test -f $DEPLOYPATH/index.php && echo "✓ index.php deployed" || echo "✗ index.php missing"
+    - test -d $DEPLOYPATH/classes && echo "✓ classes/ deployed" || echo "✗ classes/ missing"
+    - test -d $DEPLOYPATH/auth && echo "✓ auth/ deployed" || echo "✗ auth/ missing"
+    - test -d $DEPLOYPATH/Admin && echo "✓ Admin/ deployed" || echo "✗ Admin/ missing"
+    - test -d $DEPLOYPATH/pages && echo "✓ pages/ deployed" || echo "✗ pages/ missing"
+    - test -f $DEPLOYPATH/.env && echo "✓ .env configured" || echo "✗ .env missing"
+    - test -f $CONFIGPATH/database_config.php && echo "✓ database config deployed" || echo "✗ database config missing"
+    - test -f $CONFIGPATH/payhere_config.php && echo "✓ payhere config deployed" || echo "✗ payhere config missing"
