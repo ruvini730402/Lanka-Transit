@@ -1,7 +1,7 @@
 <?php
 /**
  * Bus Booking Handler
- * Processes seat booking with pending status and requires confirmation
+ * Processes seat booking with pending status and requires payment confirmation
  */
 session_start();
 
@@ -153,23 +153,31 @@ try {
         throw new Exception("Failed to update seat status");
     }
 
-    // Commit transaction
-    $pdo->commit();
+    // Payment processing (replace with actual payment gateway integration)
+    $payment_result = processPayment($booking_data['fare'], $booking_id, $booking_data);
 
-    // Generate booking reference
-    $booking_reference = 'LT-' . str_pad($booking_id, 6, '0', STR_PAD_LEFT);
-
-    // Placeholder for confirmation step (e.g., payment processing)
-    // Assuming payment or confirmation happens here
-    // For now, we'll simulate a successful confirmation
-    // In a real scenario, this would involve payment gateway integration
-    $confirmation_success = true; // Replace with actual confirmation logic (e.g., payment API call)
-
-    if ($confirmation_success) {
+    if ($payment_result['success']) {
         // Confirm the booking
         if (!$booking->updateBookingStatus($booking_id, 'confirmed')) {
             throw new Exception("Failed to confirm booking");
         }
+
+        // Save payment details (example, adjust based on your schema)
+        $stmt = $pdo->prepare("
+            INSERT INTO Payment (BookingId, TransactionId, Amount, Status, CreatedAt)
+            VALUES (?, ?, ?, 'completed', NOW())
+        ");
+        $stmt->execute([
+            $booking_id,
+            $payment_result['transaction_id'],
+            $booking_data['fare']
+        ]);
+
+        // Commit transaction
+        $pdo->commit();
+
+        // Generate booking reference
+        $booking_reference = 'LT-' . str_pad($booking_id, 6, '0', STR_PAD_LEFT);
 
         // Store booking data in session
         $_SESSION['booking_data'] = [
@@ -187,17 +195,19 @@ try {
             'departure_time' => $booking_data['departure_time'],
             'arrival_time' => $booking_data['arrival_time'],
             'booking_id' => $booking_id,
-            'booking_reference' => $booking_reference
+            'booking_reference' => $booking_reference,
+            'transaction_id' => $payment_result['transaction_id']
         ];
 
         // Redirect to confirmation page
         header('Location: confirmation.php');
         exit;
     } else {
-        // If confirmation fails, cancel the booking
+        // Payment failed, cancel the booking
         $booking->updateBookingStatus($booking_id, 'cancelled');
         $booking->updateSeatStatus($booking_data['bus_id'], $booking_data['seat_number'], 'available');
-        throw new Exception("Booking confirmation failed.");
+        $pdo->commit(); // Commit to save cancellation
+        throw new Exception("Payment failed: " . ($payment_result['error'] ?? "Unknown payment error"));
     }
 
 } catch (Exception $e) {
@@ -208,5 +218,34 @@ try {
     $_SESSION['error'] = "Booking system error: " . $e->getMessage();
     header('Location: seatbooking.php?' . http_build_query($_GET));
     exit;
+}
+
+/**
+ * Process payment (placeholder for actual payment gateway integration)
+ * @param float $amount
+ * @param int $booking_id
+ * @param array $booking_data
+ * @return array
+ */
+function processPayment($amount, $booking_id, $booking_data) {
+    // TODO: Replace with actual payment gateway integration (e.g., Stripe, PayPal)
+    // Example: Call payment gateway API, verify payment, and return result
+    try {
+        // Simulate payment processing
+        // In a real system, this would involve:
+        // 1. Sending payment request to gateway with amount and user details
+        // 2. Handling payment response
+        // 3. Verifying payment status
+        $transaction_id = 'TXN' . time() . '_' . $booking_id; // Dummy transaction ID
+        return [
+            'success' => true,
+            'transaction_id' => $transaction_id
+        ];
+    } catch (Exception $e) {
+        return [
+            'success' => false,
+            'error' => $e->getMessage()
+        ];
+    }
 }
 ?>
