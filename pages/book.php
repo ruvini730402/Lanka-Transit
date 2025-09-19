@@ -1,7 +1,7 @@
 <?php
 /**
  * Bus Booking Handler
- * Processes seat booking with pending status and requires payment confirmation
+ * Validates booking data and redirects to payment without creating booking
  */
 session_start();
 
@@ -56,6 +56,13 @@ $booking_data = [
 ];
 
 try {
+    // Validate phone number
+    if (!$booking->validateInput($booking_data['phone'], 'phone')) {
+        $_SESSION['error'] = "Phone number must be exactly 10 digits.";
+        header('Location: seatbooking.php?' . http_build_query($_GET));
+        exit;
+    }
+
     // Validate gender
     if (!in_array($booking_data['gender'], ['male', 'female', 'undisclosed'])) {
         $_SESSION['error'] = "Invalid gender selection.";
@@ -111,141 +118,31 @@ try {
         }
     }
 
-    // Start transaction
-    $pdo->beginTransaction();
+    // All validations passed - store booking data in session and redirect to payment
+    $_SESSION['booking_data'] = [
+        'passenger_name' => $booking_data['passenger_name'],
+        'phone' => $booking_data['phone'],
+        'gender' => $booking_data['gender'],
+        'nic' => $booking_data['nic'],
+        'origin' => $booking_data['origin'],
+        'destination' => $booking_data['destination'],
+        'travel_date' => $booking_data['travel_date'],
+        'bus_id' => $booking_data['bus_id'],
+        'bus_number' => $booking_data['bus_number'],
+        'seat_number' => $booking_data['seat_number'],
+        'fare' => $booking_data['fare'],
+        'departure_time' => $booking_data['departure_time'],
+        'arrival_time' => $booking_data['arrival_time']
+    ];
 
-    // Create or get user
-    $user_id = $booking->createOrGetUser($booking_data);
-    if (!$user_id) {
-        throw new Exception("Failed to create or retrieve user");
-    }
-
-    // Create booking with pending status
-    $stmt = $pdo->prepare("
-        INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status, BookingTime, Origin, Destination)
-        VALUES (?, ?, ?, ?, ?, 'pending', NOW(), ?, ?)
-    ");
-    $result = $stmt->execute([
-        $user_id,
-        $booking_data['bus_id'],
-        $booking_data['seat_number'],
-        $booking_data['phone'],
-        $booking_data['fare'],
-        $booking_data['origin'],
-        $booking_data['destination']
-    ]);
-
-    if (!$result) {
-        throw new Exception("Failed to save booking");
-    }
-
-    $booking_id = $pdo->lastInsertId();
-
-    // Create gender record
-    if (!empty($booking_data['gender'])) {
-        if (!$booking->createGenderRecord($booking_id, $booking_data['gender'])) {
-            throw new Exception("Failed to save gender record");
-        }
-    }
-
-    // Update seat status to booked
-    if (!$booking->updateSeatStatus($booking_data['bus_id'], $booking_data['seat_number'], 'booked')) {
-        throw new Exception("Failed to update seat status");
-    }
-
-    // Payment processing (replace with actual payment gateway integration)
-    $payment_result = processPayment($booking_data['fare'], $booking_id, $booking_data);
-
-    if ($payment_result['success']) {
-        // Confirm the booking
-        if (!$booking->updateBookingStatus($booking_id, 'confirmed')) {
-            throw new Exception("Failed to confirm booking");
-        }
-
-        // Save payment details (example, adjust based on your schema)
-        $stmt = $pdo->prepare("
-            INSERT INTO Payment (BookingId, TransactionId, Amount, Status, CreatedAt)
-            VALUES (?, ?, ?, 'completed', NOW())
-        ");
-        $stmt->execute([
-            $booking_id,
-            $payment_result['transaction_id'],
-            $booking_data['fare']
-        ]);
-
-        // Commit transaction
-        $pdo->commit();
-
-        // Generate booking reference
-        $booking_reference = 'LT-' . str_pad($booking_id, 6, '0', STR_PAD_LEFT);
-
-        // Store booking data in session
-        $_SESSION['booking_data'] = [
-            'passenger_name' => $booking_data['passenger_name'],
-            'phone' => $booking_data['phone'],
-            'gender' => $booking_data['gender'],
-            'nic' => $booking_data['nic'],
-            'origin' => $booking_data['origin'],
-            'destination' => $booking_data['destination'],
-            'travel_date' => $booking_data['travel_date'],
-            'bus_id' => $booking_data['bus_id'],
-            'bus_number' => $booking_data['bus_number'],
-            'seat_number' => $booking_data['seat_number'],
-            'fare' => $booking_data['fare'],
-            'departure_time' => $booking_data['departure_time'],
-            'arrival_time' => $booking_data['arrival_time'],
-            'booking_id' => $booking_id,
-            'booking_reference' => $booking_reference,
-            'transaction_id' => $payment_result['transaction_id']
-        ];
-
-        // Redirect to confirmation page
-        header('Location: confirmation.php');
-        exit;
-    } else {
-        // Payment failed, cancel the booking
-        $booking->updateBookingStatus($booking_id, 'cancelled');
-        $booking->updateSeatStatus($booking_data['bus_id'], $booking_data['seat_number'], 'available');
-        $pdo->commit(); // Commit to save cancellation
-        throw new Exception("Payment failed: " . ($payment_result['error'] ?? "Unknown payment error"));
-    }
+    // Redirect to payment page instead of confirmation
+    header('Location: payment.php');
+    exit;
 
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     error_log("Booking error: " . $e->getMessage());
     $_SESSION['error'] = "Booking system error: " . $e->getMessage();
     header('Location: seatbooking.php?' . http_build_query($_GET));
     exit;
-}
-
-/**
- * Process payment (placeholder for actual payment gateway integration)
- * @param float $amount
- * @param int $booking_id
- * @param array $booking_data
- * @return array
- */
-function processPayment($amount, $booking_id, $booking_data) {
-    // TODO: Replace with actual payment gateway integration (e.g., Stripe, PayPal)
-    // Example: Call payment gateway API, verify payment, and return result
-    try {
-        // Simulate payment processing
-        // In a real system, this would involve:
-        // 1. Sending payment request to gateway with amount and user details
-        // 2. Handling payment response
-        // 3. Verifying payment status
-        $transaction_id = 'TXN' . time() . '_' . $booking_id; // Dummy transaction ID
-        return [
-            'success' => true,
-            'transaction_id' => $transaction_id
-        ];
-    } catch (Exception $e) {
-        return [
-            'success' => false,
-            'error' => $e->getMessage()
-        ];
-    }
 }
 ?>
