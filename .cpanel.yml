@@ -17,6 +17,7 @@ deployment:
     - /bin/cp debug_index.php $DEPLOYPATH/ 2>/dev/null || true
     - /bin/cp diagnostic.php $DEPLOYPATH/ 2>/dev/null || true
     - /bin/cp db_test.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp deployment_status.php $DEPLOYPATH/ 2>/dev/null || true
     - /bin/cp .env.shared-hosting $DEPLOYPATH/ 2>/dev/null || true
     
     # Remove development and git files from production
