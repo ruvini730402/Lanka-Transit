@@ -1,16 +1,13 @@
 <?php
 /**
- * Database Configuration
- * Uses environment variables for secure credential management
+ * Database Configuration Template
+ * This file is safe for GitHub. Copy to database_config.php and configure.
  * 
  * Configuration Priority:
  * 1. Environment Variables (Production)
  * 2. .env file (Development)
  * 3. Local config files (Local development)
  */
-
-require_once __DIR__ . '/env_loader.php';
-
 class DatabaseConfig {
     // Database connection credentials
     const DB_OPTIONS = [
@@ -25,11 +22,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getHost() {
-        $host = EnvLoader::get('DB_HOST');
-        if (empty($host)) {
-            throw new Exception('DB_HOST environment variable is required');
-        }
-        return $host;
+        return $_ENV['DB_HOST'] ?? self::getLocalConfig('host') ?? 'localhost';
     }
     
     /**
@@ -37,11 +30,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getDatabaseName() {
-        $dbName = EnvLoader::get('DB_NAME');
-        if (empty($dbName)) {
-            throw new Exception('DB_NAME environment variable is required');
-        }
-        return $dbName;
+        return $_ENV['DB_NAME'] ?? self::getLocalConfig('database') ?? 'lanka_transit';
     }
     
     /**
@@ -49,11 +38,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getUsername() {
-        $username = EnvLoader::get('DB_USERNAME');
-        if (empty($username)) {
-            throw new Exception('DB_USERNAME environment variable is required');
-        }
-        return $username;
+        return $_ENV['DB_USERNAME'] ?? self::getLocalConfig('username') ?? 'root';
     }
     
     /**
@@ -61,8 +46,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getPassword() {
-        // Password can be empty for some local setups, so we don't throw an error
-        return EnvLoader::get('DB_PASSWORD', '');
+        return $_ENV['DB_PASSWORD'] ?? self::getLocalConfig('password') ?? '';
     }
     
     /**
@@ -70,7 +54,7 @@ class DatabaseConfig {
      * @return string
      */
     public static function getCharset() {
-        return EnvLoader::get('DB_CHARSET', 'utf8mb4');
+        return $_ENV['DB_CHARSET'] ?? 'utf8mb4';
     }
     
     /**
@@ -87,6 +71,20 @@ class DatabaseConfig {
      */
     public static function getOptions() {
         return self::DB_OPTIONS;
+    }
+    
+    /**
+     * Fallback to local config file if exists (not in repo)
+     * @param string $key
+     * @return mixed|null
+     */
+    private static function getLocalConfig($key) {
+        $localConfigFile = __DIR__ . '/local_database_config.php';
+        if (file_exists($localConfigFile)) {
+            $config = include $localConfigFile;
+            return $config[$key] ?? null;
+        }
+        return null;
     }
 }
 ?>

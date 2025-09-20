@@ -1,0 +1,42 @@
+---
+# Lanka Transit - Simplified cPanel Deployment
+# Deploy the exact same structure as development environment
+
+deployment:
+  tasks:
+    # Set deployment path
+    - export DEPLOYPATH=/home/anagatha/public_html/transit.uvacell.com
+    
+    # Create deployment directory
+    - /bin/mkdir -p $DEPLOYPATH
+    
+    # Copy everything except excluded files/folders
+    - /bin/cp -R * $DEPLOYPATH/
+    
+    # Copy diagnostic files for troubleshooting
+    - /bin/cp debug_index.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp diagnostic.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp db_test.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp deployment_status.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp .env.shared-hosting $DEPLOYPATH/ 2>/dev/null || true
+    
+    # Remove development and git files from production
+    - /bin/rm -rf $DEPLOYPATH/.git
+    - /bin/rm -rf $DEPLOYPATH/tests
+    - /bin/rm -f $DEPLOYPATH/.gitignore
+    - /bin/rm -f $DEPLOYPATH/.cpanel.yml
+    
+    # Update environment for production
+    - echo "" >> $DEPLOYPATH/.env
+    - echo "# Production overrides" >> $DEPLOYPATH/.env
+    - echo "APP_ENV=production" >> $DEPLOYPATH/.env
+    - echo "BASE_URL=https://transit.uvacell.com" >> $DEPLOYPATH/.env
+    - echo "DEBUG=false" >> $DEPLOYPATH/.env
+    
+    # Set basic permissions
+    - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
+    - /bin/chmod 600 $DEPLOYPATH/.env
+    
+    # Create deployment info
+    - echo "Lanka Transit deployed on $(date)" > $DEPLOYPATH/deployment.info

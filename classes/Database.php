@@ -2,8 +2,10 @@
 /**
  * Database Configuration and Connection Class
  * Handles database connection with proper error handling and security
+ * Uses environment-based configuration for enhanced security
  */
 
+require_once __DIR__ . '/../config/env_loader.php';
 require_once __DIR__ . '/../config/database_config.php';
 
 class Database {

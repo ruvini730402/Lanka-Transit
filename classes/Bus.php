@@ -53,19 +53,19 @@ class Bus {
             return ['error' => 'Travel date must be today or a future date. Please select a valid date.'];
         }
         
-        // Build base query - Modified to include intermediate stops
+        // Build base query - Fixed column names and table references
         $query = "SELECT DISTINCT 
                     b.ID as bus_id,
-                    b.BusNumber,
-                    b.Capacity,
-                    r.Origin,
-                    r.Destination,
-                    r.Stops,
-                    s.DepartureTime,
-                    s.ArrivalTime,
-                    s.Fare,
+                    b.BusNumber as bus_number,
+                    b.Capacity as capacity,
+                    r.Origin as origin,
+                    r.Destination as destination,
+                    r.Stops as stops,
+                    s.DepartureTime as departure_time,
+                    s.ArrivalTime as arrival_time,
+                    s.Fare as fare,
                     (b.Capacity - COALESCE(booked_seats.count, 0)) as available_seats
-                  FROM " . $this->table_name . " b
+                  FROM Bus b
                   INNER JOIN Route r ON b.RouteId = r.ID
                   INNER JOIN Schedule s ON b.ID = s.BusID
                   LEFT JOIN (
@@ -76,9 +76,15 @@ class Bus {
                       GROUP BY BusID
                   ) booked_seats ON b.ID = booked_seats.BusID
                   WHERE (
+                      -- Direct route match
                       (r.Origin = :origin1 AND r.Destination = :destination1) OR
-                      (FIND_IN_SET(:origin2, r.Stops) > 0 AND FIND_IN_SET(:destination2, r.Stops) > 0 
-                       AND FIND_IN_SET(:origin3, r.Stops) < FIND_IN_SET(:destination3, r.Stops))
+                      -- Origin is terminal, destination is in stops
+                      (r.Origin = :origin2 AND FIND_IN_SET(:destination2, r.Stops) > 0) OR
+                      -- Origin is in stops, destination is terminal
+                      (FIND_IN_SET(:origin3, r.Stops) > 0 AND r.Destination = :destination3) OR
+                      -- Both are intermediate stops and in correct order
+                      (FIND_IN_SET(:origin4, r.Stops) > 0 AND FIND_IN_SET(:destination4, r.Stops) > 0 
+                       AND FIND_IN_SET(:origin5, r.Stops) < FIND_IN_SET(:destination5, r.Stops))
                   )
                   AND DATE(s.DepartureTime) = :travel_date";
         
@@ -89,6 +95,10 @@ class Bus {
             ':destination2' => $destination,
             ':origin3' => $origin,
             ':destination3' => $destination,
+            ':origin4' => $origin,
+            ':destination4' => $destination,
+            ':origin5' => $origin,
+            ':destination5' => $destination,
             ':travel_date' => $travelDate,
             ':booking_date' => $travelDate
         ];
@@ -149,14 +159,14 @@ class Bus {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $buses[] = [
                     'bus_id' => $row['bus_id'],
-                    'bus_number' => $row['BusNumber'],
-                    'capacity' => $row['Capacity'],
-                    'origin' => $row['Origin'],
-                    'destination' => $row['Destination'],
-                    'stops' => $row['Stops'],
-                    'departure_time' => $row['DepartureTime'],
-                    'arrival_time' => $row['ArrivalTime'],
-                    'fare' => $row['Fare'],
+                    'bus_number' => $row['bus_number'],
+                    'capacity' => $row['capacity'],
+                    'origin' => $row['origin'],
+                    'destination' => $row['destination'],
+                    'stops' => $row['stops'],
+                    'departure_time' => $row['departure_time'],
+                    'arrival_time' => $row['arrival_time'],
+                    'fare' => $row['fare'],
                     'available_seats' => $row['available_seats']
                 ];
             }
@@ -182,13 +192,19 @@ class Bus {
                       INNER JOIN Bus b ON s.BusID = b.ID
                       INNER JOIN Route r ON b.RouteId = r.ID
                       WHERE (
+                          -- Direct route match
                           (r.Origin = ? AND r.Destination = ?) OR
+                          -- Origin is terminal, destination is in stops
+                          (r.Origin = ? AND FIND_IN_SET(?, r.Stops) > 0) OR
+                          -- Origin is in stops, destination is terminal
+                          (FIND_IN_SET(?, r.Stops) > 0 AND r.Destination = ?) OR
+                          -- Both are intermediate stops and in correct order
                           (FIND_IN_SET(?, r.Stops) > 0 AND FIND_IN_SET(?, r.Stops) > 0 
                            AND FIND_IN_SET(?, r.Stops) < FIND_IN_SET(?, r.Stops))
                       )";
             
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([$origin, $destination, $origin, $destination, $origin, $destination]);
+            $stmt->execute([$origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
             return [
@@ -214,13 +230,19 @@ class Bus {
                       INNER JOIN Bus b ON s.BusID = b.ID
                       INNER JOIN Route r ON b.RouteId = r.ID
                       WHERE (
+                          -- Direct route match
                           (r.Origin = ? AND r.Destination = ?) OR
+                          -- Origin is terminal, destination is in stops
+                          (r.Origin = ? AND FIND_IN_SET(?, r.Stops) > 0) OR
+                          -- Origin is in stops, destination is terminal
+                          (FIND_IN_SET(?, r.Stops) > 0 AND r.Destination = ?) OR
+                          -- Both are intermediate stops and in correct order
                           (FIND_IN_SET(?, r.Stops) > 0 AND FIND_IN_SET(?, r.Stops) > 0 
                            AND FIND_IN_SET(?, r.Stops) < FIND_IN_SET(?, r.Stops))
                       )";
             
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([$origin, $destination, $origin, $destination, $origin, $destination]);
+            $stmt->execute([$origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
             return [
@@ -354,7 +376,7 @@ class Bus {
                     s.DepartureTime,
                     s.ArrivalTime,
                     s.Fare
-                  FROM " . $this->table_name . " b
+                  FROM Bus b
                   INNER JOIN Route r ON b.RouteId = r.ID
                   INNER JOIN Schedule s ON b.ID = s.BusID
                   WHERE b.ID = :bus_id";
