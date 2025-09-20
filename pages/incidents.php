@@ -17,14 +17,37 @@ $database = new Database();
 $conn = $database->getConnection();
 
 if (!$conn) {
-    die("❌ Connection failed: Unable to connect to database");
+    die("Unable to connect to our system. Please try again later.");
 }
 
 // Get username from database for sidebar
-$stmt = $conn->prepare("SELECT Name FROM User WHERE ID = ?");
+$stmt = $conn->prepare("SELECT Name, PhoneNumber FROM User WHERE ID = ?");
 $stmt->execute([$userId]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 $username = $user ? htmlspecialchars($user['Name']) : 'User';
+$userPhoneNumber = $user['PhoneNumber'] ?? null;
+
+// --- Fetching User's Bookings for Trip Selection ---
+$userBookings = [];
+if ($userPhoneNumber) {
+    $stmt = $conn->prepare("
+        SELECT b.ID, b.BookingTime, b.SeatNumber, b.Fare, 
+               bus.BusNumber, r.Origin, r.Destination
+        FROM Booking b
+        JOIN Bus bus ON b.BusID = bus.ID
+        LEFT JOIN Route r ON bus.RouteId = r.ID
+        WHERE b.PhoneNumber = ? 
+          AND b.Status IN ('confirmed', 'completed')
+          AND b.BookingTime < NOW()
+        ORDER BY b.BookingTime DESC
+        LIMIT 20
+    ");
+    $stmt->execute([$userPhoneNumber]);
+    $userBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Log for debugging
+    error_log("DEBUG: Found " . count($userBookings) . " PAST bookings for phone " . $userPhoneNumber);
+}
 
 // --- Fetching Incident Records ---
 $incidentRows = [];
@@ -47,238 +70,8 @@ $database->closeConnection();
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/user-dashboard.css" />
-  <style>
-    body {
-        background-color: #ffffff;
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .container {
-        max-width: 900px;
-        padding: 0 15px;
-    }
-    .form-section {
-        background-color: #fff;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 0 12px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-    }
-    .form-section h3 {
-        color: #800000;
-    }
-    
-    .form-label{
-        color: #800000;
-        font-weight: bold;
-    }
-    
-    .btn-custom {
-        background-color: #800000;
-        color: #fff;
-    }
-    .btn-custom:hover {
-        background-color: #600000;
-    }
-    .status-pill {
-        padding: 5px 12px;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        color: white;
-        display: inline-block;
-    }
-    .submitted { background-color: #f0ad4e; }
-    .inprogress { background-color: #5bc0de; }
-    .resolved { background-color: #5cb85c; }
-    .pending { background-color: #f0ad4e; }
-    
-    /* Override dashboard CSS for proper layout */
-    body {
-      display: block !important;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
-    
-    .container {
-      display: block !important;
-      margin-left: 250px !important;
-      min-height: 100vh;
-      width: calc(100% - 250px) !important;
-      padding: 0 !important;
-      max-width: none !important;
-      margin-top: 0 !important;
-    }
-    
-    .main-content {
-      height: auto !important;
-      min-height: calc(100vh - 100px);
-      padding: 20px !important;
-      margin: 0 !important;
-      margin-top: 0 !important;
-      width: 100%;
-      overflow-x: hidden;
-    }
-    
-    /* Mobile responsive fixes */
-    @media (max-width: 768px) {
-      body {
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-      
-      .container {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-        padding-top: 0 !important;
-      }
-      
-      .main-content {
-        padding: 20px !important;
-        margin: 0 !important;
-      }
-      
-      .sidebar {
-        display: none !important; /* Hide sidebar on mobile */
-      }
-      
-      .form-section {
-        padding: 20px;
-        margin: 0 0 20px 0;
-      }
-      
-      /* Show top navigation on mobile only */
-      .top-nav {
-        display: flex !important;
-      }
-      
-      .nav-tabs {
-        display: flex !important;
-      }
-    }
-    
-    /* Remove old responsive styles */
-    @media (max-width: 576px) {
-        .form-section {
-            padding: 20px;
-        }
-    }
-    
-    /* Top Navigation Bar - MOBILE ONLY */
-    .top-nav {
-      background: linear-gradient(135deg, #8B0000, #A52A2A);
-      color: white;
-      padding: 15px 20px;
-      display: none; /* Hidden on desktop */
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    
-    .top-nav .logo-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .logo-section img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-    
-    .top-nav .user-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .user-section img {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      border: 2px solid white;
-    }
-    
-    .nav-tabs {
-      display: none; /* Hidden on desktop */
-      justify-content: center;
-      background: #8B0000;
-      padding: 0;
-      margin: 0;
-      border-bottom: 3px solid #A52A2A;
-    }
-    
-    .nav-tabs a {
-      flex: 1;
-      text-align: center;
-      padding: 15px 10px;
-      color: white;
-      text-decoration: none;
-      border-right: 1px solid rgba(255,255,255,0.2);
-      transition: background-color 0.3s ease;
-      font-weight: 500;
-    }
-    
-    .nav-tabs a:last-child {
-      border-right: none;
-    }
-    
-    .nav-tabs a.active,
-    .nav-tabs a:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .nav-tabs a.active {
-      background: rgba(255,255,255,0.2);
-      border-bottom: 3px solid white;
-    }
-    
-    /* Dropdown functionality */
-    .user-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 100%;
-      background-color: white;
-      min-width: 120px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 1001;
-      margin-top: 5px;
-    }
-    
-    .dropdown-content a {
-      color: #333 !important;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 5px;
-    }
-    
-    .dropdown-content a:hover {
-      background-color: #f1f1f1;
-    }
-    
-    .user-dropdown.show .dropdown-content {
-      display: block;
-    }
-    
-    .user-section {
-      cursor: pointer;
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/css/user-incidents.css" />
+
     
   
 </head>
@@ -309,11 +102,11 @@ $database->closeConnection();
       <a href="dashboard.php">
         <i class="fas fa-tachometer-alt"></i> Dashboard
       </a>
-      <a href="feedback.php">
-        <i class="fas fa-comment-alt"></i> Feedback
-      </a>
       <a href="incidents.php" class="active">
         <i class="fas fa-exclamation-triangle"></i> Report Incident
+      </a>
+      <a href="cancel_booking.php">
+        <i class="fas fa-times-circle"></i> Cancel Booking
       </a>
     </div>
     
@@ -340,8 +133,8 @@ $database->closeConnection();
       <nav class="navigation">
         <ul>
           <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-          <li><a href="feedback.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
           <li class="active"><a href="incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
+          <li><a href="cancel_booking.php"><i class="fas fa-times-circle"></i> Cancel Booking</a></li>
         </ul>
       </nav>
       <div class="logout">
@@ -351,24 +144,48 @@ $database->closeConnection();
     
     <div class="main-content">
 
-  <!-- Incident Report Form -->
-  <div class="form-section">
-    <h3>📝 Report an Incident</h3>
-    <form action="submit_incidents.php" method="POST">
-      <div class="mb-3">
-        <br>
-        <label class="form-label">Description of the Incident</label>
-        <textarea class="form-control" name="description" rows="4" required placeholder="Describe what happened in detail..."></textarea>
-      </div>
-        <button type="submit" class="btn btn-custom" style="background-color: #800000; color: white;">Submit Incident</button>
-    </form>
+  <!-- Incident Report Form Container -->
+  <div class="report-form-container">
+    <div class="form-section">
+      <h3>📝 Report an Incident</h3>
+      <form action="submit_incidents.php" method="POST">
+        <div class="mb-3">
+          <label class="form-label"><strong>Select Trip</strong></label>
+          <div style="position: relative;">
+            <select class="form-control" name="booking_id" required style="appearance: none; background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 4 5%22><path fill=%22%23666%22 d=%22M2 0L0 2h4zm0 5L0 3h4z%22/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px; padding-right: 40px; color: #6c757d;">
+              <option value="" disabled selected hidden>Select a completed trip to report incident</option>
+              <?php if (!empty($userBookings)): ?>
+                <?php foreach ($userBookings as $booking): ?>
+                  <option value="<?= htmlspecialchars($booking['ID']) ?>" style="color: #333;">
+                    🚌 Bus <?= htmlspecialchars($booking['BusNumber']) ?> | 
+                    <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → 
+                    <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?> | 
+                    <?= date('M j, Y', strtotime($booking['BookingTime'])) ?> | 
+                    Seat <?= htmlspecialchars($booking['SeatNumber']) ?> | 
+                    LKR <?= number_format($booking['Fare'], 2) ?>
+                  </option>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <option value="" disabled>No completed trips found. Incidents can only be reported for past journeys.</option>
+              <?php endif; ?>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label"><strong>Description of the Incident</strong></label>
+          <textarea class="form-control" name="description" rows="4" required placeholder="Describe what happened in detail..."></textarea>
+        </div>
+          <button type="submit" class="btn btn-custom" style="background-color: #800000; color: white;">Submit Incident</button>
+      </form>
+    </div>
   </div>
 
-  <!-- Tracked Incidents Table -->
-  <div class="form-section">
-    <h3>📋 Tracked Incidents</h3>
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle">
+  <!-- Tracked Incidents Table Container -->
+  <div class="tracked-incidents-container">
+    <div class="form-section">
+      <h3>📋 Tracked Incidents</h3>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
         <thead class="table-light">
           <tr>
             <th>#</th>
@@ -410,6 +227,7 @@ $database->closeConnection();
           ?>
         </tbody>
       </table>
+    </div>
     </div>
   </div>
 

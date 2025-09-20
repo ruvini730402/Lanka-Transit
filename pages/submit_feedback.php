@@ -1,123 +1,90 @@
 <?php
-// Include database configuration
+session_start();
+header('Content-Type: application/json');
+
+// Check authentication
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Please log in to share your feedback']);
+    exit();
+}
+
 require_once '../classes/Database.php';
 
-// Get database connection
 $database = new Database();
 $conn = $database->getConnection();
 
 if (!$conn) {
-    die("Connection failed: Unable to connect to database");
+    echo json_encode(['success' => false, 'message' => 'Unable to connect to our system. Please try again later.']);
+    exit();
 }
 
-// Get form data
-$userId    = $_POST['user_id'] ?? null;
-$bookingId = filter_var($_POST['booking_id'] ?? null, FILTER_VALIDATE_INT);
-$comment   = trim($_POST['comment'] ?? '');
-$rating    = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
-$createdDate = date("Y-m-d");
-
-// Get bus ID from booking
-$busId = null;
-if ($bookingId) {
-    $stmt = $conn->prepare("SELECT BusID FROM Booking WHERE ID = ?");
-    $stmt->execute([$bookingId]);
-    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($booking) {
-        $busId = $booking['BusID'];
+try {
+    // Get form data
+    $userId = (int)$_SESSION['user_id'];
+    $bookingId = filter_var($_POST['bookingId'] ?? null, FILTER_VALIDATE_INT);
+    $busId = filter_var($_POST['busId'] ?? null, FILTER_VALIDATE_INT);
+    $rating = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
+    $comment = trim($_POST['comment'] ?? '');
+    
+    // Validation
+    if (!$bookingId || !$busId || !$rating || $rating < 1 || $rating > 5) {
+        error_log("Feedback validation failed - BookingId: $bookingId, BusId: $busId, Rating: $rating");
+        echo json_encode(['success' => false, 'message' => 'Please fill in all required fields and select a rating from 1-5 stars']);
+        exit();
     }
-}
-
-// Additional validation
-if ($userId !== null && !is_numeric($userId)) {
-    $userId = null;
-}
-
-if ($rating !== false && ($rating < 1 || $rating > 5)) {
-    $rating = null;
-}
-
-// Validation
-if ($bookingId === false || $bookingId === null || $busId === null || $rating === false || $rating === null) {
-    if ($bookingId === false || $bookingId === null) {
-        $response = "❌ Please select a trip to review.";
-    } elseif ($busId === null) {
-        $response = "❌ Invalid booking selection. Please try again.";
-    } elseif ($rating === false || $rating === null) {
-        $response = "❌ Please provide a rating for your trip.";
+    
+    // Get user's phone number from database
+    $stmt = $conn->prepare("SELECT PhoneNumber FROM User WHERE ID = ?");
+    $stmt->execute([$userId]);
+    $userInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$userInfo || !$userInfo['PhoneNumber']) {
+        error_log("User phone number not found for UserId: $userId");
+        echo json_encode(['success' => false, 'message' => 'Your account information is incomplete. Please contact support.']);
+        exit();
+    }
+    
+    $userPhoneNumber = $userInfo['PhoneNumber'];
+    error_log("Feedback submission attempt - UserId: $userId, Phone: $userPhoneNumber, BookingId: $bookingId, BusId: $busId");
+    
+    // Verify the booking belongs to the user using phone number (consistent with dashboard)
+    $stmt = $conn->prepare("SELECT ID FROM Booking WHERE ID = ? AND PhoneNumber = ? AND BusID = ?");
+    $stmt->execute([$bookingId, $userPhoneNumber, $busId]);
+    if (!$stmt->fetch()) {
+        error_log("Booking verification failed - BookingId: $bookingId, Phone: $userPhoneNumber, BusId: $busId");
+        echo json_encode(['success' => false, 'message' => 'We cannot verify this booking. Please ensure you select one of your trips.']);
+        exit();
+    }
+    
+    // Check if feedback already exists for this bus and user on the booking date
+    $stmt = $conn->prepare("
+        SELECT f.ID 
+        FROM Feedback f 
+        JOIN Booking b ON f.BusId = b.BusID AND f.UserId = ?
+        WHERE b.ID = ? AND f.BusId = ? AND b.PhoneNumber = ?
+        AND DATE(f.CreatedDate) = DATE(b.BookingTime)
+    ");
+    $stmt->execute([$userId, $bookingId, $busId, $userPhoneNumber]);
+    
+    if ($stmt->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'You have already shared feedback for this trip. Thank you!']);
+        exit();
+    }
+    
+    // Insert feedback
+    $stmt = $conn->prepare("
+        INSERT INTO Feedback (UserId, BusId, Rating, Comment, CreatedDate) 
+        VALUES (?, ?, ?, ?, NOW())
+    ");
+    
+    if ($stmt->execute([$userId, $busId, $rating, $comment])) {
+        echo json_encode(['success' => true, 'message' => 'Thank you for sharing your feedback! Your input helps us improve our service.']);
     } else {
-        $response = "❌ Missing required fields. Please fill out the form completely.";
+        echo json_encode(['success' => false, 'message' => 'We encountered an issue saving your feedback. Please try again.']);
     }
-    $statusClass = "danger";
-} else {
-    // Prepare SQL
-    $stmt = $conn->prepare("INSERT INTO Feedback (UserId, BusId, Comment, Rating, CreatedDate) VALUES (?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        $response = "❌ SQL error: " . $conn->errorInfo()[2];
-        $statusClass = "danger";
-    } else {
-        // Handle nullable UserId
-        try {
-            if ($userId === '' || $userId === null) {
-                $stmt->execute([null, $busId, $comment, $rating, $createdDate]);
-            } else {
-                $stmt->execute([$userId, $busId, $comment, $rating, $createdDate]);
-            }
-            $response = "✅ Your feedback was successfully submitted!";
-            $statusClass = "success";
-        } catch (PDOException $e) {
-            $response = "❌ Failed to submit feedback: " . $e->getMessage();
-            $statusClass = "danger";
-        }
-    }
+    
+} catch (Exception $e) {
+    error_log("Feedback submission error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Something went wrong while saving your feedback. Please try again later.']);
 }
-
-// Close database connection
-$database->closeConnection();
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Submitting Feedback</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .flash-message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 25px;
-            font-size: 16px;
-            z-index: 9999;
-            border-radius: 8px;
-            transition: opacity 0.5s ease;
-        }
-    </style>
-</head>
-<body>
-
-<!-- Flash Message Output -->
-<div id="flashMessage" class="flash-message alert alert-<?php echo htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8'); ?>">
-    <?php echo htmlspecialchars($response, ENT_QUOTES, 'UTF-8'); ?>
-</div>
-
-<script>
-    const msgBox = document.getElementById('flashMessage');
-    msgBox.style.display = 'block';
-
-    // Auto-hide after 2 seconds
-    setTimeout(() => {
-        msgBox.style.opacity = '0';
-        setTimeout(() => msgBox.remove(), 500);
-    }, 2000);
-
-    // Redirect after 3.5 seconds
-    setTimeout(() => {
-        window.location.href = 'feedback.php';
-    }, 2000);
-</script>
-
-</body>
-</html>
