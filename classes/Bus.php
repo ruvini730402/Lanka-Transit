@@ -367,5 +367,5 @@ class Bus {
     public function updateBus($id, $routeId, $adminId, $busNumber, $capacity, $lastUpdate) {
         // Validate bus number format
         if (!$this->validateBusNumber($busNumber)) {
-            throw new Exception("Invalid bus number format. Must be NB-#### (four numbers)");
+            throw new Exception("Invalid bus number format. Must be NB-#### (four numbers)"); // hi..
 ?>
