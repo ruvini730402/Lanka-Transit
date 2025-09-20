@@ -386,7 +386,7 @@ class Bus {
             
         } catch(PDOException $exception) {
             error_log("Bus details error: " . $exception->getMessage());
-            return ['error' => 'Unable to load bus details. Please try again.'];
+            return ['error' => 'Unable to load bus details. Please try again.'];  //hi..
         }
     }
 }
