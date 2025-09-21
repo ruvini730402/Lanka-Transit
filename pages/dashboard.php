@@ -46,7 +46,7 @@ if (!$conn) {
     exit();
 }
 
-$stmt = $conn->prepare("SELECT Name FROM User WHERE ID = ?");
+$stmt = $conn->prepare("SELECT Name, PhoneNumber FROM User WHERE ID = ?");
 $stmt->execute([$userId]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -60,6 +60,7 @@ if (!$user) {
 
 // Update username from database (most current)
 $username = htmlspecialchars($user['Name']);
+$userPhoneNumber = $user['PhoneNumber'] ?? null;
 
 // Additional security: Regenerate session ID to prevent session hijacking
 session_regenerate_id(true);
@@ -80,91 +81,70 @@ if (!isset($database)) {
     $conn = $database->getConnection();
 }
 
-// Fetch user's bookings
+// Fetch booking history based on user's phone number
 $upcomingBookings = [];
 $bookingHistory = [];
 $recentBooking = null;
+$userPreferences = ['isReturningCustomer' => false, 'totalBookings' => 0];
 
-if ($userId && $conn) {
-    // Get user's bookings - BookingTime appears to be used as travel date in this database
-    $stmt = $conn->prepare("
-        SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-               bus.BusNumber, r.Origin, r.Destination
-        FROM Booking b
-        JOIN Bus bus ON b.BusID = bus.ID
-        LEFT JOIN Route r ON bus.RouteId = r.ID
-        WHERE b.UserId = ? AND b.Status = 'confirmed'
-        ORDER BY b.BookingTime ASC
-    ");
-    $stmt->execute([$userId]);
-    $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Debug: Log what we found
-    error_log("DEBUG: Found " . count($allBookings) . " bookings for user " . $userId);
-    if (!empty($allBookings)) {
-        error_log("DEBUG: First booking: " . print_r($allBookings[0], true));
-    }
-    
-    $currentDate = date('Y-m-d');
-    $currentDateTime = date('Y-m-d H:i:s');
-    
-    foreach ($allBookings as $booking) {
-        // Compare full datetime for more accurate results
-        $bookingDateTime = $booking['BookingTime'];
+if ($userPhoneNumber && $conn) {
+    try {
+        // Get user's bookings using phone number from Booking table
+        // Join with Bus and Route tables to get complete booking details
+        $stmt = $conn->prepare("
+            SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
+                   bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID,
+                   f.ID as FeedbackID, f.Rating, f.Comment
+            FROM Booking b
+            JOIN Bus bus ON b.BusID = bus.ID
+            LEFT JOIN Route r ON bus.RouteId = r.ID
+            LEFT JOIN Feedback f ON f.BusId = bus.ID 
+                                  AND f.UserId = ? 
+                                  AND DATE(f.CreatedDate) = DATE(b.BookingTime)
+            WHERE b.PhoneNumber = ? AND b.Status IN ('confirmed', 'completed')
+            ORDER BY b.BookingTime ASC
+        ");
+        $stmt->execute([$userId, $userPhoneNumber]);
+        $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // For upcoming: booking datetime should be in the future
-        if ($bookingDateTime > $currentDateTime) {
-            $upcomingBookings[] = $booking;
-        } else {
-            $bookingHistory[] = $booking;
-        }
-    }
-    
-    // Debug: Log results
-    error_log("DEBUG: Upcoming bookings: " . count($upcomingBookings));
-    error_log("DEBUG: Historical bookings: " . count($bookingHistory));
-    error_log("DEBUG: Current datetime: " . $currentDateTime);
-    
-    // Get most recent booking for rebooking section
-    if (!empty($allBookings)) {
-        $recentBooking = $allBookings[0];
-    }
-    
-    // Smart rebooking algorithm - analyze user's booking patterns
-    $userPreferences = [];
-    if (count($allBookings) >= 2) { // User has multiple bookings - returning customer
-        // Calculate user's favorite routes and preferences
-        $routeFrequency = [];
-        $totalFares = [];
+        // Separate bookings into upcoming and history based on booking time
+        $currentDateTime = date('Y-m-d H:i:s');
         
         foreach ($allBookings as $booking) {
-            $route = $booking['Origin'] . ' → ' . $booking['Destination'];
-            $routeFrequency[$route] = ($routeFrequency[$route] ?? 0) + 1;
-            $totalFares[] = floatval($booking['Fare']);
+            $bookingDateTime = $booking['BookingTime'];
+            
+            // Compare booking time with current time to determine if it's upcoming or past
+            if ($bookingDateTime > $currentDateTime) {
+                // Future bookings go to upcoming
+                $upcomingBookings[] = $booking;
+            } else {
+                // Past bookings go to history
+                $bookingHistory[] = $booking;
+            }
         }
         
-        // Find most frequent route
-        $mostFrequentRoute = array_keys($routeFrequency, max($routeFrequency))[0];
-        list($favoriteFrom, $favoriteTo) = explode(' → ', $mostFrequentRoute);
+        // Sort upcoming bookings by time (earliest first)
+        usort($upcomingBookings, function($a, $b) {
+            return strtotime($a['BookingTime']) - strtotime($b['BookingTime']);
+        });
         
-        // Calculate average and max price user typically pays
-        $avgPrice = round(array_sum($totalFares) / count($totalFares), 2);
-        $maxPrice = max($totalFares);
+        // Sort booking history by time (latest first)
+        usort($bookingHistory, function($a, $b) {
+            return strtotime($b['BookingTime']) - strtotime($a['BookingTime']);
+        });
         
-        $userPreferences = [
-            'from' => $favoriteFrom,
-            'to' => $favoriteTo,
-            'avgPrice' => $avgPrice,
-            'maxPrice' => $maxPrice,
-            'totalBookings' => count($allBookings),
-            'isReturningCustomer' => true
-        ];
-    } else {
-        // First time user or single booking
-        $userPreferences = [
-            'isReturningCustomer' => false,
-            'totalBookings' => count($allBookings)
-        ];
+        // Set recent booking for other sections if needed
+        if (!empty($allBookings)) {
+            $recentBooking = $allBookings[0];
+        }
+        
+        // Log for debugging
+        error_log("DEBUG: Found " . count($allBookings) . " total bookings for phone " . $userPhoneNumber);
+        error_log("DEBUG: " . count($upcomingBookings) . " upcoming bookings, " . count($bookingHistory) . " past bookings");
+        
+    } catch (PDOException $e) {
+        error_log("Error fetching bookings: " . $e->getMessage());
+        $bookingHistory = [];
     }
 }
 
@@ -190,245 +170,7 @@ if ($conn) {
 
   <link rel="stylesheet" href="../assets/css/user-dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <style>
-    .announcements-container {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    
-    .announcement-card {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border: 1px solid #dee2e6;
-      border-left: 4px solid #800000;
-      border-radius: 8px;
-      padding: 20px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    
-    .announcement-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .announcement-header {
-      display: flex;
-      justify-content: between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .announcement-title {
-      color: #800000;
-      font-size: 18px;
-      font-weight: 600;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-    }
-    
-    .announcement-title i {
-      font-size: 16px;
-    }
-    
-    .announcement-date {
-      color: #6c757d;
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-    }
-    
-    .announcement-content {
-      color: #495057;
-      line-height: 1.6;
-    }
-    
-    .announcement-content p {
-      margin: 0;
-      font-size: 15px;
-    }
-    
-    .no-announcements {
-      text-align: center;
-      padding: 40px 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 2px dashed #dee2e6;
-    }
-    
-    .back-navigation {
-      position: fixed !important;
-      top: 20px !important;
-      left: 20px !important;
-      z-index: 1000 !important;
-    }
-    
-    .back-btn:hover {
-      background: #a00000 !important;
-      transform: translateY(-1px);
-    }
-    
-    @media (max-width: 768px) {
-      .announcement-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-      
-      .announcement-title {
-        font-size: 16px;
-      }
-      
-      .back-navigation {
-        display: none !important;
-      }
-      
-      .sidebar {
-        display: none !important; /* Hide sidebar on mobile */
-      }
-      
-      /* Show top navigation on mobile only */
-      .top-nav {
-        display: flex !important;
-      }
-      
-      .nav-tabs {
-        display: flex !important;
-      }
-      
-      .container {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-      }
-      
-      .main-content {
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-    }
-    
-    /* Top Navigation Bar - MOBILE ONLY */
-    .top-nav {
-      background: linear-gradient(135deg, #8B0000, #A52A2A);
-      color: white;
-      padding: 15px 20px;
-      display: none; /* Hidden on desktop */
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    
-    .top-nav .logo-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .logo-section img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-    
-    .top-nav .user-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .user-section img {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      border: 2px solid white;
-    }
-    
-    .nav-tabs {
-      display: none; /* Hidden on desktop */
-      justify-content: center;
-      background: #8B0000;
-      padding: 0;
-      margin: 0;
-      border-bottom: 3px solid #A52A2A;
-    }
-    
-    .nav-tabs a {
-      flex: 1;
-      text-align: center;
-      padding: 15px 10px;
-      color: white;
-      text-decoration: none;
-      border-right: 1px solid rgba(255,255,255,0.2);
-      transition: background-color 0.3s ease;
-      font-weight: 500;
-    }
-    
-    .nav-tabs a:last-child {
-      border-right: none;
-    }
-    
-    .nav-tabs a.active,
-    .nav-tabs a:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .nav-tabs a.active {
-      background: rgba(255,255,255,0.2);
-      border-bottom: 3px solid white;
-    }
-    
-    /* Dropdown functionality */
-    .user-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 100%;
-      background-color: white;
-      min-width: 120px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 1001;
-      margin-top: 5px;
-    }
-    
-    .dropdown-content a {
-      color: #333 !important;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 5px;
-    }
-    
-    .dropdown-content a:hover {
-      background-color: #f1f1f1;
-    }
-    
-    .user-dropdown.show .dropdown-content {
-      display: block;
-    }
-    
-    .user-section {
-      cursor: pointer;
-    }
-  </style>
+
 </head>
 <body>
   <div class="container">
@@ -457,19 +199,11 @@ if ($conn) {
       <a href="dashboard.php" class="active">
         <i class="fas fa-tachometer-alt"></i> Dashboard
       </a>
-      <a href="feedback.php">
-        <i class="fas fa-comment-alt"></i> Feedback
-      </a>
       <a href="incidents.php">
         <i class="fas fa-exclamation-triangle"></i> Report Incident
       </a>
-    </div>
-    
-    <!-- Add back navigation -->
-    <div class="back-navigation" style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-      <a href="../index.php" class="back-btn" style="display: inline-flex; align-items: center; padding: 8px 12px; background: #800000; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">
-        <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
-        Back to Home
+      <a href="cancel_booking.php">
+        <i class="fas fa-times-circle"></i> Cancel Booking
       </a>
     </div>
     
@@ -479,7 +213,7 @@ if ($conn) {
           <img src="../assets/images/uploads/dd.png" alt="LankaTransit Logo">
         </a>
       </div>
-    <hr style="height: 1px; background-color: #ccc; border: none; width: 100%; margin: 1px auto 15px auto;">
+    <hr class="sidebar-hr">
 
       <div class="user-profile">
         <div class="user-icon">
@@ -496,8 +230,8 @@ if ($conn) {
       <nav class="navigation">
         <ul>
           <li class="active"><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-          <li><a href="feedback.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
           <li><a href="incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
+          <li><a href="cancel_booking.php"><i class="fas fa-times-circle"></i> Cancel Booking</a></li>
         </ul>
       </nav>
       <div class="logout">
@@ -538,8 +272,8 @@ if ($conn) {
             <?php endforeach; ?>
           <?php else: ?>
             <div class="no-announcements">
-              <i class="fas fa-info-circle" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
-              <p style="color: #666; font-size: 16px;">No announcements available at this time.</p>
+              <i class="fas fa-info-circle no-announcements-icon"></i>
+              <p class="no-announcements-text">No announcements available at this time.</p>
             </div>
           <?php endif; ?>
         </div>
@@ -574,77 +308,9 @@ if ($conn) {
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6" style="text-align: center; color: #666;">No upcoming bookings found</td>
+                  <td colspan="6" class="table-empty-message">No upcoming bookings found</td>
                 </tr>
               <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Schedule a Frequent Trip -->
-      <div class="section">
-        <h2><i class="fas fa-route section-icon"></i> Schedule a Frequent Trip</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Origin</th>
-                <th>Destination</th>
-                <th>Last Used</th>
-                <th>Times Booked</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php 
-              if ($userId && $conn) {
-                // Get frequent routes
-                $stmt = $conn->prepare("
-                  SELECT r.Origin, r.Destination, MAX(b.BookingTime) as LastUsed, COUNT(*) as TimesBooked
-                  FROM Booking b
-                  JOIN Bus bus ON b.BusID = bus.ID
-                  LEFT JOIN Route r ON bus.RouteId = r.ID
-                  WHERE b.UserId = ? AND r.Origin IS NOT NULL
-                  GROUP BY r.Origin, r.Destination
-                  ORDER BY COUNT(*) DESC, MAX(b.BookingTime) DESC
-                  LIMIT 3
-                ");
-                $stmt->execute([$userId]);
-                $frequentRoutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                if (!empty($frequentRoutes)):
-                  foreach ($frequentRoutes as $route):
-              ?>
-                <tr>
-                  <td><?= htmlspecialchars($route['Origin']) ?></td>
-                  <td><?= htmlspecialchars($route['Destination']) ?></td>
-                  <td><?= date('Y-m-d', strtotime($route['LastUsed'])) ?></td>
-                  <td><?= $route['TimesBooked'] ?></td>
-                  <td>
-                    <form action="search.php" method="get">
-                      <input type="hidden" name="origin" value="<?= htmlspecialchars($route['Origin']) ?>">
-                      <input type="hidden" name="destination" value="<?= htmlspecialchars($route['Destination']) ?>">
-                      <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
-                      <button class="rebook-btn">Book Again</button>
-                    </form>
-                  </td>
-                </tr>
-              <?php 
-                  endforeach;
-                else:
-              ?>
-                <tr>
-                  <td colspan="5" style="text-align: center; color: #666;">No frequent trips found</td>
-                </tr>
-              <?php 
-                endif;
-              } else {
-              ?>
-                <tr>
-                  <td colspan="5" style="text-align: center; color: #666;">Please log in to view frequent trips</td>
-                </tr>
-              <?php } ?>
             </tbody>
           </table>
         </div>
@@ -662,6 +328,7 @@ if ($conn) {
                 <th>To</th>
                 <th>Booked Seats</th>
                 <th>Fare (LKR)</th>
+                <th>Feedback</th>
               </tr>
             </thead>
             <tbody>
@@ -674,11 +341,27 @@ if ($conn) {
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
                   <td><?= number_format($booking['Fare'], 2) ?></td>
+                  <td>
+                    <?php if (!empty($booking['FeedbackID'])): ?>
+                      <div class="feedback-status">
+                        <span class="rating-stars">
+                          <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <i class="<?= $i <= $booking['Rating'] ? 'fas' : 'far' ?> fa-star"></i>
+                          <?php endfor; ?>
+                        </span>
+                        <small>Rated</small>
+                      </div>
+                    <?php else: ?>
+                      <button class="feedback-btn" onclick="openFeedbackModal(<?= $booking['ID'] ?>, '<?= htmlspecialchars($booking['BusNumber']) ?>', <?= $booking['BusID'] ?>)">
+                        <i class="fas fa-star"></i> Rate Trip
+                      </button>
+                    <?php endif; ?>
+                  </td>
                 </tr>
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6" style="text-align: center; color: #666;">No booking history found</td>
+                  <td colspan="7" class="table-empty-message">No booking history found</td>
                 </tr>
               <?php endif; ?>
             </tbody>
@@ -687,87 +370,266 @@ if ($conn) {
       </div>
 
       <div class="section">
-        <h2><i class="fas fa-redo section-icon"></i>Rebooking</h2>
-        <div class="rebooking-card-wrapper">
-          <?php if ($userPreferences['isReturningCustomer']): ?>
-          <div class="rebooking-card">
-            <div class="rebooking-details">
-              <i class="far fa-calendar-alt rebooking-icon"></i>
-              <div>
-                <p class="route"><?= htmlspecialchars($userPreferences['from']) ?> &rarr; <?= htmlspecialchars($userPreferences['to']) ?></p>
-                <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">
-                  Suggestion based on your <?= $userPreferences['totalBookings'] ?> previous bookings
-                </p>
-              </div>
-            </div>
-            <form action="search.php" method="get">
-              <input type="hidden" name="from_city" value="<?= htmlspecialchars($userPreferences['from']) ?>">
-              <input type="hidden" name="to_city" value="<?= htmlspecialchars($userPreferences['to']) ?>">
-              <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
-              <input type="hidden" name="max_price" value="<?= $userPreferences['maxPrice'] ?>">
-              <input type="hidden" name="smart_search" value="1">
-              <button class="rebook-btn">
-                <i class="fas fa-magic" style="margin-right: 5px;"></i>
-                Search
-              </button>
-            </form>
-          </div>
-          <?php else: ?>
-          <div class="rebooking-card">
-            <div class="rebooking-details">
-              <i class="fas fa-star rebooking-icon"></i>
-              <div>
-                <?php if ($userPreferences['totalBookings'] == 0): ?>
-                <p class="route">Welcome to Lanka Transit!</p>
-                <p class="last-traveled">Start your journey with us - explore our routes and find your perfect trip</p>
-                <?php else: ?>
-                <p class="route">Building your preferences...</p>
-                <p class="last-traveled">Make a few more bookings to unlock recommendations</p>
-                <?php endif; ?>
-              </div>
-            </div>
-            <a href="../index.php" class="rebook-btn">
-              <i class="fas fa-home" style="margin-right: 5px;"></i>
-              Explore Routes
-            </a>
-          </div>
-          <?php endif; ?>
+        <h2><i class="fas fa-redo section-icon"></i> Rebook a Frequent Trip</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Last Used</th>
+                <th>Times Booked</th>
+                <th>Avg Fare (LKR)</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php 
+              // Get top 5 frequent routes based on user's phone number, ordered by booking count
+              $frequentRoutes = [];
+              if ($userPhoneNumber && $conn) {
+                  try {
+                      // Query to get top 5 most frequent routes for the user
+                      $stmt = $conn->prepare("
+                          SELECT r.Origin, r.Destination, 
+                                 MAX(b.BookingTime) as LastUsed, 
+                                 COUNT(*) as TimesBooked,
+                                 AVG(b.Fare) as AvgFare
+                          FROM Booking b
+                          JOIN Bus bus ON b.BusID = bus.ID
+                          LEFT JOIN Route r ON bus.RouteId = r.ID
+                          WHERE b.PhoneNumber = ? 
+                            AND b.Status IN ('confirmed', 'completed')
+                            AND r.Origin IS NOT NULL 
+                            AND r.Destination IS NOT NULL
+                          GROUP BY r.Origin, r.Destination
+                          ORDER BY COUNT(*) DESC, MAX(b.BookingTime) DESC
+                          LIMIT 5
+                      ");
+                      $stmt->execute([$userPhoneNumber]);
+                      $frequentRoutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                      
+                      // Log for debugging
+                      error_log("DEBUG: Found " . count($frequentRoutes) . " frequent routes for rebooking, phone " . $userPhoneNumber);
+                      
+                  } catch (PDOException $e) {
+                      error_log("Error fetching frequent routes for rebooking: " . $e->getMessage());
+                      $frequentRoutes = [];
+                  }
+              }
+              
+              if (!empty($frequentRoutes)): ?>
+                <?php foreach ($frequentRoutes as $index => $route): ?>
+                <tr>
+                  <td>
+                    <?= htmlspecialchars($route['Origin']) ?>
+                    <?php if ($index === 0): ?>
+                      <span class="badge" style="background: #4B0000; color: white; font-size: 0.7rem; margin-left: 5px;">MOST FREQUENT</span>
+                    <?php endif; ?>
+                  </td>
+                  <td><?= htmlspecialchars($route['Destination']) ?></td>
+                  <td><?= date('M j, Y', strtotime($route['LastUsed'])) ?></td>
+                  <td>
+                    <strong style="color: #4B0000;"><?= $route['TimesBooked'] ?></strong>
+                    <?= $route['TimesBooked'] == 1 ? 'trip' : 'trips' ?>
+                  </td>
+                  <td><?= number_format($route['AvgFare'], 2) ?></td>
+                  <td>
+                    <form action="search.php" method="post" style="margin: 0;">
+                      <input type="hidden" name="origin" value="<?= htmlspecialchars($route['Origin']) ?>">
+                      <input type="hidden" name="destination" value="<?= htmlspecialchars($route['Destination']) ?>">
+                      <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
+                      <input type="hidden" name="max_fare" value="<?= ceil($route['AvgFare'] * 1.2) ?>">
+                      <button type="submit" class="rebook-btn">
+                        <?php if ($index === 0): ?>
+                          <i class="fas fa-star icon-with-margin"></i>
+                          Book Again
+                        <?php else: ?>
+                          <i class="fas fa-redo icon-with-margin"></i>
+                          Rebook
+                        <?php endif; ?>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="6" class="table-empty-message">
+                    <div style="text-align: center; padding: 40px;">
+                      <i class="fas fa-route" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
+                      <p style="margin: 0; color: #666;">No frequent trips found</p>
+                      <small style="color: #888;">Make some bookings to see your frequent routes here!</small>
+                      <div style="margin-top: 15px;">
+                        <a href="../index.php" class="rebook-btn" style="display: inline-block; text-decoration: none;">
+                          <i class="fas fa-search icon-with-margin"></i>
+                          Search Routes
+                        </a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
         </div>
-        
+        <p class="hint">
+          <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+          Your favorite routes, sorted by how often you travel. Click "Book Again" to find buses.
+        </p>
       </div>
 
       <div class="section">
         <h2><i class="fas fa-receipt section-icon"></i> Receipts</h2>
         <div class="receipt-card-wrapper">
-          <?php if ($recentBooking): ?>
-          <div class="receipt-card">
-            <div class="receipt-details">
-              <i class="far fa-file-alt receipt-icon"></i>
-              <div>
-                <p class="receipt-booking-id">Bus #<?= htmlspecialchars($recentBooking['BusNumber'] ?? 'N/A') ?></p>
-                <p class="receipt-date">Date: <?= date('d F Y', strtotime($recentBooking['BookingTime'])) ?> • <?= htmlspecialchars($recentBooking['Origin'] ?? 'N/A') ?> &rarr; <?= htmlspecialchars($recentBooking['Destination'] ?? 'N/A') ?></p>
+          <?php 
+          // Get all bookings for receipts based on user's phone number
+          $receiptBookings = [];
+          if ($userPhoneNumber && $conn) {
+              try {
+                  // Get all confirmed/completed bookings for receipt generation
+                  $stmt = $conn->prepare("
+                      SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
+                             bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID
+                      FROM Booking b
+                      JOIN Bus bus ON b.BusID = bus.ID
+                      LEFT JOIN Route r ON bus.RouteId = r.ID
+                      WHERE b.PhoneNumber = ? 
+                        AND b.Status IN ('confirmed', 'completed')
+                      ORDER BY b.BookingTime DESC
+                      LIMIT 10
+                  ");
+                  $stmt->execute([$userPhoneNumber]);
+                  $receiptBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                  
+                  // Log for debugging
+                  error_log("DEBUG: Found " . count($receiptBookings) . " bookings for receipts, phone " . $userPhoneNumber);
+                  
+              } catch (PDOException $e) {
+                  error_log("Error fetching receipt bookings: " . $e->getMessage());
+                  $receiptBookings = [];
+              }
+          }
+          ?>
+          
+          <?php if (!empty($receiptBookings)): ?>
+            <div style="display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+              <?php foreach ($receiptBookings as $booking): ?>
+              <div class="receipt-card">
+                <div class="receipt-details">
+                  <i class="far fa-file-alt receipt-icon"></i>
+                  <div>
+                    <p class="receipt-booking-id">
+                      <strong>Bus #<?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></strong>
+                      <span style="font-size: 0.85em; color: #666; margin-left: 8px;">
+                        <?= 'LT-' . str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>
+                      </span>
+                    </p>
+                    <p class="receipt-date">
+                      <i class="fas fa-calendar-check" style="margin-right: 5px; color: #4a90e2;"></i>
+                      <?= date('d M Y', strtotime($booking['BookingTime'])) ?>
+                      <span style="margin: 0 8px;">•</span>
+                      <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?>
+                    </p>
+                    <p style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                      <i class="fas fa-chair" style="margin-right: 5px;"></i>
+                      Seat: <?= htmlspecialchars($booking['SeatNumber']) ?>
+                      <span style="margin: 0 8px;">•</span>
+                      <i class="fas fa-money-bill-wave" style="margin-right: 5px;"></i>
+                      LKR <?= number_format($booking['Fare'], 2) ?>
+                    </p>
+                  </div>
+                </div>
+                <a href="ticket_pdf.php?ref=LT-<?= str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=<?= urlencode($userPhoneNumber) ?>&origin=<?= urlencode($booking['Origin'] ?? '') ?>&destination=<?= urlencode($booking['Destination'] ?? '') ?>&date=<?= urlencode(date('Y-m-d', strtotime($booking['BookingTime']))) ?>&bus=<?= urlencode($booking['BusNumber'] ?? '') ?>&seat=<?= urlencode($booking['SeatNumber']) ?>&fare=<?= urlencode($booking['Fare']) ?>" 
+                   class="download-btn" target="_blank">
+                  <i class="fas fa-download" style="margin-right: 5px;"></i>
+                  Download PDF
+                </a>
               </div>
+              <?php endforeach; ?>
             </div>
-            <a href="ticket_pdf.php?ref=LT-<?= str_pad($recentBooking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=&origin=<?= urlencode($recentBooking['Origin'] ?? '') ?>&destination=<?= urlencode($recentBooking['Destination'] ?? '') ?>&date=<?= urlencode(date('Y-m-d', strtotime($recentBooking['BookingTime']))) ?>&bus=<?= urlencode($recentBooking['BusNumber'] ?? '') ?>&seat=<?= urlencode($recentBooking['SeatNumber']) ?>&fare=<?= urlencode($recentBooking['Fare']) ?>" 
-               class="download-btn">Download PDF</a>
-          </div>
+            
+            <?php if (count($receiptBookings) >= 10): ?>
+            <div style="text-align: center; margin-top: 15px;">
+              <small style="color: #666;">
+                <i class="fas fa-info-circle"></i>
+                Showing latest 10 bookings. Contact support for older receipts.
+              </small>
+            </div>
+            <?php endif; ?>
+            
           <?php else: ?>
+          <!-- No bookings found -->
           <div class="receipt-card">
             <div class="receipt-details">
               <i class="far fa-file-alt receipt-icon"></i>
               <div>
-                <p class="receipt-booking-id">No recent bookings</p>
+                <p class="receipt-booking-id">No bookings found</p>
                 <p class="receipt-date">Make a booking to download receipts</p>
               </div>
             </div>
-            <span class="download-btn" style="opacity: 0.5; cursor: not-allowed;">No Receipt Available</span>
+            <span class="download-btn download-btn-disabled">No Receipt Available</span>
           </div>
           <?php endif; ?>
         </div>
-        <p class="hint">Download your ticket receipts in PDF format for reference or refunds.</p>
+        <p class="hint">
+          <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+          Download PDF receipts for your bookings with all travel details included.
+        </p>
       </div>
     </div>
   </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Rate Your Trip</h3>
+        <span class="close" onclick="closeFeedbackModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <!-- Notification area for feedback -->
+        <div id="feedbackNotification" class="notification" style="display: none;">
+          <span id="feedbackNotificationMessage"></span>
+        </div>
+        
+        <div class="trip-info">
+          <p><strong>Bus:</strong> <span id="modalBusNumber"></span></p>
+        </div>
+        <form id="feedbackForm">
+          <input type="hidden" id="bookingId" name="bookingId">
+          <input type="hidden" id="busId" name="busId">
+          
+          <div class="rating-section">
+            <label>Rate your experience:</label>
+            <div class="star-rating">
+              <input type="radio" name="rating" value="5" id="star5">
+              <label for="star5" class="star">★</label>
+              <input type="radio" name="rating" value="4" id="star4">
+              <label for="star4" class="star">★</label>
+              <input type="radio" name="rating" value="3" id="star3">
+              <label for="star3" class="star">★</label>
+              <input type="radio" name="rating" value="2" id="star2">
+              <label for="star2" class="star">★</label>
+              <input type="radio" name="rating" value="1" id="star1">
+              <label for="star1" class="star">★</label>
+            </div>
+          </div>
+          
+          <div class="comment-section">
+            <label for="comment">Comments (Optional):</label>
+            <textarea id="comment" name="comment" rows="4" placeholder="Share your experience..."></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeFeedbackModal()">Cancel</button>
+            <button type="submit" class="btn-submit">Submit Feedback</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="../assets/js/user-dashboard.js"></script>
   <script>
 // Dropdown functionality
@@ -783,7 +645,106 @@ window.onclick = function(event) {
             dropdown.classList.remove('show');
         }
     }
+    
+    // Close modal when clicking outside
+    if (event.target == document.getElementById('feedbackModal')) {
+        closeFeedbackModal();
+    }
 }
+
+// Feedback Modal Functions
+function openFeedbackModal(bookingId, busNumber, busId) {
+    document.getElementById('bookingId').value = bookingId;
+    document.getElementById('busId').value = busId;
+    document.getElementById('modalBusNumber').textContent = busNumber;
+    document.getElementById('feedbackModal').style.display = 'block';
+    
+    // Reset form
+    document.getElementById('feedbackForm').reset();
+}
+
+function closeFeedbackModal() {
+    document.getElementById('feedbackModal').style.display = 'none';
+    // Clear any notifications when closing
+    hideNotification();
+}
+
+// Function to show notifications in the modal
+function showNotification(message, type) {
+    const notification = document.getElementById('feedbackNotification');
+    const notificationMessage = document.getElementById('feedbackNotificationMessage');
+    
+    notificationMessage.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+    
+    // Auto-hide after 5 seconds for success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            hideNotification();
+        }, 5000);
+    }
+}
+
+function hideNotification() {
+    const notification = document.getElementById('feedbackNotification');
+    notification.style.display = 'none';
+}
+
+// Handle feedback form submission
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const rating = document.querySelector('input[name="rating"]:checked');
+    
+    if (!rating) {
+        showNotification('Please select a rating before submitting your feedback', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('.btn-submit');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+    
+    // Send feedback to backend
+    fetch('../pages/submit_feedback.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Feedback response:', data); // Debug logging
+        if (data.success) {
+            showNotification(data.message || 'Thank you for your feedback!', 'success');
+            // Reset form after successful submission
+            this.reset();
+            // Refresh the page after a short delay to show updated feedback status
+            setTimeout(() => {
+                closeFeedbackModal();
+                location.reload();
+            }, 2000);
+        } else {
+            showNotification(data.message || 'Unable to submit feedback. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Unable to submit feedback at the moment. Please check your connection and try again.', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
+});
 </script>
   
 </body>
