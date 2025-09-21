@@ -118,9 +118,9 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
         <div class="driver-area">🚍 Driver</div>
       </div>
       <div class="seat-grid"></div>
-      <div class="bus-rear">
+      <!-- <div class="bus-rear">
         <div class="rear-entrance">🚪 Rear Entrance</div>
-      </div>
+      </div> -->
     </div>
   </div>
 
