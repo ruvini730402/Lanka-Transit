@@ -1,8 +1,5 @@
 # Lanka Transit - Basic .htaccess Configuration
 
-# Enable error pages
-ErrorDocument 404 /404.html
-ErrorDocument 500 /500.html
 
 # Security headers
 <IfModule mod_headers.c>
