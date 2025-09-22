@@ -1,0 +1,534 @@
+Chapter: Test Cases and Expected Results
+
+Overview
+This document outlines comprehensive test cases for each module of the Lanka Transit system, derived from actual code implementation analysis. Test cases cover unit testing, integration testing, security testing, and user acceptance testing with specific input data, expected results, and validation criteria.
+
+Module-by-Module Test Cases
+
+1) Database Access Layer (classes/Database.php)
+
+Test Case 1.1: Database Connection - Valid Credentials
+- Test: Call getConnection() with valid environment variables
+- Input: Valid DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD
+- Result: Returns PDO object with successful connection
+- Validation: $conn instanceof PDO === true, $conn !== null
+
+Test Case 1.2: Database Connection - Invalid Credentials
+- Test: Call getConnection() with invalid credentials
+- Input: Wrong DB_PASSWORD or non-existent DB_HOST
+- Result: Returns null, logs error message
+- Validation: $conn === null, error log contains "Connection error"
+
+Test Case 1.3: Input Sanitization - XSS Prevention
+- Test: sanitizeInput() with malicious input
+- Input: "<script>alert('xss')</script>test"
+- Result: "&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;test"
+- Validation: HTML entities encoded, no executable script tags
+
+Test Case 1.4: Input Validation - Email Format
+- Test: validateInput() with email type
+- Input: ["test@example.com", "invalid-email", "user@domain.co.uk"]
+- Result: [true, false, true]
+- Validation: Valid emails return true, invalid formats return false
+
+Test Case 1.5: Input Validation - Phone Number Format
+- Test: validateInput() with phone type
+- Input: ["0771234567", "077123456", "077-123-4567", "abcd123456"]
+- Result: [true, false, false, false]
+- Validation: Exactly 10 digits return true, other formats return false
+
+Test Case 1.6: Input Validation - Date Format
+- Test: validateInput() with date type
+- Input: ["2025-09-22", "invalid-date", "22/09/2025", "2025-13-45"]
+- Result: [true, false, true, false]
+- Validation: Valid dates return true, invalid dates return false
+
+Test Case 1.7: Query Execution - Prepared Statements
+- Test: executeQuery() with parameterized query
+- Input: "SELECT * FROM User WHERE Email = ?", ["test@example.com"]
+- Result: PDOStatement object or false on error
+- Validation: Query executes safely without SQL injection
+
+2) User & Authentication (classes/User.php)
+
+Test Case 2.1: User Registration - Valid Data
+- Test: register() with unique email and phone
+- Input: ["John Doe", "john@example.com", "password123", "0771234567"]
+- Expected Result: ['success' => true, 'message' => 'User registered successfully.']
+- Validation: New user record created, password hashed, role set to 'registered user'
+
+Test Case 2.2: User Registration - Duplicate Email
+- Test: register() with existing email
+- Input: ["Jane Doe", "existing@example.com", "password123", "0771234568"]
+- Expected Result: ['success' => false, 'message' => 'Email already registered.']
+- Validation: No new user created, appropriate error message returned
+
+Test Case 2.3: User Registration - Duplicate Phone
+- Test: register() with existing phone number
+- Input: ["Jane Doe", "jane@example.com", "password123", "0771234567"]
+- Expected Result: ['success' => false, 'message' => 'Mobile number already registered.']
+- Validation: No new user created, appropriate error message returned
+
+Test Case 2.4: User Login - Valid Credentials
+- Test: login() with correct email and password
+- Input: ["john@example.com", "password123"]
+- Expected Result: ['success' => true, 'user' => user_data, 'redirect' => 'dashboard.php']
+- Validation: User data returned, appropriate redirect URL for role
+
+Test Case 2.5: User Login - Invalid Email
+- Test: login() with non-existent email
+- Input: ["nonexistent@example.com", "password123"]
+- Expected Result: ['success' => false, 'message' => 'No account found with that email address.']
+- Validation: Login fails, appropriate error message
+
+Test Case 2.6: User Login - Wrong Password
+- Test: login() with correct email but wrong password
+- Input: ["john@example.com", "wrongpassword"]
+- Expected Result: ['success' => false, 'message' => 'Incorrect password. Please try again.']
+- Validation: Login fails, password verification fails
+
+Test Case 2.7: User Login - Admin Role Redirect
+- Test: login() with administrator role user
+- Input: ["admin@example.com", "adminpassword"]
+- Expected Result: ['success' => true, 'redirect' => 'admin_dashboard.php']
+- Validation: Admin user redirected to admin dashboard
+
+Test Case 2.8: Password Reset Token - Valid Email
+- Test: setResetToken() with existing user email
+- Input: ["john@example.com", "random_token_123", "2025-09-23 12:00:00"]
+- Expected Result: Token saved in User_2 table with expiry
+- Validation: Reset token and expiry time stored correctly
+
+Test Case 2.9: Password Reset Token - Invalid Email
+- Test: setResetToken() with non-existent email
+- Input: ["nonexistent@example.com", "token", "2025-09-23 12:00:00"]
+- Expected Result: Error message "User not found."
+- Validation: No token created, appropriate error handling
+
+Test Case 2.10: Find User by Token - Valid Token
+- Test: findByToken() with valid, non-expired token
+- Input: ["valid_token_123"]
+- Expected Result: User data with token information
+- Validation: User and token data retrieved from joined tables
+
+Test Case 2.11: Update Password - Valid User
+- Test: updatePassword() with valid user ID and new password
+- Input: [123, "new_hashed_password"]
+- Expected Result: Password updated, reset token cleared
+- Validation: PasswordHash updated in User table, token cleared in User_2
+
+3) Bus & Schedule (classes/Bus.php)
+
+Test Case 3.1: Bus Search - Direct Route Match
+- Test: searchBusesWithFilters() with terminal-to-terminal route
+- Input: ["Colombo", "Kandy", "2025-09-25"]
+- Result: List of buses with Origin='Colombo', Destination='Kandy'
+- Validation: Only direct routes returned, available seats calculated correctly
+
+Test Case 3.2: Bus Search - Origin Terminal to Stop
+- Test: searchBusesWithFilters() with terminal to intermediate stop
+- Input: ["Colombo", "Kegalle", "2025-09-25"]
+- Result: Buses where Origin='Colombo' and 'Kegalle' in Stops
+- Validation: Route matching logic includes intermediate stops
+
+Test Case 3.3: Bus Search - Stop to Terminal
+- Test: searchBusesWithFilters() with intermediate stop to terminal
+- Input: ["Kegalle", "Kandy", "2025-09-25"]
+- Result: Buses where 'Kegalle' in Stops and Destination='Kandy'
+- Validation: Intermediate stop to terminal routes found
+
+Test Case 3.4: Bus Search - Stop to Stop Ordering
+- Test: searchBusesWithFilters() with two intermediate stops
+- Input: ["Kegalle", "Mawanella", "2025-09-25"]
+- Result: Buses where both stops exist and Kegalle comes before Mawanella
+- Validation: FIND_IN_SET position comparison works correctly
+
+Test Case 3.5: Bus Search - Invalid Same Origin/Destination
+- Test: searchBusesWithFilters() with same origin and destination
+- Input: ["Colombo", "Colombo", "2025-09-25"]
+- Result: ['error' => 'Origin and destination cities must be different...']
+- Validation: Validation prevents same location booking
+
+Test Case 3.6: Bus Search - Past Date Validation
+- Test: searchBusesWithFilters() with past travel date
+- Input: ["Colombo", "Kandy", "2025-09-20"]
+- Expected Result: ['error' => 'Travel date must be today or a future date...']
+- Validation: Past date bookings prevented
+
+Test Case 3.7: Bus Search - Fare Range Filter
+- Test: searchBusesWithFilters() with min/max fare filters
+- Input: ["Colombo", "Kandy", "2025-09-25", ['min_fare' => 500, 'max_fare' => 1000]]
+- Result: Only buses with fare between 500-1000 LKR
+- Validation: Fare filtering works correctly
+
+Test Case 3.8: Bus Search - Departure Time Filter
+- Test: searchBusesWithFilters() with time window filter
+- Input: ["Colombo", "Kandy", "2025-09-25", ['departure_time_from' => '06:00', 'departure_time_to' => '12:00']]
+- Result: Only buses departing between 6 AM and 12 PM
+- Validation: Time filtering applied correctly
+
+Test Case 3.9: Bus Search - Minimum Seats Filter
+- Test: searchBusesWithFilters() with minimum available seats
+- Input: ["Colombo", "Kandy", "2025-09-25", ['min_seats' => 10]]
+- Result: Only buses with 10+ available seats
+- Validation: Seat availability calculation and filtering
+
+Test Case 3.10: Bus Search - Sorting by Fare Low to High
+- Test: searchBusesWithFilters() with fare ascending sort
+- Input: ["Colombo", "Kandy", "2025-09-25", ['sort_by' => 'fare_low']]
+- Result: Results sorted by fare ascending, then departure time
+- Validation: Primary and secondary sort criteria applied
+
+Test Case 3.11: Bus Search - Available Seats Calculation
+- Test: searchBusesWithFilters() with existing bookings
+- Input: Bus with capacity 50, 15 confirmed bookings for travel date
+- Result: available_seats = 35
+- Validation: Capacity minus confirmed bookings equals available seats
+
+Test Case 3.12: Fare Range Calculation - Valid Route
+- Test: getFareRange() for existing route
+- Input: ["Colombo", "Kandy"]
+- Result: ['min_fare' => minimum_fare, 'max_fare' => maximum_fare]
+- Validation: MIN and MAX fare values calculated from route options
+
+4) Booking System (classes/Booking.php)
+
+Test Case 4.1: Booking Creation - Valid Data with Seat Check
+- Test: createBooking() with valid booking data
+- Input: [bus_id: 1, seat_number: 15, passenger_name: "John Doe", phone: "0771234567", travel_date: "2025-09-25"]
+- Expected Result: ['success' => true, 'booking_id' => id, 'booking_reference' => 'LT-xxxxxx']
+- Validation: Booking record created, user created/retrieved, seat marked booked
+
+Test Case 4.2: Booking Creation - Seat Already Booked
+- Test: createBooking() with already booked seat
+- Input: [bus_id: 1, seat_number: 10, ...] where seat 10 is already booked
+- Expected Result: ['success' => false, 'error' => 'Selected seat is not available']
+- Validation: Booking fails, no transaction committed
+
+Test Case 4.3: Booking Creation - Skip Availability Check
+- Test: createBooking() with skipAvailabilityCheck = true
+- Input: [booking_data], skipAvailabilityCheck = true
+- Expected Result: Booking created regardless of current seat status
+- Validation: Used for post-payment confirmations, bypasses seat check
+
+Test Case 4.4: Booking Validation - Missing Required Fields
+- Test: validateBookingData() with incomplete data
+- Input: [bus_id: 1, passenger_name: "John"] // missing seat_number, phone
+- Expected Result: ['valid' => false, 'error' => error_description]
+- Validation: All required fields validated
+
+Test Case 4.5: Booking Transaction - Database Error Rollback
+- Test: createBooking() with database constraint violation
+- Input: Valid data but database constraint fails during transaction
+- Expected Result: ['success' => false, 'error' => error_message]
+- Validation: Transaction rolled back, no partial data saved
+
+Test Case 4.6: User Creation - Guest User
+- Test: createOrGetUser() with guest user data
+- Input: [name: "Guest User", phone: "0771234567", email: null]
+- Expected Result: User ID for new or existing guest user
+- Validation: Guest users handled without email requirement
+
+Test Case 4.7: User Creation - Registered User
+- Test: createOrGetUser() with existing registered user
+- Input: [name: "John Doe", phone: "0771234567", email: "john@example.com"]
+- Expected Result: Existing user ID returned
+- Validation: No duplicate user created
+
+Test Case 4.8: Booking Reference Generation
+- Test: Booking reference format after successful creation
+- Input: Booking ID = 123
+- Expected Result: 'LT-000123'
+- Validation: Booking reference follows LT-xxxxxx format with zero padding
+
+Test Case 4.9: Gender Record Creation
+- Test: createGenderRecord() with booking ID and gender
+- Input: [booking_id: 123, gender: "Male"]
+- Expected Result: Record created in Booking_2 table
+- Validation: Gender information stored in secondary table
+
+Test Case 4.10: Seat Status Update
+- Test: updateSeatStatus() after booking
+- Input: [bus_id: 1, seat_number: 15, status: "booked"]
+- Expected Result: Seat status updated in Seat table
+- Validation: Seat marked as booked (if Seat table exists)
+
+Test Case 4.11: Get Bookings by User
+- Test: getBookingsByUser() for existing user
+- Input: [user_id: 123]
+- Expected Result: Array of user's bookings with bus and route details
+- Validation: JOIN query returns complete booking information
+
+Test Case 4.12: Update Booking Status
+- Test: updateBookingStatus() with valid booking ID
+- Input: [booking_id: 123, status: "confirmed"]
+- Expected Result: Booking status updated successfully
+- Validation: Status field updated in Booking table
+
+5) Payment Integration (classes/Payment.php)
+
+Test Case 5.1: Payment Form Generation - Valid Booking Data
+- Test: generatePaymentForm() with complete booking information
+- Input: [fare: 850.00, origin: "Colombo", destination: "Kandy", passenger_name: "John Doe", phone: "0771234567", bus_id: 1]
+- Result: Form data array with PayHere parameters and valid hash
+- Validation: All required PayHere fields populated, hash calculated correctly
+
+Test Case 5.4: Payment Verification - Valid Notification
+- Test: verifyPayment() with genuine PayHere notification
+- Input: [merchant_id: "1231682", order_id: "LT-1234567890-5678", payhere_amount: "850.00", payhere_currency: "LKR", status_code: "2", md5sig: "calculated_hash"]
+- Result: true
+- Validation: Local hash matches PayHere signature
+
+Test Case 5.5: Payment Verification - Tampered Notification
+- Test: verifyPayment() with modified notification data
+- Input: [merchant_id: "1231682", order_id: "LT-1234567890-5678", payhere_amount: "1.00", payhere_currency: "LKR", status_code: "2", md5sig: "original_hash"]
+- Result: false
+- Validation: Hash verification detects data tampering
+
+Test Case 5.6: Payment Verification - Missing Signature
+- Test: verifyPayment() with missing md5sig
+- Input: [merchant_id: "1231682", order_id: "LT-1234567890-5678", payhere_amount: "850.00", payhere_currency: "LKR", status_code: "2"]
+- Result: false
+- Validation: Missing signature fails verification
+
+Test Case 5.7: Payment Notification Processing - Success Status
+- Test: processPaymentNotification() with successful payment
+- Input: Valid notification with status_code: "2"
+- Result: Booking status updated to "confirmed", payment record created
+- Validation: Database updates reflect successful payment
+
+Test Case 5.8: Payment Notification Processing - Failed Status
+- Test: processPaymentNotification() with failed payment
+- Input: Valid notification with status_code: "-1"
+- Result: Booking status updated to "cancelled", payment record created
+- Validation: Failed payments properly recorded
+
+Test Case 5.9: Payment Amount Formatting
+- Test: Amount formatting for PayHere submission
+- Input: [fare: 850, fare: 850.5, fare: 850.123]
+- Result: ["850.00", "850.50", "850.12"]
+- Validation: Amounts formatted to 2 decimal places
+
+6) Announcements (classes/Announcement.php)
+
+Test Case 6.1: Announcement Creation - Valid Data
+- Test: createAnnouncement() with title and message
+- Input: ["System Maintenance", "System will be down for maintenance on Sunday"]
+- Expected Result: true, announcement record created
+- Validation: Announcement inserted with timestamps
+
+Test Case 6.2: Announcement Creation - Empty Title
+- Test: createAnnouncement() with empty title
+- Input: ["", "This is a test message"]
+- Expected Result: false, error logged
+- Validation: Creation fails with empty title
+
+Test Case 6.3: Get All Announcements - Ordered by Date
+- Test: getAllAnnouncements() retrieval and ordering
+- Input: No input parameters
+- Expected Result: Array of announcements ordered by created_at DESC
+- Validation: Most recent announcements appear first
+
+Test Case 6.4: Get Recent Announcements - Limit Parameter
+- Test: getRecentAnnouncements() with limit
+- Input: [limit: 3]
+- Expected Result: Maximum 3 most recent announcements
+- Validation: Limit parameter enforced correctly
+
+Test Case 6.5: Update Announcement - Valid ID
+- Test: updateAnnouncement() with existing announcement
+- Input: [id: 123, title: "Updated Title", message: "Updated message"]
+- Expected Result: true, announcement updated with new timestamp
+- Validation: Content updated, updated_at timestamp refreshed
+
+Test Case 6.6: Delete Announcement - Valid ID
+- Test: deleteAnnouncement() with existing announcement
+- Input: [id: 123]
+- Expected Result: true, announcement removed
+- Validation: Record deleted from database
+
+Test Case 6.7: Delete Announcement - Non-existent ID
+- Test: deleteAnnouncement() with invalid ID
+- Input: [id: 99999]
+- Expected Result: false or exception
+- Validation: Graceful handling of non-existent records
+
+7) Search & Filters Integration
+
+Test Case 7.1: Search Page - Form Submission
+- Test: pages/search.php form processing
+- Input: Form data [origin: "Colombo", destination: "Kandy", date: "2025-09-25"]
+- Result: Search results displayed with available buses
+- Validation: Form data passed to Bus::searchBusesWithFilters()
+
+Test Case 7.2: Search Results - Empty Results
+- Test: Search with no matching routes
+- Input: [origin: "NonExistentCity", destination: "AnotherFakeCity", date: "2025-09-25"]
+- Result: "No buses found" message displayed
+- Validation: Empty result set handled gracefully
+
+Test Case 7.3: Search Filters - Combined Filters
+- Test: Multiple filters applied simultaneously
+- Input: Fare range + time window + minimum seats
+- Result: Results matching all filter criteria
+- Validation: Filter logic combines correctly with AND conditions
+
+8) Seat Management Integration
+
+Test Case 8.1: Seat Availability Check - Available Seat
+- Test: checkSeatAvailability() for unbooked seat
+- Input: [bus_id: 1, seat_number: 20, travel_date: "2025-09-25"]
+- Expected Result: true
+- Validation: Seat shows as available for booking
+
+Test Case 8.2: Seat Availability Check - Booked Seat
+- Test: checkSeatAvailability() for already booked seat
+- Input: [bus_id: 1, seat_number: 15, travel_date: "2025-09-25"]
+- Expected Result: false
+- Validation: Booked seat correctly identified
+
+Test Case 8.3: Lady Seat Identification
+- Test: isLadySeat() functionality
+- Input: [seat_number: 5, seat_number: 15]
+- Expected Result: [true, false] (first 8 seats are lady seats)
+- Validation: Lady seat convention properly implemented
+
+Test Case 8.4: Seat Map Generation - Default Layout
+- Test: getAvailableSeats() for bus without Seat table entries
+- Input: [bus_id: 1, travel_date: "2025-09-25"]
+- Expected Result: Default layout with first 8 as lady seats
+- Validation: Default seat generation works when no custom layout exists
+
+Test Case 8.5: Seat Map Generation - Custom Layout
+- Test: getAvailableSeats() for bus with Seat table entries
+- Input: [bus_id: 2, travel_date: "2025-09-25"]
+- Expected Result: Custom seat layout with booking status
+- Validation: Custom layouts override default generation
+
+9) User Interface & Experience
+
+Test Case 9.1: Form Validation - Client-side
+- Test: JavaScript validation on booking forms
+- Input: Invalid phone number, empty required fields
+- Result: Form submission prevented, error messages displayed
+- Validation: Client-side validation prevents invalid submissions
+
+Test Case 9.2: Form Validation - Server-side
+- Test: Server-side validation after form submission
+- Input: Malicious or invalid data bypassing client validation
+- Result: Server validates and rejects invalid data
+- Validation: Double validation prevents security issues
+
+Test Case 9.3: Responsive Design - Mobile Devices
+- Test: Interface rendering on mobile devices
+- Input: Access site from mobile browser
+- Result: Responsive layout adapts to screen size
+- Validation: Bootstrap responsive classes work correctly
+
+Test Case 9.4: Error Message Display
+- Test: Error handling and user feedback
+- Input: Various error conditions (database down, invalid input, etc.)
+- Result: User-friendly error messages displayed
+- Validation: Technical errors translated to user-friendly messages
+
+Test Case 9.5: Success Message Display
+- Test: Success feedback for completed actions
+- Input: Successful booking, registration, login
+- Result: Clear success messages with next steps
+- Validation: Positive feedback guides user workflow
+
+10) Security Testing
+
+Test Case 10.1: SQL Injection Prevention
+- Test: Database queries with malicious input
+- Input: "'; DROP TABLE User; --" in search fields
+- Result: Input sanitized, no SQL injection occurs
+- Validation: Prepared statements prevent SQL injection
+
+Test Case 10.2: XSS Prevention
+- Test: Cross-site scripting attack attempts
+- Input: "<script>alert('xss')</script>" in form fields
+- Result: Script tags escaped/encoded
+- Validation: htmlspecialchars() prevents XSS execution
+
+Test Case 10.3: CSRF Protection
+- Test: Cross-site request forgery attempts
+- Input: Forged requests from external sites
+- Result: Requests rejected without proper tokens
+- Validation: CSRF tokens validate request authenticity
+
+Test Case 10.4: Password Security
+- Test: Password hashing and verification
+- Input: Plain text passwords
+- Result: Passwords hashed with secure algorithm
+- Validation: password_hash() and password_verify() used correctly
+
+Test Case 10.5: Session Management
+- Test: User session handling
+- Input: Login, logout, session timeout scenarios
+- Result: Sessions properly created, maintained, and destroyed
+- Validation: Secure session handling prevents session hijacking
+
+11) Performance Testing
+
+Test Case 11.1: Database Query Performance
+- Test: Search query execution time with large datasets
+- Input: Search requests with many results
+- Result: Queries complete within acceptable time limits
+- Validation: Query optimization and indexing effectiveness
+
+Test Case 11.2: Concurrent Booking Attempts
+- Test: Multiple users booking same seat simultaneously
+- Input: Concurrent booking requests for same seat
+- Result: Only one booking succeeds, others fail gracefully
+- Validation: Database transactions prevent double booking
+
+Test Case 11.3: Payment Gateway Response Time
+- Test: PayHere integration response handling
+- Input: Payment processing requests
+- Result: Timeouts handled gracefully, user feedback provided
+- Validation: Payment gateway integration robust against delays
+
+Test Case 11.4: Large Data Set Handling
+- Test: System performance with extensive booking history
+- Input: Users with many historical bookings
+- Result: Pagination and query optimization maintain performance
+- Validation: Large datasets don't degrade user experience
+
+12) Integration Testing
+
+Test Case 12.1: End-to-End Booking Flow
+- Test: Complete booking process from search to payment
+- Input: User searches, selects bus, books seat, makes payment
+- Result: Successful booking with all data consistency
+- Validation: All systems integrate correctly
+
+Test Case 12.2: Payment to Booking Status Integration
+- Test: PayHere notification updating booking status
+- Input: Payment notification from PayHere
+- Result: Booking status updated, user notified
+- Validation: Payment gateway integration updates application state
+
+Test Case 12.3: Admin to User Data Consistency
+- Test: Admin changes reflecting in user interface
+- Input: Admin updates bus schedules, announcements
+- Result: Changes visible to users immediately
+- Validation: Data consistency across admin and user interfaces
+
+Test Case 12.4: Multi-table Transaction Integrity
+- Test: Operations spanning multiple database tables
+- Input: Booking creation involving User, Booking, Booking_2, Seat tables
+- Result: All or nothing transaction behavior
+- Validation: Transaction rollback prevents partial data corruption
+
+Expected Results Summary
+
+All test cases should demonstrate:
+- Functional correctness according to specifications
+- Data integrity maintained across all operations
+- Security measures preventing common vulnerabilities
+- User experience meeting usability standards
+- Performance acceptable under normal and stress conditions
+- Integration between modules working seamlessly
+- Error handling providing appropriate feedback
+- Database consistency maintained under all conditions
