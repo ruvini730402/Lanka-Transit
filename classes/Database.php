@@ -45,7 +45,6 @@ class Database {
      */
     public static function validateInput($input, $type = 'string') {
         $input = trim($input);
-        
         switch ($type) {
             case 'date':
                 return !empty($input) && strtotime($input) !== false;
@@ -60,15 +59,13 @@ class Database {
     }
 
     // Send password reset email
-    public static function sendResetEmail($email, $token) {
+    public static function sendResetEmail($email, $resetLink) {
         // Check if PHPMailer is available
         if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
             error_log("PHPMailer not available for email sending");
             return false;
         }
-        
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-
         try {
             // SMTP server settings
             $mail->isSMTP();
@@ -78,7 +75,6 @@ class Database {
             $mail->Password = 'afdowadfulydoqhv';
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
-            
             $mail->SMTPOptions = [
                 'ssl' => [
                     'verify_peer' => false,
@@ -86,7 +82,6 @@ class Database {
                     'allow_self_signed' => true,
                 ]
             ];
-
             // Set email details
             $mail->setFrom('lankatransitmailer@gmail.com', 'LankaTransit');
             $mail->addAddress($email);
@@ -185,7 +180,7 @@ class Database {
       <h4>Hello,</h4>
       <p>You have requested a password reset for your <span class="highlight">Lanka Transit</span> account. Please click the button below to reset your password:</p>
       <p style="text-align: center;">
-        <a href="http://localhost/Registerlog/pages/reset_password_form.php?token=$token" class="btn">Reset Password</a>
+        <a href="' . htmlspecialchars($resetLink) . '" class="btn">Reset Password</a>
       </p>
       <p>This link is valid for <span class="highlight">1 hour</span>. If you did not request a password reset, please ignore this email or contact our support team.</p>
       <p>Thank you for choosing <span class="highlight">Lanka Transit</span>!</p>
@@ -198,10 +193,10 @@ class Database {
 </body>
 </html>
 ';
-
+            $mail->AltBody = "Dear User,\n\nClick the following link to reset your password: $resetLink\n\nThis link will expire in 1 hour.\n\nBest regards,\nLanka Transit";
+            error_log("Sending reset email to: $email with link: $resetLink");
             $mail->send();
             return true;
-
         } catch (\PHPMailer\PHPMailer\Exception $e) {
             error_log("PHPMailer Error: " . $mail->ErrorInfo);
             return false;
@@ -218,9 +213,7 @@ class Database {
             error_log("PHPMailer not available for email sending");
             return false;
         }
-        
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-
         try {
             // SMTP server settings
             $mail->isSMTP();
@@ -230,7 +223,6 @@ class Database {
             $mail->Password = 'afdowadfulydoqhv';
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
-            
             $mail->SMTPOptions = [
                 'ssl' => [
                     'verify_peer' => false,
@@ -238,7 +230,6 @@ class Database {
                     'allow_self_signed' => true,
                 ]
             ];
-
             // Set email details
             $mail->setFrom('lankatransitmailer@gmail.com', 'LankaTransit');
             $mail->addAddress($email);
@@ -255,7 +246,7 @@ class Database {
                 <p style='font-size: 16px;'>Thank you for registering with <strong>LankaTransit</strong>! 🎉</p>
                 <p style='font-size: 15px; color: #555;'>Your account has been successfully created. You can now log in to explore our services and start your journey.</p>
                 <p style='text-align: center; margin: 25px 0;'>
-                    <a href='http://localhost/Registerlog/pages/login-form.php' style='display: inline-block; padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;'>🔑 Log In Now</a>
+                    <a href='http://localhost/pages/login-form.php' style='display: inline-block; padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;'>🔑 Log In Now</a>
                 </p>
                 <p style='font-size: 14px; color: #555;'>If you have any questions, feel free to contact our support team 💬.</p>
                 <p style='margin-top: 30px; font-size: 15px;'>Best regards,<br>💼 <strong>LankaTransit Team</strong></p>
@@ -266,10 +257,8 @@ class Database {
         </div>
     </div>
 ";
-
             $mail->send();
             return true;
-
         } catch (\PHPMailer\PHPMailer\Exception $e) {
             error_log("PHPMailer Error (Registration Email): " . $mail->ErrorInfo);
             return false;
