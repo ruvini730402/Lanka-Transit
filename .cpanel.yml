@@ -13,13 +13,6 @@ deployment:
     # Copy everything except excluded files/folders
     - /bin/cp -R * $DEPLOYPATH/
     
-    # Copy diagnostic files for troubleshooting
-    - /bin/cp debug_index.php $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/cp diagnostic.php $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/cp db_test.php $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/cp deployment_status.php $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/cp .env.shared-hosting $DEPLOYPATH/ 2>/dev/null || true
-    
     # Remove development and git files from production
     - /bin/rm -rf $DEPLOYPATH/.git
     - /bin/rm -rf $DEPLOYPATH/tests
@@ -34,9 +27,9 @@ deployment:
     - echo "DEBUG=false" >> $DEPLOYPATH/.env
     
     # Set basic permissions
-    - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
-    - /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
-    - /bin/chmod 600 $DEPLOYPATH/.env
+    #- /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
+    #- /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
+    #- /bin/chmod 600 $DEPLOYPATH/.env
     
     # Create deployment info
-    - echo "Lanka Transit deployed on $(date)" > $DEPLOYPATH/deployment.info
+    #- echo "Lanka Transit deployed on $(date)" > $DEPLOYPATH/deployment.info

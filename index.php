@@ -1,8 +1,15 @@
 <?php
-// Include announcement class and fetch recent announcements
+// Include necessary classes
 require_once 'classes/Announcement.php';
+require_once 'classes/Route.php';
+
+// Fetch recent announcements
 $announcement = new Announcement();
 $recentAnnouncements = $announcement->getRecentAnnouncements(3); // Get 3 most recent announcements
+
+// Fetch dynamic locations from Route class
+$route = new Route();
+$locationOptions = $route->getLocationsAsSelectOptions();
 
 // Include header
 include 'includes/header.php';
@@ -31,15 +38,7 @@ include 'includes/header.php';
                                     </label>
                                     <select class="form-select" id="origin" name="origin" required>
                                         <option value="">Select Origin</option>
-                                        <option value="Badulla">Badulla</option>
-                                        <option value="Ella">Ella</option>
-                                        <option value="Wellawaya">Wellawaya</option>
-                                        <option value="Thanamalvila">Thanamalvila</option>
-                                        <option value="Lunugamvehera">Lunugamvehera</option>
-                                        <option value="Tangalle">Tangalle</option>
-                                        <option value="Dickwella">Dickwella</option>
-                                        <option value="Devinuwara">Devinuwara</option>
-                                        <option value="Matara">Matara</option>
+                                        <?php echo $locationOptions; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6 col-lg-3">
@@ -48,15 +47,7 @@ include 'includes/header.php';
                                     </label>
                                     <select class="form-select" id="destination" name="destination" required>
                                         <option value="">Select Destination</option>
-                                        <option value="Badulla">Badulla</option>
-                                        <option value="Ella">Ella</option>
-                                        <option value="Wellawaya">Wellawaya</option>
-                                        <option value="Thanamalvila">Thanamalvila</option>
-                                        <option value="Lunugamvehera">Lunugamvehera</option>
-                                        <option value="Tangalle">Tangalle</option>
-                                        <option value="Dickwella">Dickwella</option>
-                                        <option value="Devinuwara">Devinuwara</option>
-                                        <option value="Matara">Matara</option>
+                                        <?php echo $locationOptions; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6 col-lg-2">
