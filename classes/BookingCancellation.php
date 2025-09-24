@@ -34,21 +34,22 @@ class BookingCancellation {
             $userPhoneNumber = $user['PhoneNumber'];
             
             // Query to get user's future confirmed bookings using phone number
+            // Use TravelDate instead of BookingTime to determine future bookings
             $sql = "SELECT 
                         b.ID as booking_id,
                         b.SeatNumber,
                         b.Fare,
                         b.BookingTime,
-                        bus.BusNumber,
-                        r.Origin,
-                        r.Destination
+                        b.TravelDate,
+                        b.Origin,
+                        b.Destination,
+                        bus.BusNumber
                     FROM Booking b
                     LEFT JOIN Bus bus ON b.BusID = bus.ID
-                    LEFT JOIN Route r ON bus.RouteId = r.ID
                     WHERE b.PhoneNumber = ? 
-                    AND b.Status = 'confirmed'
-                    AND b.BookingTime > NOW()
-                    ORDER BY b.BookingTime ASC";
+                    AND b.Status IN ('confirmed', 'completed')
+                    AND b.TravelDate > CURDATE()
+                    ORDER BY b.TravelDate ASC, b.BookingTime ASC";
                     
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$userPhoneNumber]);
@@ -87,8 +88,8 @@ class BookingCancellation {
             }
             
             // Verify the booking belongs to the user AND is a future booking
-            $sql = "SELECT ID, BookingTime FROM Booking 
-                    WHERE ID = ? AND PhoneNumber = ? AND Status = 'confirmed' AND BookingTime > NOW()";
+            $sql = "SELECT ID, BookingTime, TravelDate FROM Booking 
+                    WHERE ID = ? AND PhoneNumber = ? AND Status IN ('confirmed', 'completed') AND TravelDate > CURDATE()";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$bookingId, $user['PhoneNumber']]);
             $booking = $stmt->fetch(PDO::FETCH_ASSOC);
