@@ -9,7 +9,7 @@ class Booking {
     }
 
    private function connectDB() {
-    require_once __DIR__ . '/../classes/database[WRONG].php'; // Adjust path if needed
+    require_once __DIR__ . '/../classes/Database.php'; // Adjust path if needed
     $database = new Database();
     $this->db = $database->getConnection();
 

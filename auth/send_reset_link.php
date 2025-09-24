@@ -11,14 +11,14 @@ try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         http_response_code(405);
         $_SESSION['forgot_message'] = '❌ Method Not Allowed.';
-        header('Location: http://localhost/pages/forgot-password.php');
+        header('Location: http://localhost/Lanka-Transit/pages/forgot-password.php');
         exit;
     }
 
     $email = $_POST['email'] ?? '';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['forgot_message'] = '❌ Invalid email address.';
-        header('Location: http://localhost/pages/forgot-password.php');
+        header('Location: http://localhost/Lanka-Transit/pages/forgot-password.php');
         exit;
     }
 
@@ -27,7 +27,7 @@ try {
 
     if (!$userData) {
         $_SESSION['forgot_message'] = '❌ Email not found.';
-        header('Location: http://localhost/pages/forgot-password.php');
+        header('Location: http://localhost/Lanka-Transit/pages/forgot-password.php');
         exit;
     }
 
@@ -39,7 +39,7 @@ try {
     $user->setResetToken($email, $token, $expiry);
 
     // Construct reset link
-    $resetLink = "http://localhost/pages/reset_password_form.php?token=" . urlencode($token);
+    $resetLink = "http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token);
     error_log("Generated reset link: " . $resetLink);
 
     // Send email
@@ -50,12 +50,12 @@ try {
         error_log("Failed to send reset email for: " . $email);
     }
 
-    header('Location: http://localhost/pages/forgot-password.php');
+    header('Location: http://localhost/Lanka-Transit/pages/forgot-password.php');
     exit;
 
 } catch (Exception $e) {
     error_log("Error in send_reset_link.php: " . $e->getMessage());
     $_SESSION['forgot_message'] = '❌ An unexpected error occurred. Please try again.';
-    header('Location: http://localhost/pages/forgot-password.php');
+    header('Location: http://localhost/Lanka-Transit/pages/forgot-password.php');
     exit;
 }

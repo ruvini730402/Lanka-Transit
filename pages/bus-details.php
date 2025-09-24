@@ -1,7 +1,6 @@
 <!-- bus-details.php -->
 <?php
-session_start();
-require_once '../classes/Database.php';
+require_once '../config/database.php';
 ?>
 
 <form method="POST">

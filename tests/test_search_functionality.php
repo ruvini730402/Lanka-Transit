@@ -1,10 +1,10 @@
 <?php
 /**
- * Enhanced Search Functionality Test
- * Comprehensive testing of search features with various scenarios
+ * Bus Search Functionality Tests
+ * Tests the Bus class search methods and edge cases
  */
 
-require_once __DIR__ . '/../classes/Database.php';
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/Bus.php';
 
 echo "<h1>Lanka Transit - Bus Search Functionality Tests</h1>";

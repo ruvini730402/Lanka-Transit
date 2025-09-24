@@ -1,16 +1,6 @@
 <?php
-session_start();
-
 // Include database configuration
-require_once '../classes/Database.php';
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/login.php?error=login_required');
-    exit();
-}
-
-$userId = $_SESSION['user_id'];
+require_once '../config/database.php';
 
 // Get database connection
 $database = new Database();
@@ -19,12 +9,6 @@ $conn = $database->getConnection();
 if (!$conn) {
     die("❌ Connection failed: Unable to connect to database");
 }
-
-// Get username from database for sidebar
-$stmt = $conn->prepare("SELECT Name FROM User WHERE ID = ?");
-$stmt->execute([$userId]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-$username = $user ? htmlspecialchars($user['Name']) : 'User';
 
 // --- Fetching Incident Records ---
 $incidentRows = [];
@@ -46,7 +30,6 @@ $database->closeConnection();
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/user-dashboard.css" />
   <style>
     body {
         background-color: #ffffff;
@@ -54,6 +37,7 @@ $database->closeConnection();
     }
     .container {
         max-width: 900px;
+        margin-top: 20px;
         padding: 0 15px;
     }
     .form-section {
@@ -72,6 +56,16 @@ $database->closeConnection();
         font-weight: bold;
     }
     
+     
+    .back-in-header {
+            color: #800000;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .back-in-header:hover {
+        color: #600000;
+        }   
     .btn-custom {
         background-color: #800000;
         color: #fff;
@@ -89,277 +83,83 @@ $database->closeConnection();
     .submitted { background-color: #f0ad4e; }
     .inprogress { background-color: #5bc0de; }
     .resolved { background-color: #5cb85c; }
-    .pending { background-color: #f0ad4e; }
+    .pending { background-color: #f0ad4e; } /* Added this for Pending status */
     
-    /* Override dashboard CSS for proper layout */
-    body {
-      display: block !important;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-    }
-    
-    .container {
-      display: block !important;
-      margin-left: 250px !important;
-      min-height: 100vh;
-      width: calc(100% - 250px) !important;
-      padding: 0 !important;
-      max-width: none !important;
-      margin-top: 0 !important;
-    }
-    
-    .main-content {
-      height: auto !important;
-      min-height: calc(100vh - 100px);
-      padding: 20px !important;
-      margin: 0 !important;
-      margin-top: 0 !important;
-      width: 100%;
-      overflow-x: hidden;
-    }
-    
-    /* Mobile responsive fixes */
-    @media (max-width: 768px) {
-      body {
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-      
-      .container {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-        padding-top: 0 !important;
-      }
-      
-      .main-content {
-        padding: 20px !important;
-        margin: 0 !important;
-      }
-      
-      .sidebar {
-        display: none !important; /* Hide sidebar on mobile */
-      }
-      
-      .form-section {
-        padding: 20px;
-        margin: 0 0 20px 0;
-      }
-      
-      /* Show top navigation on mobile only */
-      .top-nav {
-        display: flex !important;
-      }
-      
-      .nav-tabs {
-        display: flex !important;
-      }
-    }
-    
-    /* Remove old responsive styles */
-    @media (max-width: 576px) {
-        .form-section {
-            padding: 20px;
+    /* --- Responsive Styles for smaller screens (max-width: 576px) --- */
+        @media (max-width: 576px) {
+            .form-section {
+                padding: 20px; /* Reduce padding on smaller screens */
+            }
+
+            .back-icon {
+                position: fixed; /* Fixes position on scroll */
+                top: 80px;
+                left: 30px;
+                width: 40px; /* Smaller icon size */
+                height: 40px;
+                z-index: 999;
+            }
+
+            .back-icon i {
+                font-size: 24px; /* Smaller icon font size */
+            }
+
+            .container {
+                padding-top: 30px; /* Add padding to prevent content overlap with fixed icon */
+            }
         }
-    }
-    
-    /* Top Navigation Bar - MOBILE ONLY */
-    .top-nav {
-      background: linear-gradient(135deg, #8B0000, #A52A2A);
-      color: white;
-      padding: 15px 20px;
-      display: none; /* Hidden on desktop */
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    
-    .top-nav .logo-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .logo-section img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-    
-    .top-nav .user-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-nav .user-section img {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      border: 2px solid white;
-    }
-    
-    .nav-tabs {
-      display: none; /* Hidden on desktop */
-      justify-content: center;
-      background: #8B0000;
-      padding: 0;
-      margin: 0;
-      border-bottom: 3px solid #A52A2A;
-    }
-    
-    .nav-tabs a {
-      flex: 1;
-      text-align: center;
-      padding: 15px 10px;
-      color: white;
-      text-decoration: none;
-      border-right: 1px solid rgba(255,255,255,0.2);
-      transition: background-color 0.3s ease;
-      font-weight: 500;
-    }
-    
-    .nav-tabs a:last-child {
-      border-right: none;
-    }
-    
-    .nav-tabs a.active,
-    .nav-tabs a:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .nav-tabs a.active {
-      background: rgba(255,255,255,0.2);
-      border-bottom: 3px solid white;
-    }
-    
-    /* Dropdown functionality */
-    .user-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 100%;
-      background-color: white;
-      min-width: 120px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 1001;
-      margin-top: 5px;
-    }
-    
-    .dropdown-content a {
-      color: #333 !important;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 5px;
-    }
-    
-    .dropdown-content a:hover {
-      background-color: #f1f1f1;
-    }
-    
-    .user-dropdown.show .dropdown-content {
-      display: block;
-    }
-    
-    .user-section {
-      cursor: pointer;
-    }
   </style>
-    
-  
 </head>
 <body>
-  <div class="container">
-    <!-- Top Navigation for Mobile -->
-    <div class="top-nav">
-      <div class="logo-section">
-        <a href="../index.php" style="color: white; text-decoration: none; font-weight: bold; font-size: 18px;">LankaTransit</a>
-      </div>
-      <div class="user-dropdown">
-        <div class="user-section" onclick="toggleDropdown()">
-          <img src="../assets/images/uploads/rosalette.jpg" alt="User Icon">
-          <span><?= $username ?></span>
-          <i class="fas fa-caret-down"></i>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="../index.php">
+                <span class="fw-bold" style="color: #800000;">Lanka Transit</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.php">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.php">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="feedback.php">
+                            <i class="fas fa-comment-alt me-1"></i>Feedback
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../auth/Logout.php">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <div class="dropdown-content">
-          <a href="../auth/Logout.php">
-            <i class="fas fa-sign-out-alt"></i>
-            Logout
-          </a>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Navigation Tabs for Mobile -->
-    <div class="nav-tabs">
-      <a href="dashboard.php">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a href="feedback.php">
-        <i class="fas fa-comment-alt"></i> Feedback
-      </a>
-      <a href="incidents.php" class="active">
-        <i class="fas fa-exclamation-triangle"></i> Report Incident
-      </a>
-    </div>
-    
-    <div class="sidebar">
-      <div class="logo">
-        <a href="../index.php">
-          <img src="../assets/images/uploads/dd.png" alt="LankaTransit Logo">
-        </a>
-      </div>
-      <hr style="height: 1px; background-color: #ccc; border: none; width: 100%; margin: 1px auto 15px auto;">
+    </nav>
 
-      <div class="user-profile">
-        <div class="user-icon">
-          <img src="../assets/images/uploads/rosalette.jpg" alt="User Icon">
-        </div>
-        <div class="user-info mobile-only">
-          <p class="username"><?= $username ?></p>
-          <button class="dropdown-toggle"><i class="fas fa-caret-down"></i></button>
-          <div class="dropdown-menu">
-            <a href="../auth/Logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-          </div>
-        </div>
-      </div>
-      <nav class="navigation">
-        <ul>
-          <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-          <li><a href="feedback.php"><i class="fas fa-comment-alt"></i> Feedback</a></li>
-          <li class="active"><a href="incidents.php"><i class="fas fa-exclamation-triangle"></i> Report Incident</a></li>
-        </ul>
-      </nav>
-      <div class="logout">
-        <a href="../auth/Logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-      </div>
-    </div>
-    
-    <div class="main-content">
 
+
+<div class="container">
   <!-- Incident Report Form -->
   <div class="form-section">
     <h3>📝 Report an Incident</h3>
     <form action="submit_incidents.php" method="POST">
+
+
       <div class="mb-3">
         <br>
         <label class="form-label">Description of the Incident</label>
         <textarea class="form-control" name="description" rows="4" required placeholder="Describe what happened in detail..."></textarea>
       </div>
+
         <button type="submit" class="btn btn-custom" style="background-color: #800000; color: white;">Submit Incident</button>
     </form>
   </div>
@@ -412,27 +212,17 @@ $database->closeConnection();
       </table>
     </div>
   </div>
+</div>
 
-    </div> <!-- End main-content -->
-  </div> <!-- End container -->
+<!-- Footer -->
+<footer class="text-white py-4 mt-5" style="background-color: #800000;">
+  <div class="container">
+    <div class="row">
+      <p>&copy; 2025 Transit. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/user-dashboard.js"></script>
-<script>
-// Dropdown functionality
-function toggleDropdown() {
-    document.querySelector('.user-dropdown').classList.toggle('show');
-}
-
-// Close dropdown when clicking outside
-window.onclick = function(event) {
-    if (!event.target.matches('.user-section') && !event.target.closest('.user-section')) {
-        var dropdown = document.querySelector('.user-dropdown');
-        if (dropdown && dropdown.classList.contains('show')) {
-            dropdown.classList.remove('show');
-        }
-    }
-}
-</script>
 </body>
 </html>

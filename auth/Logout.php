@@ -1,8 +1,3 @@
-<?php
-session_start();
-session_unset();
-session_destroy();
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -164,7 +159,7 @@ session_destroy();
     <h1>Logged Out</h1>
     <p>You have successfully logged out of your account.</p>
     <a href="login.php">Return to Login</a><br><br>
-    <a href="../pages/dashboard.php" class="link-small">Return to Dashboard</a>
+    <a href="../index.php" class="link-small">Return to Home Page</a>
   </div>
 
 </body>

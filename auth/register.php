@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../classes/User.php';
-require_once __DIR__ . '/../classes/database[WRONG].php'; // Include Database class
+require_once __DIR__ . '/../classes/Database.php'; // Include Database class
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

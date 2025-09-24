@@ -153,7 +153,7 @@ session_start();
                 <?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
               </div>
             <?php endif; ?>
-            <form action="http://localhost/auth/send_reset_link.php" method="POST" autocomplete="off">
+            <form action="http://localhost/Lanka-Transit/auth/send_reset_link.php" method="POST" autocomplete="off">
               <div class="mb-3">
                 <label for="email" class="form-label text-darkblue">Registered Email</label>
                 <input type="email" name="email" id="email" class="form-control" required autocomplete="off" placeholder="Enter your registered email address">

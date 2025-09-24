@@ -130,27 +130,8 @@ html, body {
 }
 
 .seat.lady-seat {
-  position: relative;
-  background: linear-gradient(to bottom, #4CAF50, #388E3C); /* Same as available seats */
-  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-}
-
-.seat.lady-seat::before {
-  content: '\2640'; /* Unicode for female symbol (♀) */
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ff3333; /* Red background for the icon */
-  color: white;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-  border: 1px solid #fff; /* White border for contrast */
+  border: 3px solid #ff3333;
+  box-shadow: 0 5px 10px rgba(255,51,51,0.3);
 }
 
 .seat.selected {
@@ -223,26 +204,12 @@ html, body {
 }
 
 .seat-legend.lady-seat {
-  position: relative;
-  background: linear-gradient(to bottom, #4CAF50, #388E3C); /* Match available seat color */
+  border: 3px solid #ff3333;
+  background: #fff;
 }
 
-.seat-legend.lady-seat::before {
-  content: '\2640'; /* Unicode for female symbol (♀) */
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ff3333; /* Red background for the icon */
-  color: white;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  line-height: 1;
-  border: 1px solid #fff; /* White border for contrast */
+.seat-legend.selected {
+  background: linear-gradient(to bottom, #FFC107, #F57C00);
 }
 
 /* Title Color */

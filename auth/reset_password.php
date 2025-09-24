@@ -13,19 +13,19 @@ try {
 
     if (!$token || !$password || !$confirm_password) {
         $_SESSION['reset_error'] = '⚠️ All fields are required.';
-        header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+        header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
         exit;
     }
 
     if ($password !== $confirm_password) {
         $_SESSION['reset_error'] = '❌ Passwords do not match.';
-        header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+        header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
         exit;
     }
 
     if (strlen($password) < 12 || !preg_match('/[A-Z]/', $password) || !preg_match('/[a-z]/', $password) || !preg_match('/[0-9]/', $password)) {
         $_SESSION['reset_error'] = '❌ Password must be at least 12 characters long and include uppercase, lowercase letters, and at least one number.';
-        header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+        header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
         exit;
     }
 
@@ -35,21 +35,21 @@ try {
     if (!$userData) {
         error_log("Token not found: " . $token);
         $_SESSION['reset_error'] = '❌ Invalid token.';
-        header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+        header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
         exit;
     }
 
     if (!isset($userData['ID'])) {
         error_log("User ID not found in userData for token: " . $token);
         $_SESSION['reset_error'] = '❌ Invalid user data.';
-        header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+        header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
         exit;
     }
 
     if (strtotime($userData['token_expiry']) < time()) {
         error_log("Token expired for token: " . $token . ", Expiry: " . $userData['token_expiry']);
         $_SESSION['reset_error'] = '❌ Token has expired.';
-        header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+        header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
         exit;
     }
 
@@ -63,12 +63,12 @@ try {
     // Start a new session for success message
     session_start();
     $_SESSION['success'] = '✅ Password has been reset successfully. Please log in.';
-    header("Location: http://localhost/pages/login-form.php");
+    header("Location: http://localhost/Lanka-Transit/pages/login-form.php");
     exit;
 
 } catch (Exception $e) {
     error_log("Error in reset_password.php: " . $e->getMessage() . " | Token: " . $token);
     $_SESSION['reset_error'] = '❌ An unexpected error occurred.';
-    header("Location: http://localhost/pages/reset_password_form.php?token=" . urlencode($token));
+    header("Location: http://localhost/Lanka-Transit/pages/reset_password_form.php?token=" . urlencode($token));
     exit;
 }

@@ -1,6 +1,6 @@
 <?php
 // Include database configuration
-require_once '../classes/Database.php';
+require_once '../config/database.php';
 
 // Get database connection
 $database = new Database();

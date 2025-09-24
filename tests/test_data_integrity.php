@@ -1,10 +1,10 @@
 <?php
 /**
- * Data Integrity Test Suite
- * Tests database structure and data consistency
+ * Data Integrity and Business Logic Tests
+ * Tests data consistency, business rules, and edge cases
  */
 
-require_once __DIR__ . '/../classes/Database.php';
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/Bus.php';
 
 echo "<h1>Lanka Transit - Data Integrity Tests</h1>";

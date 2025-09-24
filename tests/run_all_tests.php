@@ -9,53 +9,41 @@ echo "<hr>";
 
 echo "<div style='background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px;'>";
 echo "<h2>📋 Test Suite Overview</h2>";
-echo "<p>This test runner will execute all core functionality tests for the Lanka Transit system.</p>";
-echo "<strong>Core Functionality Tests:</strong><br>";
-echo "1. 🔌 Database & Environment Tests<br>";
-echo "2. 🔐 User Authentication Tests<br>";
-echo "3. 🔍 Bus Search Algorithm Tests<br>";
-echo "4. � Booking Management Tests<br>";
-echo "5. 💳 Payment Processing Tests<br>";
-echo "6. � Announcement System Tests<br>";
-echo "7. ❌ Booking Cancellation Tests<br>";
+echo "<p>This test runner will execute all available tests for the Lanka Transit system.</p>";
+echo "<strong>Available Tests:</strong><br>";
+echo "1. 🔌 Database Connection & Structure Tests<br>";
+echo "2. 🔍 Bus Search Functionality Tests<br>";
+echo "3. 📊 Data Integrity & Business Logic Tests<br>";
+echo "4. 📈 August 2025 Sample Data Tests<br>";
+echo "5. 🎯 Complete System Summary<br>";
 echo "</div>";
 
-// Core functionality test execution order
+// Test execution order
 $tests = [
     [
-        'name' => 'Database & Environment Tests',
-        'file' => 'test_core_database.php',
-        'description' => 'Tests database connectivity, environment variables, prepared statements, and input validation'
+        'name' => 'Database Connection Tests',
+        'file' => 'test_database.php',
+        'description' => 'Tests database connectivity, table structure, and basic validation functions'
     ],
     [
-        'name' => 'User Authentication Tests', 
-        'file' => 'test_core_auth.php',
-        'description' => 'Tests user registration, login, password handling, and session management'
+        'name' => 'Search Functionality Tests', 
+        'file' => 'test_search_functionality.php',
+        'description' => 'Tests bus search, input validation, seat availability, and performance'
     ],
     [
-        'name' => 'Bus Search Algorithm Tests',
-        'file' => 'test_core_search.php', 
-        'description' => 'Tests search functionality, intermediate stops, filters, and seat availability'
+        'name' => 'Data Integrity Tests',
+        'file' => 'test_data_integrity.php', 
+        'description' => 'Tests data consistency, business rules, and financial calculations'
     ],
     [
-        'name' => 'Booking Management Tests',
-        'file' => 'test_core_booking.php',
-        'description' => 'Tests booking creation, validation, seat management, and status updates'
+        'name' => 'August 2025 Data Tests',
+        'file' => 'test_august_2025.php',
+        'description' => 'Tests with sample August 2025 data for realistic scenarios'
     ],
     [
-        'name' => 'Payment Processing Tests',
-        'file' => 'test_core_payment.php',
-        'description' => 'Tests PayHere integration, payment verification, session management, and status tracking'
-    ],
-    [
-        'name' => 'Announcement System Tests',
-        'file' => 'test_core_announcement.php',
-        'description' => 'Tests announcement creation, active filtering, priority ordering, and status management'
-    ],
-    [
-        'name' => 'Booking Cancellation Tests',
-        'file' => 'test_core_booking_cancellation.php',
-        'description' => 'Tests cancellation requests, eligibility checks, admin processing, and status updates'
+        'name' => 'Complete System Summary',
+        'file' => 'final_test_august_2025.php',
+        'description' => 'Comprehensive overview of system capabilities and data'
     ]
 ];
 
@@ -140,18 +128,16 @@ if ($executedTests == $totalTests) {
     echo "<p>Your Lanka Transit system has been thoroughly tested and is ready for use.</p>";
     echo "</div>";
     
-    echo "<h3>🎯 Core Functionality Verified:</h3>";
+    echo "<h3>🎯 System Capabilities Verified:</h3>";
     echo "<ul>";
-    echo "<li>✅ Database connectivity and environment configuration</li>";
-    echo "<li>✅ User authentication and session management</li>";
-    echo "<li>✅ Bus search algorithm with intermediate stops</li>";
-    echo "<li>✅ Booking creation and validation</li>";
-    echo "<li>✅ PayHere payment integration and verification</li>";
-    echo "<li>✅ Announcement system with priority management</li>";
-    echo "<li>✅ Booking cancellation workflow and admin processing</li>";
+    echo "<li>✅ Database connectivity and structure integrity</li>";
+    echo "<li>✅ Bus search functionality with filtering</li>";
+    echo "<li>✅ Seat availability calculations</li>";
     echo "<li>✅ Input validation and security measures</li>";
-    echo "<li>✅ Data integrity and business rule enforcement</li>";
-    echo "<li>✅ Error handling and exception management</li>";
+    echo "<li>✅ Data consistency and business rule enforcement</li>";
+    echo "<li>✅ Financial calculations and revenue tracking</li>";
+    echo "<li>✅ Real-world data scenarios with August 2025 sample data</li>";
+    echo "<li>✅ Performance optimization and error handling</li>";
     echo "</ul>";
     
 } else {

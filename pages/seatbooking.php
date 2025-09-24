@@ -181,28 +181,28 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
 
     <!-- Legend -->
     <div class="mt-4">
-  <h6 class="title-dark-blue">Legend:</h6>
-  <div class="d-flex flex-column">
-    <div class="d-flex align-items-center mb-2 title-dark-blue">
-      <span class="d-inline-block me-2 seat-legend available"></span> Available
+      <h6 class="title-dark-blue">Legend:</h6>
+      <div class="d-flex flex-column">
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend available"></span> Available
+        </div>
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend booked female"></span> Booked (Female)
+        </div>
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend booked male"></span> Booked (Male)
+        </div>
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend booked undisclosed"></span> Booked (Undisclosed)
+        </div>
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend lady-seat"></span> Lady Seats (1–8)
+        </div>
+        <div class="d-flex align-items-center mb-2 title-dark-blue">
+          <span class="d-inline-block me-2 seat-legend selected"></span> Selected
+        </div>
+      </div>
     </div>
-    <div class="d-flex align-items-center mb-2 title-dark-blue">
-      <span class="d-inline-block me-2 seat-legend booked female"></span> Booked (Female)
-    </div>
-    <div class="d-flex align-items-center mb-2 title-dark-blue">
-      <span class="d-inline-block me-2 seat-legend booked male"></span> Booked (Male)
-    </div>
-    <div class="d-flex align-items-center mb-2 title-dark-blue">
-      <span class="d-inline-block me-2 seat-legend booked undisclosed"></span> Booked (Undisclosed)
-    </div>
-    <div class="d-flex align-items-center mb-2 title-dark-blue">
-      <span class="d-inline-block me-2 seat-legend lady-seat"></span> Lady Seats (1–8, marked with ♀)
-    </div>
-    <div class="d-flex align-items-center mb-2 title-dark-blue">
-      <span class="d-inline-block me-2 seat-legend selected"></span> Selected
-    </div>
-  </div>
-</div>
   </div>
 </div>
   </div>

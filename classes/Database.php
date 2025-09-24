@@ -1,108 +1,73 @@
 <?php
-/**
- * Database Configuration and Connection Class
- * Handles database connection, query execution, input validation, and email sending
- * Uses environment-based configuration for enhanced security
- */
-require_once __DIR__ . '/../config/env_loader.php';
-require_once __DIR__ . '/../config/database_config.php';
+// PHPMailer includes only when needed for email functionality
+if (class_exists('PHPMailer\PHPMailer\PHPMailer') === false) {
+    // Only include if files exist and PHPMailer is needed
+    $phpmailerPath = __DIR__ . '/../PHPMailer/PHPMailer.php';
+    if (file_exists($phpmailerPath)) {
+        require_once $phpmailerPath;
+        require_once __DIR__ . '/../PHPMailer/SMTP.php';
+        require_once __DIR__ . '/../PHPMailer/Exception.php';
+    }
+}
 
 class Database {
-    private $conn;
+    private $host = 'bosennoy016fmb5flv0m-mysql.services.clever-cloud.com';
+    private $db_name = 'bosennoy016fmb5flv0m';
+    private $username = 'ul9ivik7jhoj9kyh';
+    private $password = 'iVbsGABNeLEWyG69bSqj';
+    private static $pdo = null;
 
-    /**
-     * Get database connection
-     * @return PDO|null
-     */
-    public function getConnection() {
-        $this->conn = null;
-
-        try {
-            $this->conn = new PDO(
-                DatabaseConfig::getDSN(),
-                DatabaseConfig::getUsername(),
-                DatabaseConfig::getPassword(),
-                DatabaseConfig::getOptions()
-            );
-        } catch(PDOException $exception) {
-            error_log("Connection error: " . $exception->getMessage());
-            return null;
+    // Get PDO database connection
+    public static function getConnection() {
+        if (self::$pdo === null) {
+            try {
+                $instance = new self();
+                $dsn = "mysql:host={$instance->host};dbname={$instance->db_name};charset=utf8";
+                self::$pdo = new PDO($dsn, $instance->username, $instance->password);
+                self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            } catch (PDOException $e) {
+                error_log("DB Connection failed: " . $e->getMessage());
+                die("Database connection failed. Please try again later.");
+            }
         }
-
-        return $this->conn;
+        return self::$pdo;
     }
 
     /**
-     * Close database connection
+     * Sanitize input to prevent XSS and clean data
      */
-    public function closeConnection() {
-        $this->conn = null;
-    }
-
-    /**
-     * Execute a prepared statement with parameters
-     * @param string $query
-     * @param array $params
-     * @return PDOStatement|false
-     */
-    public function executeQuery($query, $params = []) {
-        try {
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute($params);
-            return $stmt;
-        } catch(PDOException $exception) {
-            error_log("Query error: " . $exception->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Sanitize input to prevent XSS attacks
-     * @param string $data
-     * @return string
-     */
-    public static function sanitizeInput($data) {
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-        return $data;
+    public static function sanitizeInput($input) {
+        return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
     }
 
     /**
      * Validate input based on type
-     * @param string $data
-     * @param string $type
-     * @return bool
      */
-    public static function validateInput($data, $type = 'string') {
-        $data = trim($data);
+    public static function validateInput($input, $type = 'string') {
+        $input = trim($input);
         switch ($type) {
-            case 'email':
-                return filter_var($data, FILTER_VALIDATE_EMAIL);
-            case 'phone':
-                return preg_match('/^[0-9]{10}$/', $data);
             case 'date':
-                return !empty($data) && strtotime($data) !== false;
-            case 'number':
-                return is_numeric($data);
+                return !empty($input) && strtotime($input) !== false;
+            case 'email':
+                return filter_var($input, FILTER_VALIDATE_EMAIL) !== false;
+            case 'phone':
+                return preg_match('/^\d{10}$/', $input);
+            case 'string':
             default:
-                return !empty($data);
+                return !empty($input) && strlen($input) > 0;
         }
     }
 
-    /**
-     * Send password reset email
-     * @param string $email
-     * @param string $resetLink
-     * @return bool
-     */
+    // Send password reset email
     public static function sendResetEmail($email, $resetLink) {
+        // Check if PHPMailer is available
         if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
             error_log("PHPMailer not available for email sending");
             return false;
         }
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
+            // SMTP server settings
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
@@ -117,6 +82,7 @@ class Database {
                     'allow_self_signed' => true,
                 ]
             ];
+            // Set email details
             $mail->setFrom('lankatransitmailer@gmail.com', 'LankaTransit');
             $mail->addAddress($email);
             $mail->isHTML(true);
@@ -148,6 +114,10 @@ class Database {
       background: linear-gradient(135deg, #800000 0%, #a30000 100%);
       padding: 20px;
       text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+      height: auto;
     }
     .header h1 {
       color: #ffffff;
@@ -236,19 +206,16 @@ class Database {
         }
     }
 
-    /**
-     * Send registration confirmation email
-     * @param string $email
-     * @param string $name
-     * @return bool
-     */
+    // Send registration confirmation email
     public static function sendRegistrationEmail($email, $name) {
+        // Check if PHPMailer is available
         if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
             error_log("PHPMailer not available for email sending");
             return false;
         }
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
+            // SMTP server settings
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
@@ -263,6 +230,7 @@ class Database {
                     'allow_self_signed' => true,
                 ]
             ];
+            // Set email details
             $mail->setFrom('lankatransitmailer@gmail.com', 'LankaTransit');
             $mail->addAddress($email);
             $mail->isHTML(true);
@@ -278,7 +246,7 @@ class Database {
                 <p style='font-size: 16px;'>Thank you for registering with <strong>LankaTransit</strong>! 🎉</p>
                 <p style='font-size: 15px; color: #555;'>Your account has been successfully created. You can now log in to explore our services and start your journey.</p>
                 <p style='text-align: center; margin: 25px 0;'>
-                    <a href='http://localhost/pages/login-form.php' style='display: inline-block; padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;'>🔑 Log In Now</a>
+                    <a href='http://localhost/Lanka-Transit/pages/login-form.php' style='display: inline-block; padding: 12px 25px; background-color: #28a745; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;'>🔑 Log In Now</a>
                 </p>
                 <p style='font-size: 14px; color: #555;'>If you have any questions, feel free to contact our support team 💬.</p>
                 <p style='margin-top: 30px; font-size: 15px;'>Best regards,<br>💼 <strong>LankaTransit Team</strong></p>
@@ -300,4 +268,3 @@ class Database {
         }
     }
 }
-?>
