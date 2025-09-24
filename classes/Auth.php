@@ -8,7 +8,8 @@ class Auth {
     
     public function __construct() {
         $this->user = new User();
-        $this->pdo = Database::getConnection();
+        $database = new Database();
+        $this->pdo = $database->getConnection();
     }
 
     public function login($email, $password) {

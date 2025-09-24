@@ -3,7 +3,7 @@
  * View Booking & Get Seat Availability
  * Handles booking lookup, seat availability, and bus details API
  */
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 if (isset($_GET['api'])) {
     header('Content-Type: application/json');
@@ -29,7 +29,8 @@ if (isset($_GET['api'])) {
         }
         
         try {
-            $pdo = Database::getConnection();
+            $database = new Database();
+            $pdo = $database->getConnection();
             if (!$pdo) {
                 echo json_encode(['error' => 'Database connection failed']);
                 error_log('Seats API: Database connection failed');
@@ -99,7 +100,8 @@ if (isset($_GET['api'])) {
         }
         
         try {
-            $pdo = Database::getConnection();
+            $database = new Database();
+            $pdo = $database->getConnection();
             if (!$pdo) {
                 echo json_encode(['error' => 'Database connection failed']);
                 error_log('Bus Details API: Database connection failed');
@@ -233,7 +235,8 @@ if (isset($_GET['api'])) {
                     $id = trim($_POST['identifier']);
 
                     try {
-                        $pdo = Database::getConnection();
+                        $database = new Database();
+                        $pdo = $database->getConnection();
                         if (!$pdo) {
                             echo '<div class="alert alert-danger">Database connection failed.</div>';
                             exit;

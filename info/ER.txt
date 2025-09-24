@@ -25,6 +25,7 @@ Feedback
 PK ID INT AUTO_INCREMENT
 FK UserId INT (NULLABLE)
 FK BusId INT (NULLABLE)
+FK BookingId INT (NULLABLE)
 Comment TEXT
 Rating INT (1-5)
 CreatedDate DATE DEFAULT (CURRENT_DATE)
@@ -222,7 +223,14 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 - UserId in Booking is optional (supports guest bookings)
 - Many foreign keys are nullable to support flexible usage patterns
 
+<<<<<<< HEAD
 === ACTIVE USAGE PATTERNS ===
+=======
+- Booking (1) ←→ (1) Payment
+- Booking (1) ←→ (0..n) BookingCancellation
+- Booking (1) ←→ (0..n) Feedback
+- Booking (1) ←→ (0..1) Booking_2
+>>>>>>> main
 
 **Incident Workflow:**
 1. Users report incidents via incidents.php (description only)
