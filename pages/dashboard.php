@@ -90,30 +90,29 @@ $userPreferences = ['isReturningCustomer' => false, 'totalBookings' => 0];
 if ($userPhoneNumber && $conn) {
     try {
         // Get user's bookings using phone number from Booking table
-        // Join with Bus and Route tables to get complete booking details
+        // Use TravelDate, Origin, and Destination from Booking table directly
         $stmt = $conn->prepare("
-            SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-                   bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID,
+            SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status, b.TravelDate, b.Origin, b.Destination,
+                   bus.BusNumber, bus.ID as BusID,
                    f.ID as FeedbackID, f.Rating, f.Comment
             FROM Booking b
             JOIN Bus bus ON b.BusID = bus.ID
-            LEFT JOIN Route r ON bus.RouteId = r.ID
             LEFT JOIN Feedback f ON f.BookingId = b.ID
             WHERE b.PhoneNumber = ? AND b.Status IN ('confirmed', 'completed')
-            ORDER BY b.BookingTime ASC
+            ORDER BY b.TravelDate ASC, b.BookingTime ASC
         ");
         $stmt->execute([$userPhoneNumber]);
         $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Separate bookings into upcoming and history based on booking time
-        $currentDateTime = date('Y-m-d H:i:s');
+        // Separate bookings into upcoming and history based on travel date
+        $currentDate = date('Y-m-d');
         
         foreach ($allBookings as $booking) {
-            $bookingDateTime = $booking['BookingTime'];
+            $travelDate = $booking['TravelDate'];
             
-            // Compare booking time with current time to determine if it's upcoming or past
-            if ($bookingDateTime > $currentDateTime) {
-                // Future bookings go to upcoming
+            // Compare travel date with current date to determine if it's upcoming or past
+            if ($travelDate >= $currentDate) {
+                // Future or today's bookings go to upcoming
                 $upcomingBookings[] = $booking;
             } else {
                 // Past bookings go to history
@@ -121,14 +120,18 @@ if ($userPhoneNumber && $conn) {
             }
         }
         
-        // Sort upcoming bookings by time (earliest first)
+        // Sort upcoming bookings by travel date (earliest first)
         usort($upcomingBookings, function($a, $b) {
-            return strtotime($a['BookingTime']) - strtotime($b['BookingTime']);
+            $dateCompare = strtotime($a['TravelDate']) - strtotime($b['TravelDate']);
+            // If travel dates are same, sort by booking time
+            return $dateCompare === 0 ? strtotime($a['BookingTime']) - strtotime($b['BookingTime']) : $dateCompare;
         });
         
-        // Sort booking history by time (latest first)
+        // Sort booking history by travel date (latest first)
         usort($bookingHistory, function($a, $b) {
-            return strtotime($b['BookingTime']) - strtotime($a['BookingTime']);
+            $dateCompare = strtotime($b['TravelDate']) - strtotime($a['TravelDate']);
+            // If travel dates are same, sort by booking time (latest first)
+            return $dateCompare === 0 ? strtotime($b['BookingTime']) - strtotime($a['BookingTime']) : $dateCompare;
         });
         
         // Set recent booking for other sections if needed
@@ -297,7 +300,7 @@ if ($conn) {
                 <?php foreach ($upcomingBookings as $booking): ?>
                 <tr>
                   <td><?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></td>
-                  <td><?= date('M j, Y \a\t g:i A', strtotime($booking['BookingTime'])) ?></td>
+                  <td><?= date('M j, Y', strtotime($booking['TravelDate'])) ?></td>
                   <td><?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
@@ -334,7 +337,7 @@ if ($conn) {
                 <?php foreach ($bookingHistory as $index => $booking): ?>
                 <tr <?= $index >= 5 ? 'class="booking-history-extra" style="display: none;"' : '' ?>>
                   <td><?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></td>
-                  <td><?= date('Y-m-d', strtotime($booking['BookingTime'])) ?></td>
+                  <td><?= date('Y-m-d', strtotime($booking['TravelDate'])) ?></td>
                   <td><?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
@@ -396,19 +399,18 @@ if ($conn) {
                   try {
                       // Query to get top 5 most frequent routes for the user
                       $stmt = $conn->prepare("
-                          SELECT r.Origin, r.Destination, 
-                                 MAX(b.BookingTime) as LastUsed, 
+                          SELECT b.Origin, b.Destination, 
+                                 MAX(b.TravelDate) as LastUsed, 
                                  COUNT(*) as TimesBooked,
                                  AVG(b.Fare) as AvgFare
                           FROM Booking b
                           JOIN Bus bus ON b.BusID = bus.ID
-                          LEFT JOIN Route r ON bus.RouteId = r.ID
                           WHERE b.PhoneNumber = ? 
                             AND b.Status IN ('confirmed', 'completed')
-                            AND r.Origin IS NOT NULL 
-                            AND r.Destination IS NOT NULL
-                          GROUP BY r.Origin, r.Destination
-                          ORDER BY COUNT(*) DESC, MAX(b.BookingTime) DESC
+                            AND b.Origin IS NOT NULL 
+                            AND b.Destination IS NOT NULL
+                          GROUP BY b.Origin, b.Destination
+                          ORDER BY COUNT(*) DESC, MAX(b.TravelDate) DESC
                           LIMIT 5
                       ");
                       $stmt->execute([$userPhoneNumber]);
@@ -489,14 +491,13 @@ if ($conn) {
               try {
                   // Get all confirmed/completed bookings for receipt generation
                   $stmt = $conn->prepare("
-                      SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-                             bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID
+                      SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status, b.TravelDate, b.Origin, b.Destination,
+                             bus.BusNumber, bus.ID as BusID
                       FROM Booking b
                       JOIN Bus bus ON b.BusID = bus.ID
-                      LEFT JOIN Route r ON bus.RouteId = r.ID
                       WHERE b.PhoneNumber = ? 
                         AND b.Status IN ('confirmed', 'completed')
-                      ORDER BY b.BookingTime DESC
+                      ORDER BY b.TravelDate DESC, b.BookingTime DESC
                       LIMIT 10
                   ");
                   $stmt->execute([$userPhoneNumber]);
@@ -527,7 +528,7 @@ if ($conn) {
                     </p>
                     <p class="receipt-date">
                       <i class="fas fa-calendar-check" style="margin-right: 5px; color: #4a90e2;"></i>
-                      <?= date('d M Y', strtotime($booking['BookingTime'])) ?>
+                      <?= date('d M Y', strtotime($booking['TravelDate'])) ?>
                       <span style="margin: 0 8px;">•</span>
                       <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?>
                     </p>
@@ -540,7 +541,7 @@ if ($conn) {
                     </p>
                   </div>
                 </div>
-                <a href="ticket_pdf.php?ref=LT-<?= str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=<?= urlencode($userPhoneNumber) ?>&origin=<?= urlencode($booking['Origin'] ?? '') ?>&destination=<?= urlencode($booking['Destination'] ?? '') ?>&date=<?= urlencode(date('Y-m-d', strtotime($booking['BookingTime']))) ?>&bus=<?= urlencode($booking['BusNumber'] ?? '') ?>&seat=<?= urlencode($booking['SeatNumber']) ?>&fare=<?= urlencode($booking['Fare']) ?>" 
+                <a href="ticket_pdf.php?ref=LT-<?= str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=<?= urlencode($userPhoneNumber) ?>&origin=<?= urlencode($booking['Origin'] ?? '') ?>&destination=<?= urlencode($booking['Destination'] ?? '') ?>&date=<?= urlencode($booking['TravelDate']) ?>&bus=<?= urlencode($booking['BusNumber'] ?? '') ?>&seat=<?= urlencode($booking['SeatNumber']) ?>&fare=<?= urlencode($booking['Fare']) ?>" 
                    class="download-btn" target="_blank">
                   <i class="fas fa-download" style="margin-right: 5px;"></i>
                   Download PDF
