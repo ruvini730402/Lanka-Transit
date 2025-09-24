@@ -121,4 +121,73 @@ class User {
             ];
         }
     }
+
+    public function createUser($name, $email, $passwordHash, $phone, $role) {
+        try {
+            $stmt = $this->pdo->prepare("INSERT INTO User (Name, Email, PasswordHash, PhoneNumber, Role) VALUES (?, ?, ?, ?, ?)");
+            return $stmt->execute([$name, $email, $passwordHash, $phone, $role]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    public function getUserById($id) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM User WHERE ID = ?");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (PDOException $e) {
+            return null;
+        }
+    }
+
+    public function updateUser($id, $data) {
+        try {
+            $fields = [];
+            $values = [];
+            
+            foreach ($data as $key => $value) {
+                $fields[] = "$key = ?";
+                $values[] = $value;
+            }
+            $values[] = $id;
+            
+            $sql = "UPDATE User SET " . implode(', ', $fields) . " WHERE ID = ?";
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($values);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    public function deleteUser($id) {
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM User WHERE ID = ?");
+            return $stmt->execute([$id]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    public function validateResetToken($token) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT u.*, u2.reset_token, u2.token_expiry 
+                                         FROM User u 
+                                         JOIN User_2 u2 ON u.ID = u2.user_id 
+                                         WHERE u2.reset_token = ? AND u2.token_expiry > NOW()");
+            $stmt->execute([$token]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (PDOException $e) {
+            return null;
+        }
+    }
+
+    public function clearResetToken($userId) {
+        try {
+            $stmt = $this->pdo->prepare("UPDATE User_2 SET reset_token = NULL, token_expiry = NULL WHERE user_id = ?");
+            return $stmt->execute([$userId]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
 }
