@@ -1,11 +1,11 @@
 <?php
-require_once __DIR__ . "/../includes/session_config.php";
+require_once __DIR__ . '/../includes/session_config.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Forgot Password - Lanka Transit</title>
+    <title>Password Reset Successful - Lanka Transit</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -26,23 +26,6 @@ require_once __DIR__ . "/../includes/session_config.php";
             border-bottom: 1px solid #e9ecef;
             padding: 1.5rem 2rem;
         }
-        .form-label {
-            color: #003366;
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 0.7rem;
-        }
-        .form-control {
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
-            padding: 12px 16px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        .form-control:focus {
-            border-color: #003366;
-            box-shadow: 0 0 0 0.2rem rgba(0, 51, 102, 0.15);
-        }
         .btn-maroon {
             background: linear-gradient(135deg, #800000 0%, #a30000 100%);
             color: white;
@@ -59,7 +42,7 @@ require_once __DIR__ . "/../includes/session_config.php";
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(128, 0, 0, 0.4);
         }
-        .forgot-password-header {
+        .success-header {
             font-size: 2rem;
             font-weight: 700;
             color: #003366;
@@ -67,7 +50,7 @@ require_once __DIR__ . "/../includes/session_config.php";
             margin-bottom: 2rem;
             position: relative;
         }
-        .forgot-password-header::after {
+        .success-header::after {
             content: '';
             position: absolute;
             bottom: -10px;
@@ -81,45 +64,21 @@ require_once __DIR__ . "/../includes/session_config.php";
         .text-darkblue {
             color: #003366;
         }
-        .card-header a {
-            transition: all 0.3s ease;
-        }
-        .card-header a:hover {
-            text-decoration: underline;
-            color: #a30000 !important;
-        }
-        .alert {
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
             border-radius: 12px;
             border: none;
             font-weight: 500;
             margin-bottom: 1.5rem;
-        }
-        .alert-warning {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            color: #856404;
-        }
-        .alert-success {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-        }
-        .mb-3 {
-            margin-bottom: 1.5rem !important;
+            font-size: 1.1rem;
+            text-align: center;
         }
         .card > .card-body {
             padding: 2rem;
         }
         .shadow-lg {
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07) !important;
-        }
-        input::placeholder {
-            color: #6c757d;
-            font-style: italic;
-        }
-        .form-control:valid {
-            border-color: #28a745;
-        }
-        .form-control:invalid:not(:placeholder-shown) {
-            border-color: #dc3545;
         }
     </style>
 </head>
@@ -130,27 +89,20 @@ require_once __DIR__ . "/../includes/session_config.php";
                 <div class="card shadow-lg">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="fw-bold fs-5" style="color: #800000;">Lanka Transit</span>
-                        <a href="login-form.php" class="fw-semibold" style="color: #800000; text-decoration: none;">Back to Login</a>
+                        <a href="login-form.php" class="fw-semibold" style="color: #800000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'; this.style.color='#a30000'" onmouseout="this.style.textDecoration='none'; this.style.color='#800000'">Go to Login</a>
                     </div>
                     <div class="card-body">
-                        <div class="forgot-password-header">Reset Password</div>
-                        <?php if (isset($_SESSION['forgot_message'])): ?>
-                            <div class="alert alert-warning text-darkblue">
-                                <?= htmlspecialchars($_SESSION['forgot_message']); unset($_SESSION['forgot_message']); ?>
-                            </div>
-                        <?php elseif (isset($_SESSION['success'])): ?>
+                        <div class="success-header">Password Reset Successful</div>
+                        <?php if (isset($_SESSION['success'])): ?>
                             <div class="alert alert-success text-darkblue">
                                 <?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
                             </div>
-                        <?php endif; ?>
-                        <p class="text-darkblue mb-4">Enter your registered email address to receive a password reset link.</p>
-                        <form action="../auth/send_reset_link.php" method="POST" autocomplete="off">
-                            <div class="mb-3">
-                                <label for="email" class="form-label text-darkblue">Registered Email</label>
-                                <input type="email" name="email" id="email" class="form-control" required autocomplete="off" placeholder="Enter your registered email address">
+                        <?php else: ?>
+                            <div class="alert alert-success text-darkblue">
+                                ✅ Your password has been reset successfully! 🎉 Please log in to continue your journey with Lanka Transit.
                             </div>
-                            <button type="submit" class="btn btn-maroon w-100 mt-3">Send Reset Link</button>
-                        </form>
+                        <?php endif; ?>
+                        <a href="login-form.php" class="btn btn-maroon w-100 mt-3">Log In Now</a>
                     </div>
                 </div>
             </div>

@@ -21,7 +21,6 @@ if ($password !== $confirm_password) {
 try {
     $user = new User();
     $userData = $user->findByToken($token);
-
     if (!$userData || strtotime($userData['token_expiry']) < time()) {
         $_SESSION['reset_error'] = '❌ Invalid or expired token.';
         header("Location: ../pages/reset_password_form.php?token=" . urlencode($token));
@@ -29,23 +28,21 @@ try {
     }
 
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    $user->updatePassword($userData['id'], $hashedPassword);
+    $user->updatePassword($userData['ID'], $hashedPassword);
 
-    // ✅ Clear any existing session (including old login state)
+    // Clear any existing session (including old login state)
     session_unset();
     session_destroy();
 
-// ✅ Start a new session to store the success message
+    // Start a new session to store the success message
     require_once __DIR__ . '/../includes/session_config.php';
-    $_SESSION['success'] = '✅ Password has been reset successfully. Please log in.';
-    header("Location: ../pages/login-form.php");
+    $_SESSION['success'] = '✅ Your password has been reset successfully! 🎉 Please log in to continue your journey with Lanka Transit.';
+    header("Location: ../pages/reset_password_success.php");
     exit;
-
-
 } catch (Exception $e) {
     error_log("Password Reset Error: " . $e->getMessage());
     $_SESSION['reset_error'] = '❌ An unexpected error occurred.';
     header("Location: ../pages/reset_password_form.php?token=" . urlencode($token));
     exit;
 }
-
+?>
