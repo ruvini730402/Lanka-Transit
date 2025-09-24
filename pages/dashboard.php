@@ -111,11 +111,11 @@ if ($userPhoneNumber && $conn) {
             $travelDate = $booking['TravelDate'];
             
             // Compare travel date with current date to determine if it's upcoming or past
-            if ($travelDate >= $currentDate) {
-                // Future or today's bookings go to upcoming
+            if ($travelDate > $currentDate) {
+                // Only future bookings go to upcoming (today's trips go to history)
                 $upcomingBookings[] = $booking;
             } else {
-                // Past bookings go to history
+                // Past bookings and today's bookings go to history
                 $bookingHistory[] = $booking;
             }
         }

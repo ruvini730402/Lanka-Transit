@@ -55,3 +55,4 @@ pids
 # Vendor directory (if using Composer)
 vendor/
 .gitignore
+tmp/sessions/

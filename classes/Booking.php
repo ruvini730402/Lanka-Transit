@@ -170,40 +170,19 @@ class Booking {
             // Seat table might not exist, continue
         }
         
-        // Check for existing confirmed bookings on the same bus and seat
-        // Note: Since Booking table doesn't have travel_date field according to ER.txt,
-        // we'll check for recent bookings (within last 24 hours) to avoid immediate conflicts
+        // Check for existing confirmed bookings on the same bus, seat, and travel date
+        // Use TravelDate field from Booking table for accurate date-based conflict detection
         $stmt = $this->pdo->prepare("
             SELECT COUNT(*) FROM Booking b
             WHERE b.BusID = ? AND b.SeatNumber = ? 
             AND b.Status = 'confirmed'
-            AND b.BookingTime >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+            AND b.TravelDate = ?
         ");
-        $stmt->execute([$busId, $seatNumber]);
-        $recentBookings = $stmt->fetchColumn();
+        $stmt->execute([$busId, $seatNumber, $date]);
+        $existingBookings = $stmt->fetchColumn();
         
-        // Also check if there's a schedule-based conflict for the specific date
-        try {
-            $stmt = $this->pdo->prepare("
-                SELECT COUNT(*) FROM Booking b
-                LEFT JOIN Schedule s ON b.BusID = s.BusID
-                WHERE b.BusID = ? AND b.SeatNumber = ? 
-                AND b.Status = 'confirmed'
-                AND (DATE(s.DepartureTime) = ? OR s.DepartureTime IS NULL)
-            ");
-            $stmt->execute([$busId, $seatNumber, $date]);
-            $scheduledBookings = $stmt->fetchColumn();
-            
-            // If there are scheduled bookings for this date, seat is not available
-            if ($scheduledBookings > 0) {
-                return false;
-            }
-        } catch (PDOException $e) {
-            // Schedule table might not exist or have issues, continue with basic check
-        }
-        
-        // Allow booking if no recent conflicts found
-        return $recentBookings == 0;
+        // If there are confirmed bookings for this specific date, seat is not available
+        return $existingBookings == 0;
     }
     
     /**

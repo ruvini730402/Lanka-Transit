@@ -33,25 +33,29 @@ class BookingCancellation {
             
             $userPhoneNumber = $user['PhoneNumber'];
             
-            // Query to get user's future confirmed bookings using phone number
+            // Query to get user's future confirmed bookings with cancellation status
+            // Use TravelDate instead of BookingTime to determine future bookings
             $sql = "SELECT 
                         b.ID as booking_id,
                         b.SeatNumber,
                         b.Fare,
                         b.BookingTime,
+                        b.TravelDate,
+                        b.Origin,
+                        b.Destination,
                         bus.BusNumber,
-                        r.Origin,
-                        r.Destination
+                        bc.ID as cancellation_id,
+                        bc.Status as cancellation_status
                     FROM Booking b
                     LEFT JOIN Bus bus ON b.BusID = bus.ID
-                    LEFT JOIN Route r ON bus.RouteId = r.ID
+                    LEFT JOIN BookingCancellation bc ON b.ID = bc.BookingID AND bc.UserID = ?
                     WHERE b.PhoneNumber = ? 
-                    AND b.Status = 'confirmed'
-                    AND b.BookingTime > NOW()
-                    ORDER BY b.BookingTime ASC";
+                    AND b.Status IN ('confirmed', 'completed')
+                    AND b.TravelDate > CURDATE()
+                    ORDER BY b.TravelDate ASC, b.BookingTime ASC";
                     
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$userPhoneNumber]);
+            $stmt->execute([$userId, $userPhoneNumber]);
             $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Log for debugging
@@ -87,8 +91,8 @@ class BookingCancellation {
             }
             
             // Verify the booking belongs to the user AND is a future booking
-            $sql = "SELECT ID, BookingTime FROM Booking 
-                    WHERE ID = ? AND PhoneNumber = ? AND Status = 'confirmed' AND BookingTime > NOW()";
+            $sql = "SELECT ID, BookingTime, TravelDate FROM Booking 
+                    WHERE ID = ? AND PhoneNumber = ? AND Status IN ('confirmed', 'completed') AND TravelDate > CURDATE()";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$bookingId, $user['PhoneNumber']]);
             $booking = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -99,6 +103,43 @@ class BookingCancellation {
                     'success' => false,
                     'error' => 'Please select one of your upcoming trips. Only future bookings can be cancelled.'
                 ];
+            }
+            
+            // Check if user has already submitted a cancellation request for this booking
+            $sql = "SELECT ID, Status FROM BookingCancellation WHERE BookingID = ? AND UserID = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$bookingId, $userId]);
+            $existingCancellation = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existingCancellation) {
+                $status = ucfirst($existingCancellation['Status']);
+                switch (strtolower($existingCancellation['Status'])) {
+                    case 'pending':
+                        return [
+                            'success' => false,
+                            'error' => 'You have already submitted a cancellation request for this trip. Your request is currently pending review by our team.'
+                        ];
+                    case 'approved':
+                        return [
+                            'success' => false,
+                            'error' => 'This trip has already been approved for cancellation. Please check your cancellation history for updates.'
+                        ];
+                    case 'processed':
+                        return [
+                            'success' => false,
+                            'error' => 'This trip cancellation has already been processed. No further action is needed.'
+                        ];
+                    case 'rejected':
+                        return [
+                            'success' => false,
+                            'error' => 'Your previous cancellation request for this trip was rejected. Please contact support if you need assistance.'
+                        ];
+                    default:
+                        return [
+                            'success' => false,
+                            'error' => "A cancellation request for this trip already exists with status: $status. Please contact support for assistance."
+                        ];
+                }
             }
             
             // Insert into BookingCancellation table
