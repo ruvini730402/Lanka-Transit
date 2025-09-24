@@ -157,11 +157,36 @@ try {
                             <option value="">-- Select a Future Booking to Cancel --</option>
                             <?php if (!empty($bookings)): ?>
                                 <?php foreach ($bookings as $booking): ?>
-                                    <option value="<?= $booking['booking_id'] ?>">
+                                    <?php 
+                                    $isAlreadyCanceled = !empty($booking['cancellation_id']);
+                                    $cancellationStatus = $booking['cancellation_status'] ?? '';
+                                    $statusText = '';
+                                    
+                                    if ($isAlreadyCanceled) {
+                                        switch (strtolower($cancellationStatus)) {
+                                            case 'pending':
+                                                $statusText = ' (Cancellation Pending)';
+                                                break;
+                                            case 'approved':
+                                                $statusText = ' (Cancellation Approved)';
+                                                break;
+                                            case 'processed':
+                                                $statusText = ' (Cancellation Processed)';
+                                                break;
+                                            case 'rejected':
+                                                $statusText = ' (Cancellation Rejected - Contact Support)';
+                                                break;
+                                            default:
+                                                $statusText = ' (Cancellation ' . ucfirst($cancellationStatus) . ')';
+                                        }
+                                    }
+                                    ?>
+                                    <option value="<?= $booking['booking_id'] ?>" <?= $isAlreadyCanceled ? 'disabled' : '' ?>>
                                         <?= htmlspecialchars($booking['Origin'] ?? 'Unknown') ?> to <?= htmlspecialchars($booking['Destination'] ?? 'Unknown') ?> 
                                         - Seat: <?= $booking['SeatNumber'] ?> 
                                         - Rs. <?= number_format($booking['Fare'], 2) ?>
-                                        - Travel: <?= date('M j, Y g:i A', strtotime($booking['BookingTime'])) ?>
+                                        - Travel: <?= date('M j, Y', strtotime($booking['TravelDate'])) ?>
+                                        <?= $statusText ?>
                                     </option>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -172,6 +197,11 @@ try {
                             <small class="text-muted">
                                 <i class="fas fa-info-circle"></i>
                                 Only future bookings can be cancelled. Past or completed trips cannot be cancelled.
+                            </small>
+                        <?php else: ?>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                All your upcoming trips are shown below. Trips with existing cancellation requests are disabled and marked with their status.
                             </small>
                         <?php endif; ?>
                     </div>
