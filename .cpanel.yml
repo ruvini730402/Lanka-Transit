@@ -1,42 +1,52 @@
 ---
-# Lanka Transit - Simplified cPanel Deployment
-# Deploy the exact same structure as development environment
+# Lanka Transit - Git-based cPanel Deployment
+# This runs automatically when you push to the repository
 
 deployment:
   tasks:
     # Set deployment path
     - export DEPLOYPATH=/home/anagatha/public_html/transit.uvacell.com
     
-    # Create deployment directory
+    # Create deployment directory if it doesn't exist
     - /bin/mkdir -p $DEPLOYPATH
     
-    # Copy everything except excluded files/folders
+    # Copy files (excluding development files)
     - /bin/cp -R * $DEPLOYPATH/
     
-    # Create necessary directories with proper permissions
-    - /bin/mkdir -p $DEPLOYPATH/tmp/sessions
-    - /bin/chmod 755 $DEPLOYPATH/tmp
-    - /bin/chmod 755 $DEPLOYPATH/tmp/sessions
-    
-    # Remove development and git files from production
+    # Remove development files from production
     - /bin/rm -rf $DEPLOYPATH/.git
     - /bin/rm -rf $DEPLOYPATH/tests
+    - /bin/rm -rf $DEPLOYPATH/tmp
     - /bin/rm -f $DEPLOYPATH/.gitignore
     - /bin/rm -f $DEPLOYPATH/.cpanel.yml
+    - /bin/rm -f $DEPLOYPATH/README.md
     - /bin/rm -f $DEPLOYPATH/session_debug.php
     - /bin/rm -f $DEPLOYPATH/payment_debug.php
+    - /bin/rm -f $DEPLOYPATH/test_*.php
     
-    # Update environment for production
-    - echo "" >> $DEPLOYPATH/.env
-    - echo "# Production overrides" >> $DEPLOYPATH/.env
-    - echo "APP_ENV=production" >> $DEPLOYPATH/.env
-    - echo "BASE_URL=https://transit.uvacell.com" >> $DEPLOYPATH/.env
-    - echo "DEBUG=false" >> $DEPLOYPATH/.env
+    # Create production environment file (copy dev .env and override production values)
+    - /bin/cp .env $DEPLOYPATH/.env
     
-    # Set basic permissions
-    #- /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
-    #- /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
-    #- /bin/chmod 600 $DEPLOYPATH/.env
+    # If .env.production exists, use it instead (with all production credentials)
+    - test -f .env.production && /bin/cp .env.production $DEPLOYPATH/.env || echo "Using development .env with production overrides"
     
-    # Create deployment info
-    #- echo "Lanka Transit deployed on $(date)" > $DEPLOYPATH/deployment.info
+    # Override production-specific settings (only if using dev .env)
+    - test -f .env.production || /bin/sed -i 's/^APP_ENV=.*/APP_ENV=production/' $DEPLOYPATH/.env
+    - test -f .env.production || /bin/sed -i 's|^BASE_URL=.*|BASE_URL=https://transit.uvacell.com|' $DEPLOYPATH/.env
+    - test -f .env.production || /bin/sed -i 's/^DEBUG=.*/DEBUG=false/' $DEPLOYPATH/.env
+    - test -f .env.production || /bin/sed -i 's/^PAYHERE_SANDBOX=.*/PAYHERE_SANDBOX=false/' $DEPLOYPATH/.env
+    
+    # Add production-specific values if they don't exist
+    - grep -q "^APP_ENV=" $DEPLOYPATH/.env || echo "APP_ENV=production" >> $DEPLOYPATH/.env
+    - grep -q "^BASE_URL=" $DEPLOYPATH/.env || echo "BASE_URL=https://transit.uvacell.com" >> $DEPLOYPATH/.env
+    - grep -q "^DEBUG=" $DEPLOYPATH/.env || echo "DEBUG=false" >> $DEPLOYPATH/.env
+    
+    # Set file permissions for security
+    - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
+    - /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
+    - /bin/chmod 600 $DEPLOYPATH/.env
+    - /bin/chmod 644 $DEPLOYPATH/config/*.example.php
+    
+    # Create deployment timestamp
+    - echo "Last deployed: $(date)" > $DEPLOYPATH/deployment.log
+    - echo "Deployed from commit: $(/bin/git rev-parse HEAD 2>/dev/null || echo 'unknown')" >> $DEPLOYPATH/deployment.log
