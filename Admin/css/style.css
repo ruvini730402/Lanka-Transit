@@ -137,6 +137,8 @@ a.btn {
 .bg-reservations { background-color: #f0e6ff; }
 .bg-feedback { background-color: #ffe6f0; }
 .bg-reports { background-color: #e0f7fa; }
+.bg-routes { background-color: #f3e5f5; }
+.bg-schedules { background-color: #e8f5e8; }
 
 /* Stat Colors */
 .bg-blue { background-color: #B22222; }
