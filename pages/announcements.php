@@ -2,7 +2,7 @@
 /**
  * Announcements Page - Display all public announcements
  */
-session_start();
+require_once __DIR__ . "/../includes/session_config.php";
 require_once '../classes/Announcement.php';
 
 $announcement = new Announcement();

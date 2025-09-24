@@ -3,7 +3,7 @@
  * View Booking & Get Seat Availability
  * Handles booking lookup, seat availability, and bus details API
  */
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 if (isset($_GET['api'])) {
     header('Content-Type: application/json');

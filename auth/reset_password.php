@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 require_once __DIR__ . '/../classes/User.php';
 
 $token = $_POST['token'] ?? '';
@@ -36,7 +36,7 @@ try {
     session_destroy();
 
 // ✅ Start a new session to store the success message
-    session_start();
+    require_once __DIR__ . '/../includes/session_config.php';
     $_SESSION['success'] = '✅ Password has been reset successfully. Please log in.';
     header("Location: ../pages/login-form.php");
     exit;

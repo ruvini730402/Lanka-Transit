@@ -1,6 +1,6 @@
 <?php
 // Start session first
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 // DEBUG: Check what's in the session (remove this after testing)
 error_log("DEBUG SESSION: " . print_r($_SESSION, true));

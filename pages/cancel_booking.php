@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . "/../includes/session_config.php";
 
 // Authentication check
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {

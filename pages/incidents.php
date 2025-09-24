@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . "/../includes/session_config.php";
 
 // Include database configuration
 require_once '../classes/Database.php';
