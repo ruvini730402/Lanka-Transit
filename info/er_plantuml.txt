@@ -1,0 +1,184 @@
+@startuml
+left to right direction
+entity User {
+  *ID : INT <<PK>>
+  --
+  Name : VARCHAR(100) NOT NULL
+  Email : VARCHAR(60) NOT NULL UNIQUE
+  PasswordHash : VARCHAR(255) NOT NULL
+  PhoneNumber : VARCHAR(10) NOT NULL
+  Role : ENUM('administrator','guest user','registered user')
+  RegistrationDate : TIMESTAMP
+}
+
+entity Booking {
+  *ID : INT <<PK>>
+  --
+  UserId : INT <<FK>>
+  BusID : INT NOT NULL <<FK>>
+  SeatNumber : VARCHAR(6) NOT NULL
+  PhoneNumber : VARCHAR(10) NOT NULL
+  Fare : DECIMAL(10,2) NOT NULL
+  Status : ENUM('confirmed','cancelled','completed')
+  BookingTime : TIMESTAMP
+}
+
+entity Feedback {
+  *ID : INT <<PK>>
+  --
+  UserId : INT <<FK>>
+  BusId : INT <<FK>>
+  BookingId : INT <<FK>>
+  Comment : TEXT
+  Rating : INT (1–5)
+  CreatedDate : DATE
+}
+
+entity Incident {
+  *ID : INT <<PK>>
+  --
+  UserId : INT <<FK>>
+  AdminId : INT <<FK>>
+  BookingId : INT <<FK>>
+  RouteId : INT <<FK>>
+  Description : TEXT
+  Status : ENUM('submitted','in progress','resolved')
+  ReportedDate : DATE
+  ResolvedDate : DATE NULL
+}
+
+entity Admin {
+  *ID : INT <<PK>>
+  --
+  Email : VARCHAR(60) UNIQUE NOT NULL
+  PasswordHash : VARCHAR(255) NOT NULL
+  Name : VARCHAR(100) NOT NULL
+  PhoneNumber : VARCHAR(10) NOT NULL
+}
+
+entity Bus {
+  *ID : INT <<PK>>
+  --
+  RouteId : INT <<FK>>
+  AdminId : INT <<FK>>
+  BusNumber : VARCHAR(7) UNIQUE NOT NULL
+  Capacity : INT CHECK (49,54)
+  LastUpdate : DATE
+}
+
+entity Payment {
+  *ID : INT <<PK>>
+  --
+  BookingId : INT <<FK>>
+  PaymentMethod : VARCHAR(50)
+  Status : ENUM('success','failed') NOT NULL
+  Amount : DECIMAL(10,2) NOT NULL
+  PaymentDate : TIMESTAMP
+  TransactionId : VARCHAR(100)
+}
+
+entity Seat {
+  *ID : INT <<PK>>
+  --
+  BusID : INT <<FK>>
+  SeatNumber : VARCHAR(6) NOT NULL
+  Status : ENUM('available','booked')
+  GenderPreference : ENUM('male','female','other')
+  IsLadySeat : BOOLEAN DEFAULT FALSE
+  UNIQUE (BusID, SeatNumber)
+}
+
+entity BookingCancellation {
+  *ID : INT <<PK>>
+  --
+  BookingID : INT <<FK>>
+  UserID : INT <<FK>>
+  CancellationReason : TEXT NOT NULL
+  RequestedAt : TIMESTAMP
+  Status : ENUM('pending','refunded','declined')
+  ProcessedBy : INT <<FK>>
+  ProcessedAt : TIMESTAMP NULL
+}
+
+entity Route {
+  *ID : INT <<PK>>
+  --
+  Origin : VARCHAR(50) NOT NULL
+  Destination : VARCHAR(50) NOT NULL
+  Stops : TEXT NULL
+}
+
+entity Location {
+  *UniqueID : INT <<PK>>
+  --
+  Name : VARCHAR(100) NOT NULL
+  Type : ENUM('terminal','stop') NOT NULL
+}
+
+entity Schedule {
+  *ID : INT <<PK>>
+  --
+  BusID : INT <<FK>>
+  DepartureTime : DATETIME NOT NULL
+  ArrivalTime : DATETIME NOT NULL
+  Fare : DECIMAL(10,2) NOT NULL
+}
+
+entity User_2 {
+  *user_id : INT <<PK,FK>>
+  --
+  reset_token : VARCHAR(255) NULL
+  token_expiry : DATETIME NULL
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity Booking_2 {
+  *booking_id : INT <<PK,FK>>
+  --
+  gender : ENUM('male','female','undisclosed')
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity Admin_2 {
+  *admin_id : INT <<PK,FK>>
+  --
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity Announcements {
+  *ID : INT <<PK>>
+  --
+  title : VARCHAR(200) NOT NULL
+  message : TEXT NOT NULL
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+' RELATIONSHIPS WITH CARDINALITIES
+
+User "1" -- "0..n" Booking : makes
+User "1" -- "0..n" Feedback : gives
+User "1" -- "0..n" Incident : reports
+User "1" -- "0..n" BookingCancellation : requests
+User "1" -- "0..1" User_2 : extends
+Admin "1" -- "0..n" Bus : manages
+Admin "1" -- "0..n" Incident : handles
+Admin "1" -- "0..n" BookingCancellation : processes
+Admin "1" -- "0..1" Admin_2 : extends
+
+Route "1" -- "0..n" Bus : assigned to
+Route "1" -- "0..n" Incident : occurs on
+
+Bus "1" -- "0..n" Booking : requires
+Bus "1" -- "0..n" Seat : contains
+Bus "1" -- "0..n" Schedule : follows
+Bus "1" -- "0..n" Feedback : receives
+
+Booking "1" -- "1" Payment : gives
+Booking "1" -- "0..n" BookingCancellation : can be cancelled
+Booking "1" -- "0..n" Feedback : receives
+Booking "1" -- "0..1" Booking_2 : extends
+@enduml
