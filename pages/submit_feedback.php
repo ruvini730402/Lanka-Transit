@@ -56,15 +56,9 @@ try {
         exit();
     }
     
-    // Check if feedback already exists for this bus and user on the booking date
-    $stmt = $conn->prepare("
-        SELECT f.ID 
-        FROM Feedback f 
-        JOIN Booking b ON f.BusId = b.BusID AND f.UserId = ?
-        WHERE b.ID = ? AND f.BusId = ? AND b.PhoneNumber = ?
-        AND DATE(f.CreatedDate) = DATE(b.BookingTime)
-    ");
-    $stmt->execute([$userId, $bookingId, $busId, $userPhoneNumber]);
+    // Check if feedback already exists for this specific booking
+    $stmt = $conn->prepare("SELECT ID FROM Feedback WHERE BookingId = ?");
+    $stmt->execute([$bookingId]);
     
     if ($stmt->fetch()) {
         echo json_encode(['success' => false, 'message' => 'You have already shared feedback for this trip. Thank you!']);
@@ -73,11 +67,11 @@ try {
     
     // Insert feedback
     $stmt = $conn->prepare("
-        INSERT INTO Feedback (UserId, BusId, Rating, Comment, CreatedDate) 
-        VALUES (?, ?, ?, ?, NOW())
+        INSERT INTO Feedback (UserId, BusId, BookingId, Rating, Comment, CreatedDate) 
+        VALUES (?, ?, ?, ?, ?, NOW())
     ");
     
-    if ($stmt->execute([$userId, $busId, $rating, $comment])) {
+    if ($stmt->execute([$userId, $busId, $bookingId, $rating, $comment])) {
         echo json_encode(['success' => true, 'message' => 'Thank you for sharing your feedback! Your input helps us improve our service.']);
     } else {
         echo json_encode(['success' => false, 'message' => 'We encountered an issue saving your feedback. Please try again.']);
