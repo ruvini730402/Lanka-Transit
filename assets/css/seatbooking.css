@@ -4,27 +4,24 @@
   color: #ffffff;
   padding: 20px 0;
   text-align: center;
-}
-
-/* Footer */
-.footer-full {
+  }
+  /* Footer */
+  .footer-full {
   width: 100%;
   background: linear-gradient(135deg, #4B0000 0%, #800000 100%);
   padding: 20px 0;
   margin-top: 40px;
   color: white;
   box-sizing: border-box;
-}
-
-/* Global Styles */
-html, body {
+  }
+  /* Global Styles */
+  html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-}
-
-/* Bus Interior Container */
-.bus-interior {
+  }
+  /* Bus Interior Container */
+  .bus-interior {
   background: linear-gradient(to bottom, #f0f0f0, #d9d9d9);
   border: 3px solid #333;
   border-radius: 30px;
@@ -34,10 +31,9 @@ html, body {
   box-shadow: 0 10px 20px rgba(0,0,0,0.3);
   position: relative;
   overflow: hidden;
-}
-
-/* Bus Front and Rear */
-.bus-front, .bus-rear {
+  }
+  /* Bus Front and Rear */
+  .bus-front, .bus-rear {
   position: relative;
   height: 100px;
   display: flex;
@@ -49,47 +45,41 @@ html, body {
   color: #fff;
   font-weight: bold;
   font-size: 18px;
-}
-
-.bus-rear {
+  }
+  .bus-rear {
   background: linear-gradient(to right, #777, #555);
   border-top: 3px solid #333;
   border-bottom: none;
   margin-top: 20px;
-}
-
-.entrance-area, .rear-entrance {
+  }
+  .entrance-area, .rear-entrance {
   width: 45%;
   text-align: center;
   background: #666;
   padding: 10px;
   border-radius: 10px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.driver-area {
+  }
+  .driver-area {
   width: 45%;
   text-align: center;
   background: #444;
   padding: 10px;
   border-radius: 10px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.rear-entrance {
+  }
+  .rear-entrance {
   width: 100%;
   max-width: 200px;
-}
-
-/* Seat Grid */
-.seat-grid {
+  }
+  /* Seat Grid */
+  .seat-grid {
   display: grid;
   gap: 15px;
   padding: 20px;
-}
-
-/* Seat Styles */
-.seat {
+  }
+  /* Seat Styles */
+  .seat {
   width: 55px;
   height: 55px;
   margin: 5px;
@@ -106,9 +96,8 @@ html, body {
   transition: all 0.3s ease;
   box-shadow: 0 5px 10px rgba(0,0,0,0.3);
   position: relative;
-}
-
-.seat::after {
+  }
+  .seat::after {
   content: '';
   position: absolute;
   top: 5px;
@@ -117,130 +106,132 @@ html, body {
   bottom: 5px;
   background: rgba(255,255,255,0.1);
   border-radius: 8px;
-}
-
-.seat:hover:not(.booked) {
+  }
+  .seat:hover:not(.booked) {
   transform: translateY(-3px) scale(1.05);
   box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-}
-
-.seat.available {
+  }
+  .seat.available {
   background: linear-gradient(to bottom, #4CAF50, #388E3C);
   border: 2px solid #2E7D32;
-}
-
-.seat.lady-seat {
-  border: 3px solid #ff3333;
-  box-shadow: 0 5px 10px rgba(255,51,51,0.3);
-}
-
-.seat.selected {
+  }
+  .seat.lady-seat {
+  position: relative;
+  background: linear-gradient(to bottom, #4CAF50, #388E3C);
+  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+  }
+  .seat.lady-seat::before {
+  content: '♀';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 16px;
+  color: #ff3333;
+  font-weight: bold;
+  }
+  .seat.selected {
   background: linear-gradient(to bottom, #FFC107, #F57C00);
   border: 2px solid #EF6C00;
   box-shadow: 0 0 15px rgba(255,193,7,0.5);
-}
-
-.seat.booked {
+  }
+  .seat.booked {
   cursor: not-allowed;
   pointer-events: none;
   opacity: 0.9;
-}
-
-.seat.booked.female {
+  }
+  .seat.booked.female {
   background: linear-gradient(to bottom, #ffb6c1, #f48fb1) !important;
   border: 2px solid #f48fb1 !important;
-}
-
-.seat.booked.male {
+  }
+  .seat.booked.male {
   background: linear-gradient(to bottom, #add8e6, #81d4fa) !important;
   border: 2px solid #81d4fa !important;
-}
-
-.seat.booked.undisclosed {
+  }
+  .seat.booked.undisclosed {
   background: linear-gradient(to bottom, #A9A9A9, #757575) !important;
   border: 2px solid #757575 !important;
-}
-
-/* Aisle */
-.aisle {
+  }
+  /* Aisle */
+  .aisle {
   width: 50px;
   height: 55px;
   margin: 5px;
   background: repeating-linear-gradient(
-    45deg,
-    #ccc 0,
-    #ccc 6px,
-    #ddd 6px,
-    #ddd 12px
+  45deg,
+  #ccc 0,
+  #ccc 6px,
+  #ddd 6px,
+  #ddd 12px
   );
   border-radius: 5px;
   user-select: none;
   pointer-events: none;
-}
-
-/* Legend Styles */
-.seat-legend {
+  }
+  /* Legend Styles */
+  .seat-legend {
   width: 20px;
   height: 20px;
   border-radius: 5px;
   display: inline-block;
   vertical-align: middle;
-}
-
-.seat-legend.available {
+  }
+  .seat-legend.available {
   background: linear-gradient(to bottom, #4CAF50, #388E3C);
-}
-
-.seat-legend.booked.female {
+  }
+  .seat-legend.booked.female {
   background: linear-gradient(to bottom, #ffb6c1, #f48fb1);
-}
-
-.seat-legend.booked.male {
+  }
+  .seat-legend.booked.male {
   background: linear-gradient(to bottom, #add8e6, #81d4fa);
-}
-
-.seat-legend.booked.undisclosed {
+  }
+  .seat-legend.booked.undisclosed {
   background: linear-gradient(to bottom, #A9A9A9, #757575);
-}
-
-.seat-legend.lady-seat {
-  border: 3px solid #ff3333;
-  background: #fff;
-}
-
-.seat-legend.selected {
+  }
+  .seat-legend.lady-seat {
+  position: relative;
+  background: linear-gradient(to bottom, #4CAF50, #388E3C);
+  border: none;
+  }
+  .seat-legend.lady-seat::before {
+  content: '♀';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 12px;
+  color: #ff3333;
+  font-weight: bold;
+  }
+  .seat-legend.selected {
   background: linear-gradient(to bottom, #FFC107, #F57C00);
-}
-
-/* Title Color */
-.title-dark-blue {
+  }
+  /* Title Color */
+  .title-dark-blue {
   color: #003366;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
+  }
+  /* Responsive Design */
+  @media (max-width: 768px) {
   .bus-interior {
-    transform: scale(0.85);
+  transform: scale(0.85);
   }
   .seat-grid {
-    gap: 10px;
+  gap: 10px;
   }
   .seat {
-    width: 50px;
-    height: 50px;
-    line-height: 50px;
-    font-size: 14px;
+  width: 50px;
+  height: 50px;
+  line-height: 50px;
+  font-size: 14px;
   }
   .aisle {
-    width: 40px;
-    height: 50px;
+  width: 40px;
+  height: 50px;
   }
   .bus-front, .bus-rear {
-    font-size: 16px;
-    height: 80px;
+  font-size: 16px;
+  height: 80px;
   }
   .entrance-area, .rear-entrance, .driver-area {
-    padding: 8px;
-    font-size: 14px;
+  padding: 8px;
+  font-size: 14px;
   }
-}
+  }

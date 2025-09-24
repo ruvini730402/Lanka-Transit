@@ -22,50 +22,46 @@ class Bus {
     }
     
     /**
-     * Search buses with advanced filters
+     * Search buses based on filters
      * @param string $origin
      * @param string $destination
      * @param string $travelDate
-     * @param array $filters
+     * @param float $maxFare
      * @return array
      */
-    public function searchBusesWithFilters($origin, $destination, $travelDate, $filters = []) {
+    public function searchBuses($origin, $destination, $travelDate, $maxFare = null) {
         // Sanitize inputs
         $origin = Database::sanitizeInput($origin);
         $destination = Database::sanitizeInput($destination);
         $travelDate = Database::sanitizeInput($travelDate);
         
-        // Comprehensive validation
+        // Validate inputs
         if (!Database::validateInput($origin) || !Database::validateInput($destination)) {
-            return ['error' => 'Please enter valid city names for origin and destination.'];
-        }
-        
-        if ($origin === $destination) {
-            return ['error' => 'Origin and destination cities must be different. Please select different locations.'];
+            return ['error' => 'Invalid origin or destination'];
         }
         
         if (!Database::validateInput($travelDate, 'date')) {
-            return ['error' => 'Please enter a valid travel date in the correct format.'];
+            return ['error' => 'Invalid travel date'];
         }
         
         // Check if travel date is not in the past
         if (strtotime($travelDate) < strtotime(date('Y-m-d'))) {
-            return ['error' => 'Travel date must be today or a future date. Please select a valid date.'];
+            return ['error' => 'Travel date cannot be in the past'];
         }
         
-        // Build base query - Fixed column names and table references
+        // Build query
         $query = "SELECT DISTINCT 
                     b.ID as bus_id,
-                    b.BusNumber as bus_number,
-                    b.Capacity as capacity,
-                    r.Origin as origin,
-                    r.Destination as destination,
-                    r.Stops as stops,
-                    s.DepartureTime as departure_time,
-                    s.ArrivalTime as arrival_time,
-                    s.Fare as fare,
+                    b.BusNumber,
+                    b.Capacity,
+                    r.Origin,
+                    r.Destination,
+                    r.Stops,
+                    s.DepartureTime,
+                    s.ArrivalTime,
+                    s.Fare,
                     (b.Capacity - COALESCE(booked_seats.count, 0)) as available_seats
-                  FROM Bus b
+                  FROM " . $this->table_name . " b
                   INNER JOIN Route r ON b.RouteId = r.ID
                   INNER JOIN Schedule s ON b.ID = s.BusID
                   LEFT JOIN (
@@ -75,81 +71,24 @@ class Bus {
                       AND DATE(BookingTime) = :booking_date
                       GROUP BY BusID
                   ) booked_seats ON b.ID = booked_seats.BusID
-                  WHERE (
-                      -- Direct route match
-                      (r.Origin = :origin1 AND r.Destination = :destination1) OR
-                      -- Origin is terminal, destination is in stops
-                      (r.Origin = :origin2 AND FIND_IN_SET(:destination2, r.Stops) > 0) OR
-                      -- Origin is in stops, destination is terminal
-                      (FIND_IN_SET(:origin3, r.Stops) > 0 AND r.Destination = :destination3) OR
-                      -- Both are intermediate stops and in correct order
-                      (FIND_IN_SET(:origin4, r.Stops) > 0 AND FIND_IN_SET(:destination4, r.Stops) > 0 
-                       AND FIND_IN_SET(:origin5, r.Stops) < FIND_IN_SET(:destination5, r.Stops))
-                  )
+                  WHERE r.Origin = :origin 
+                  AND r.Destination = :destination
                   AND DATE(s.DepartureTime) = :travel_date";
         
         $params = [
-            ':origin1' => $origin,
-            ':destination1' => $destination,
-            ':origin2' => $origin,
-            ':destination2' => $destination,
-            ':origin3' => $origin,
-            ':destination3' => $destination,
-            ':origin4' => $origin,
-            ':destination4' => $destination,
-            ':origin5' => $origin,
-            ':destination5' => $destination,
+            ':origin' => $origin,
+            ':destination' => $destination,
             ':travel_date' => $travelDate,
             ':booking_date' => $travelDate
         ];
         
-        // Apply filters
-        if (!empty($filters['min_fare']) && is_numeric($filters['min_fare'])) {
-            $query .= " AND s.Fare >= :min_fare";
-            $params[':min_fare'] = (float)$filters['min_fare'];
-        }
-        
-        if (!empty($filters['max_fare']) && is_numeric($filters['max_fare'])) {
+        // Add fare filter if provided
+        if ($maxFare !== null && is_numeric($maxFare)) {
             $query .= " AND s.Fare <= :max_fare";
-            $params[':max_fare'] = (float)$filters['max_fare'];
+            $params[':max_fare'] = $maxFare;
         }
         
-        if (!empty($filters['departure_time_from'])) {
-            $query .= " AND TIME(s.DepartureTime) >= :departure_from";
-            $params[':departure_from'] = $filters['departure_time_from'];
-        }
-        
-        if (!empty($filters['departure_time_to'])) {
-            $query .= " AND TIME(s.DepartureTime) <= :departure_to";
-            $params[':departure_to'] = $filters['departure_time_to'];
-        }
-        
-        if (!empty($filters['min_seats']) && is_numeric($filters['min_seats'])) {
-            $query .= " HAVING available_seats >= :min_seats";
-            $params[':min_seats'] = (int)$filters['min_seats'];
-        }
-        
-        // Apply sorting
-        $sortBy = $filters['sort_by'] ?? 'departure_time';
-        switch ($sortBy) {
-            case 'fare_low':
-                $query .= " ORDER BY s.Fare ASC, s.DepartureTime ASC";
-                break;
-            case 'fare_high':
-                $query .= " ORDER BY s.Fare DESC, s.DepartureTime ASC";
-                break;
-            case 'departure_early':
-                $query .= " ORDER BY s.DepartureTime ASC";
-                break;
-            case 'departure_late':
-                $query .= " ORDER BY s.DepartureTime DESC";
-                break;
-            case 'seats_available':
-                $query .= " ORDER BY available_seats DESC, s.DepartureTime ASC";
-                break;
-            default:
-                $query .= " ORDER BY s.DepartureTime ASC";
-        }
+        $query .= " ORDER BY s.DepartureTime ASC";
         
         try {
             $stmt = $this->conn->prepare($query);
@@ -159,14 +98,14 @@ class Bus {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $buses[] = [
                     'bus_id' => $row['bus_id'],
-                    'bus_number' => $row['bus_number'],
-                    'capacity' => $row['capacity'],
-                    'origin' => $row['origin'],
-                    'destination' => $row['destination'],
-                    'stops' => $row['stops'],
-                    'departure_time' => $row['departure_time'],
-                    'arrival_time' => $row['arrival_time'],
-                    'fare' => $row['fare'],
+                    'bus_number' => $row['BusNumber'],
+                    'capacity' => $row['Capacity'],
+                    'origin' => $row['Origin'],
+                    'destination' => $row['Destination'],
+                    'stops' => $row['Stops'],
+                    'departure_time' => $row['DepartureTime'],
+                    'arrival_time' => $row['ArrivalTime'],
+                    'fare' => $row['Fare'],
                     'available_seats' => $row['available_seats']
                 ];
             }
@@ -175,83 +114,7 @@ class Bus {
             
         } catch(PDOException $exception) {
             error_log("Search error: " . $exception->getMessage());
-            return ['error' => 'We are experiencing technical difficulties. Please try your search again in a few moments.'];
-        }
-    }
-    
-    /**
-     * Get fare range for a specific route
-     * @param string $origin
-     * @param string $destination
-     * @return array
-     */
-    public function getFareRange($origin, $destination) {
-        try {
-            $query = "SELECT MIN(s.Fare) as min_fare, MAX(s.Fare) as max_fare
-                      FROM Schedule s
-                      INNER JOIN Bus b ON s.BusID = b.ID
-                      INNER JOIN Route r ON b.RouteId = r.ID
-                      WHERE (
-                          -- Direct route match
-                          (r.Origin = ? AND r.Destination = ?) OR
-                          -- Origin is terminal, destination is in stops
-                          (r.Origin = ? AND FIND_IN_SET(?, r.Stops) > 0) OR
-                          -- Origin is in stops, destination is terminal
-                          (FIND_IN_SET(?, r.Stops) > 0 AND r.Destination = ?) OR
-                          -- Both are intermediate stops and in correct order
-                          (FIND_IN_SET(?, r.Stops) > 0 AND FIND_IN_SET(?, r.Stops) > 0 
-                           AND FIND_IN_SET(?, r.Stops) < FIND_IN_SET(?, r.Stops))
-                      )";
-            
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute([$origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            return [
-                'min_fare' => $result['min_fare'] ?? 0,
-                'max_fare' => $result['max_fare'] ?? 5000
-            ];
-        } catch (PDOException $e) {
-            error_log("Fare range error: " . $e->getMessage());
-            return ['min_fare' => 0, 'max_fare' => 5000];
-        }
-    }
-    
-    /**
-     * Get departure time range for a specific route
-     * @param string $origin
-     * @param string $destination
-     * @return array
-     */
-    public function getDepartureTimeRange($origin, $destination) {
-        try {
-            $query = "SELECT MIN(TIME(s.DepartureTime)) as earliest_time, MAX(TIME(s.DepartureTime)) as latest_time
-                      FROM Schedule s
-                      INNER JOIN Bus b ON s.BusID = b.ID
-                      INNER JOIN Route r ON b.RouteId = r.ID
-                      WHERE (
-                          -- Direct route match
-                          (r.Origin = ? AND r.Destination = ?) OR
-                          -- Origin is terminal, destination is in stops
-                          (r.Origin = ? AND FIND_IN_SET(?, r.Stops) > 0) OR
-                          -- Origin is in stops, destination is terminal
-                          (FIND_IN_SET(?, r.Stops) > 0 AND r.Destination = ?) OR
-                          -- Both are intermediate stops and in correct order
-                          (FIND_IN_SET(?, r.Stops) > 0 AND FIND_IN_SET(?, r.Stops) > 0 
-                           AND FIND_IN_SET(?, r.Stops) < FIND_IN_SET(?, r.Stops))
-                      )";
-            
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute([$origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination, $origin, $destination]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            return [
-                'earliest_time' => $result['earliest_time'] ?? '05:00',
-                'latest_time' => $result['latest_time'] ?? '23:00'
-            ];
-        } catch (PDOException $e) {
-            error_log("Departure time range error: " . $e->getMessage());
-            return ['earliest_time' => '05:00', 'latest_time' => '23:00'];
+            return ['error' => 'Database error occurred(SearchBus) '. $exception->getMessage()];
         }
     }
     
@@ -266,7 +129,7 @@ class Bus {
         $travelDate = Database::sanitizeInput($travelDate);
         
         if (!Database::validateInput($travelDate, 'date')) {
-            return ['error' => 'Please select a valid travel date.'];
+            return ['error' => 'Invalid travel date'];
         }
         
         // First check if seat records exist for this bus
@@ -326,7 +189,7 @@ class Bus {
             
         } catch(PDOException $exception) {
             error_log("Seat availability error: " . $exception->getMessage());
-            return ['error' => 'Unable to load seat information. Please refresh the page and try again.'];
+            return ['error' => 'Database error occurred(AvailableSeats)'];
         }
     }
     
@@ -376,7 +239,7 @@ class Bus {
                     s.DepartureTime,
                     s.ArrivalTime,
                     s.Fare
-                  FROM Bus b
+                  FROM " . $this->table_name . " b
                   INNER JOIN Route r ON b.RouteId = r.ID
                   INNER JOIN Schedule s ON b.ID = s.BusID
                   WHERE b.ID = :bus_id";
@@ -403,12 +266,12 @@ class Bus {
                     ]
                 ];
             } else {
-                return ['error' => 'Bus not found. This bus may no longer be available for booking.'];
+                return ['error' => 'Bus not found'];
             }
             
         } catch(PDOException $exception) {
             error_log("Bus details error: " . $exception->getMessage());
-            return ['error' => 'Unable to load bus details. Please try again.'];
+            return ['error' => 'Database error occurred(BusDetails)'];
         }
     }
 }

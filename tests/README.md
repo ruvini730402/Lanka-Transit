@@ -11,7 +11,7 @@ This folder contains test scripts for validating the payment return page functio
 - Provides access to both success and failure tests
 - Includes testing instructions and cleanup functionality
 
-**Access**: `http://localhost/Lanka-Transit/tests/test_payment_suite.php`
+**Access**: `http://localhost:8080/tests/test_payment_suite.php`
 
 ### ✅ `test_payment_success.php`
 **Payment Success Scenario Tests**

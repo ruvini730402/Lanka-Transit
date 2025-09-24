@@ -1,6 +1,5 @@
 <?php
 require_once '../includes/session_config.php';
-
 // Get booking parameters from URL
 $bus_id = $_GET['bus_id'] ?? '';
 $travel_date = $_GET['date'] ?? '';
@@ -10,7 +9,6 @@ $fare = $_GET['fare'] ?? '';
 $bus_number = $_GET['bus_number'] ?? '';
 $departure_time = $_GET['departure'] ?? '';
 $arrival_time = $_GET['arrival'] ?? '';
-
 // Validate required parameters
 if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destination)) {
     header('Location: ../index.php?error=missing_params');
@@ -54,7 +52,6 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
     </section>
   <div class="container my-4">
  <h2 class="text-center mb-4 title-dark-blue">Bus Seat Selection</h2>
- 
  <!-- Booking Summary -->
  <div class="row mb-4">
    <div class="col-12">
@@ -93,22 +90,13 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
      </div>
    </div>
  </div>
-
  <!-- Bus Model Selection -->
  <div class="row mb-4">
    <div class="col-12">
      <div class="card shadow-sm">
-       <div class="card-body">
-         <h5 class="card-title title-dark-blue">Choose Bus Model</h5>
-         <select id="bus-model" class="form-select">
-           <option value="49">49 Seater Model</option>
-           <option value="54">54 Seater Model</option>
-         </select>
-       </div>
      </div>
    </div>
  </div>
-
  <div class="row">
   <!-- Left: Seat Map -->
   <div class="col-md-7">
@@ -118,42 +106,33 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
         <div class="driver-area">🚍 Driver</div>
       </div>
       <div class="seat-grid"></div>
-      <!-- <div class="bus-rear">
-        <div class="rear-entrance">🚪 Rear Entrance</div>
-      </div> -->
     </div>
   </div>
-
   <!-- Right: Passenger Info Form + Legend -->
   <div class="col-md-5">
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title mb-3 title-dark-blue">Passenger Info</h5>
-
         <?php if (isset($_SESSION['error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <?php echo htmlspecialchars($_SESSION['error']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <?php unset($_SESSION['error']); endif; ?>
-
         <div id="form-message"></div>
         <form id="booking-form" method="POST" action="book.php">
           <div class="mb-3">
             <label class="form-label title-dark-blue">Passenger Name</label>
             <input type="text" class="form-control" name="name" required pattern="[A-Za-z\s]+" title="Name should contain only letters and spaces.">
           </div>
-
           <div class="mb-3">
             <label class="form-label title-dark-blue">Mobile Number</label>
             <input type="tel" class="form-control" name="phone" required pattern="07\d{8}" title="Mobile number should start with 07 followed by 8 digits.">
           </div>
-
           <div class="mb-3">
             <label class="form-label title-dark-blue">NIC (Optional)</label>
             <input type="text" class="form-control" name="nic" pattern="^([0-9]{9}[vVxX]|[0-9]{12})$" title="Valid NIC format: 9 digits + V/X or 12 digits.">
           </div>
-
           <div class="mb-3">
             <label class="form-label title-dark-blue">Gender</label>
             <select class="form-select" name="gender" id="gender" required>
@@ -163,7 +142,6 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
               <option value="undisclosed">Undisclosed</option>
             </select>
           </div>
-
           <input type="hidden" name="seat" id="selected-seat">
           <input type="hidden" name="model" id="selected-model">
           <input type="hidden" name="bus_id" value="<?php echo htmlspecialchars($bus_id); ?>">
@@ -178,7 +156,6 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
         </form>
       </div>
     </div>
-
     <!-- Legend -->
     <div class="mt-4">
       <h6 class="title-dark-blue">Legend:</h6>
@@ -196,7 +173,7 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
           <span class="d-inline-block me-2 seat-legend booked undisclosed"></span> Booked (Undisclosed)
         </div>
         <div class="d-flex align-items-center mb-2 title-dark-blue">
-          <span class="d-inline-block me-2 seat-legend lady-seat"></span> Lady Seats (1–8)
+          <span class="d-inline-block me-2 seat-legend lady-seat"></span> Lady Seats (1–8) <small>(♀ icon)</small>
         </div>
         <div class="d-flex align-items-center mb-2 title-dark-blue">
           <span class="d-inline-block me-2 seat-legend selected"></span> Selected
@@ -209,7 +186,6 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
 <footer class="footer-full text-center">
   <p class="mb-0">&copy; 2025 Transit. All rights reserved.</p>
 </footer>
-
 <script src="../assets/js/seatbooking.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
