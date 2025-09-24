@@ -1,7 +1,9 @@
 <?php
-include('../dbcon.php');
+require_once __DIR__ . '/../../classes/Database.php';
 include('Bus.php');
 
+$database = new Database();
+$connection = $database->getConnection();
 $busObj = new Bus($connection);
 
 // Step 1: Load the existing bus data when accessed with GET

@@ -1,8 +1,10 @@
 <?php
-include('dbcon.php');
+require_once __DIR__ . '/../classes/Database.php';
 include('php/announcement.php');
 
 try {
+    $database = new Database();
+    $connection = $database->getConnection();
     $announcementObj = new Announcement($connection);
     $announcements = $announcementObj->getAll();
 } catch (PDOException $e) {

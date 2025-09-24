@@ -1,8 +1,10 @@
 <?php
-session_start();
-include('../dbcon.php');
+require_once __DIR__ . '/../../includes/session_config.php';
+require_once __DIR__ . '/../../classes/Database.php';
 include('Bus.php');
 
+$database = new Database();
+$connection = $database->getConnection();
 $busObj = new Bus($connection);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

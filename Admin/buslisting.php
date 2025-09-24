@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 $showModal = false;
 $errorMsg = "";
@@ -19,9 +19,11 @@ if (isset($_SESSION['bus_success'])) {
     unset($_SESSION['bus_success']);
 }
 
-include('dbcon.php');
+require_once __DIR__ . '/../classes/Database.php';
 include('php/Bus.php');
 
+$database = new Database();
+$connection = $database->getConnection();
 $busObj = new Bus($connection);
 $buses = $busObj->getAll();
 if (!$buses) {

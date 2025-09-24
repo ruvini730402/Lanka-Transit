@@ -1,11 +1,13 @@
 <?php
-include('../dbcon.php');
+require_once __DIR__ . '/../../classes/Database.php';
 include('announcement.php');
 
 if (isset($_POST['add_announcement'])) {
     $title = $_POST['title'];
     $content = $_POST['content'];
 
+    $database = new Database();
+    $connection = $database->getConnection();
     $announcement = new Announcement($connection);
     if ($announcement->insert($title, $content)) {
         header("Location: ../announcement_display.php?msg=Announcement added successfully");
