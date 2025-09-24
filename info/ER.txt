@@ -20,6 +20,9 @@ PhoneNumber VARCHAR(10) NOT NULL
 Fare DECIMAL(10,2) NOT NULL
 Status ENUM('confirmed','cancelled','completed') NOT NULL DEFAULT 'confirmed'
 BookingTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+TravelDate DATE (NULLABLE)
+Origin VARCHAR(50) (NULLABLE)
+Destination VARCHAR(50) (NULLABLE)
 
 Feedback
 PK ID INT AUTO_INCREMENT

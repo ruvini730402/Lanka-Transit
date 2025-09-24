@@ -21,6 +21,9 @@ entity Booking {
   Fare : DECIMAL(10,2) NOT NULL
   Status : ENUM('confirmed','cancelled','completed')
   BookingTime : TIMESTAMP
+  TravelDate : DATE NULL
+  Origin : VARCHAR(50) NULL
+  Destination : VARCHAR(50) NULL
 }
 
 entity Feedback {
