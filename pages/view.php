@@ -8,7 +8,7 @@ session_start();
 if (isset($_GET['api'])) {
     header('Content-Type: application/json');
     
-    require_once '../classes/database[WRONG].php';
+    require_once '../classes/Database.php';
     require_once '../classes/Bus.php';
     
     if ($_GET['api'] === 'seats') {
@@ -29,7 +29,8 @@ if (isset($_GET['api'])) {
         }
         
         try {
-            $pdo = Database::getConnection();
+            $database = new Database();
+            $pdo = $database->getConnection();
             if (!$pdo) {
                 echo json_encode(['error' => 'Database connection failed']);
                 error_log('Seats API: Database connection failed');
@@ -99,7 +100,8 @@ if (isset($_GET['api'])) {
         }
         
         try {
-            $pdo = Database::getConnection();
+            $database = new Database();
+            $pdo = $database->getConnection();
             if (!$pdo) {
                 echo json_encode(['error' => 'Database connection failed']);
                 error_log('Bus Details API: Database connection failed');
@@ -228,12 +230,13 @@ if (isset($_GET['api'])) {
 
                 <?php
                 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    require_once __DIR__ . '/../classes/database[WRONG].php';
+                    require_once __DIR__ . '/../classes/Database.php';
 
                     $id = trim($_POST['identifier']);
 
                     try {
-                        $pdo = Database::getConnection();
+                        $database = new Database();
+                        $pdo = $database->getConnection();
                         if (!$pdo) {
                             echo '<div class="alert alert-danger">Database connection failed.</div>';
                             exit;

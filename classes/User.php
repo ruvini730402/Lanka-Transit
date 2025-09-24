@@ -1,11 +1,12 @@
 <?php
-require_once __DIR__ . '/../classes/database[WRONG].php';
+require_once __DIR__ . '/Database.php';
 
 class User {
     private $pdo;
 
     public function __construct() {
-        $this->pdo = Database::getConnection();
+        $database = new Database();
+        $this->pdo = $database->getConnection();
     }
 
     public function findByEmail($email) {
