@@ -98,13 +98,11 @@ if ($userPhoneNumber && $conn) {
             FROM Booking b
             JOIN Bus bus ON b.BusID = bus.ID
             LEFT JOIN Route r ON bus.RouteId = r.ID
-            LEFT JOIN Feedback f ON f.BusId = bus.ID 
-                                  AND f.UserId = ? 
-                                  AND DATE(f.CreatedDate) = DATE(b.BookingTime)
+            LEFT JOIN Feedback f ON f.BookingId = b.ID
             WHERE b.PhoneNumber = ? AND b.Status IN ('confirmed', 'completed')
             ORDER BY b.BookingTime ASC
         ");
-        $stmt->execute([$userId, $userPhoneNumber]);
+        $stmt->execute([$userPhoneNumber]);
         $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Separate bookings into upcoming and history based on booking time
@@ -333,8 +331,8 @@ if ($conn) {
             </thead>
             <tbody>
               <?php if (!empty($bookingHistory)): ?>
-                <?php foreach (array_slice($bookingHistory, 0, 5) as $booking): ?>
-                <tr>
+                <?php foreach ($bookingHistory as $index => $booking): ?>
+                <tr <?= $index >= 5 ? 'class="booking-history-extra" style="display: none;"' : '' ?>>
                   <td><?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></td>
                   <td><?= date('Y-m-d', strtotime($booking['BookingTime'])) ?></td>
                   <td><?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?></td>
@@ -367,6 +365,13 @@ if ($conn) {
             </tbody>
           </table>
         </div>
+        <?php if (!empty($bookingHistory) && count($bookingHistory) > 5): ?>
+        <div style="text-align: center; margin-top: 15px;">
+          <button id="seeMoreBookingsBtn" class="see-more-btn" onclick="toggleBookingHistory()">
+            <i class="fas fa-chevron-down"></i> See More (<?= count($bookingHistory) - 5 ?> more trips)
+          </button>
+        </div>
+        <?php endif; ?>
       </div>
 
       <div class="section">
@@ -441,13 +446,8 @@ if ($conn) {
                       <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
                       <input type="hidden" name="max_fare" value="<?= ceil($route['AvgFare'] * 1.2) ?>">
                       <button type="submit" class="rebook-btn">
-                        <?php if ($index === 0): ?>
-                          <i class="fas fa-star icon-with-margin"></i>
-                          Book Again
-                        <?php else: ?>
-                          <i class="fas fa-redo icon-with-margin"></i>
-                          Rebook
-                        <?php endif; ?>
+                        <i class="fas fa-star icon-with-margin"></i>
+                        Book Again
                       </button>
                     </form>
                   </td>
@@ -745,7 +745,65 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
         submitBtn.disabled = false;
     });
 });
+
+// Booking History "See More" functionality
+function toggleBookingHistory() {
+    const extraBookings = document.querySelectorAll('.booking-history-extra');
+    const seeMoreBtn = document.getElementById('seeMoreBookingsBtn');
+    const icon = seeMoreBtn.querySelector('i');
+    
+    // Check if bookings are currently hidden
+    const isHidden = extraBookings[0] && extraBookings[0].style.display === 'none';
+    
+    if (isHidden) {
+        // Show additional bookings
+        extraBookings.forEach(booking => {
+            booking.style.display = 'table-row';
+        });
+        icon.className = 'fas fa-chevron-up';
+        seeMoreBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less';
+    } else {
+        // Hide additional bookings
+        extraBookings.forEach(booking => {
+            booking.style.display = 'none';
+        });
+        icon.className = 'fas fa-chevron-down';
+        const hiddenCount = extraBookings.length;
+        seeMoreBtn.innerHTML = `<i class="fas fa-chevron-down"></i> See More (${hiddenCount} more trips)`;
+    }
+}
 </script>
+
+<!-- Add custom CSS for the see-more button -->
+<style>
+.see-more-btn {
+    background: linear-gradient(135deg, #4B0000, #6B0000);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.see-more-btn:hover {
+    background: linear-gradient(135deg, #6B0000, #8B0000);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.see-more-btn:active {
+    transform: translateY(0);
+}
+
+.see-more-btn i {
+    margin-right: 5px;
+    transition: transform 0.3s ease;
+}
+</style>
   
 </body>
 </html>
