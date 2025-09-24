@@ -3,7 +3,7 @@
  * Bus Booking Handler
  * Validates booking data and redirects to payment without creating booking
  */
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/Booking.php';
@@ -135,8 +135,24 @@ try {
         'arrival_time' => $booking_data['arrival_time']
     ];
 
-    // Redirect to payment page instead of confirmation
-    header('Location: payment.php');
+    // Log successful session storage
+    error_log("Book.php: Successfully stored booking data in session for user: " . $booking_data['passenger_name']);
+
+    // Create backup URL parameters for session recovery
+    $backup_params = [
+        'bus_id' => $booking_data['bus_id'],
+        'date' => $booking_data['travel_date'],
+        'origin' => $booking_data['origin'],
+        'destination' => $booking_data['destination'],
+        'fare' => $booking_data['fare'],
+        'bus_number' => $booking_data['bus_number'],
+        'departure' => $booking_data['departure_time'],
+        'arrival' => $booking_data['arrival_time']
+    ];
+
+    // Redirect to payment page with backup parameters
+    $redirect_url = 'payment.php?' . http_build_query($backup_params);
+    header("Location: $redirect_url");
     exit;
 
 } catch (Exception $e) {

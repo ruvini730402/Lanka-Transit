@@ -2,12 +2,55 @@
 /**
  * Payment Page - PayHere Integration
  */
-session_start();
+require_once '../includes/session_config.php';
 require_once '../classes/Database.php';
 require_once '../classes/Payment.php';
 
-// Check if booking data exists in session
+// Enhanced session debugging for production
+$debug_info = [
+    'session_id' => session_id(),
+    'session_status' => session_status(),
+    'session_data_exists' => isset($_SESSION['booking_data']),
+    'session_keys' => array_keys($_SESSION ?? []),
+    'server_name' => $_SERVER['SERVER_NAME'] ?? 'unknown',
+    'request_uri' => $_SERVER['REQUEST_URI'] ?? 'unknown',
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+    'timestamp' => date('Y-m-d H:i:s')
+];
+
+// Log session information for debugging
+error_log("Payment.php session debug: " . json_encode($debug_info));
+
+// Check if booking data exists in session with enhanced error handling
 if (!isset($_SESSION['booking_data'])) {
+    // Log the missing session data error
+    error_log("Payment.php: No booking data in session. Session contents: " . json_encode($_SESSION ?? []));
+    
+    // Try to recover from URL parameters if available
+    $recovery_params = [
+        'bus_id', 'date', 'origin', 'destination', 'fare', 'bus_number'
+    ];
+    
+    $has_recovery_data = true;
+    foreach ($recovery_params as $param) {
+        if (!isset($_GET[$param]) || empty($_GET[$param])) {
+            $has_recovery_data = false;
+            break;
+        }
+    }
+    
+    if ($has_recovery_data) {
+        // Log recovery attempt
+        error_log("Payment.php: Attempting to recover from URL parameters");
+        
+        // Redirect back to seat booking with preserved parameters
+        $redirect_url = 'seatbooking.php?' . http_build_query($_GET);
+        $_SESSION['error'] = "Your session expired. Please select your seat again.";
+        header("Location: $redirect_url");
+        exit;
+    }
+    
+    // If no recovery possible, redirect to index with error
     header('Location: ../index.php?error=no_booking_data');
     exit;
 }

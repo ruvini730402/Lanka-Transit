@@ -13,11 +13,18 @@ deployment:
     # Copy everything except excluded files/folders
     - /bin/cp -R * $DEPLOYPATH/
     
+    # Create necessary directories with proper permissions
+    - /bin/mkdir -p $DEPLOYPATH/tmp/sessions
+    - /bin/chmod 755 $DEPLOYPATH/tmp
+    - /bin/chmod 755 $DEPLOYPATH/tmp/sessions
+    
     # Remove development and git files from production
     - /bin/rm -rf $DEPLOYPATH/.git
     - /bin/rm -rf $DEPLOYPATH/tests
     - /bin/rm -f $DEPLOYPATH/.gitignore
     - /bin/rm -f $DEPLOYPATH/.cpanel.yml
+    - /bin/rm -f $DEPLOYPATH/session_debug.php
+    - /bin/rm -f $DEPLOYPATH/payment_debug.php
     
     # Update environment for production
     - echo "" >> $DEPLOYPATH/.env

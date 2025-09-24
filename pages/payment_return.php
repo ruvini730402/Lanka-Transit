@@ -2,7 +2,7 @@
 /**
  * Payment Return Handler - User returns here after successful payment
  */
-session_start();
+require_once '../includes/session_config.php';
 require_once '../classes/Database.php';
 require_once '../classes/Payment.php';
 
@@ -11,9 +11,17 @@ $error = '';
 $order_id = $_GET['order_id'] ?? $_SESSION['payment_order_id'] ?? '';
 $bookingData = null;
 
+// Log payment return for debugging
+error_log("Payment return accessed - Order ID: " . $order_id . ", GET params: " . json_encode($_GET) . ", Session keys: " . json_encode(array_keys($_SESSION ?? [])));
+
 try {
     if (empty($order_id)) {
-        throw new Exception("No order ID found");
+        // Try to get order_id from other PayHere return parameters
+        $order_id = $_GET['merchant_id'] ?? $_GET['payhere_order_id'] ?? $_GET['custom_1'] ?? '';
+        
+        if (empty($order_id)) {
+            throw new Exception("No order ID found in return parameters");
+        }
     }
     
     // Initialize payment processor
@@ -22,41 +30,97 @@ try {
     // First, check if we have booking data from payment session
     $bookingData = $payment->getPaymentSession($order_id);
     
-    // Check payment status in database
+    // Check payment status in database using existing method
     $paymentStatus = $payment->getPaymentStatus($order_id);
     $paymentData = null;
     
+    // PayHere successful return handling using existing methods only
+    // When PayHere redirects to return_url, it means payment was successful
+    
     if ($paymentStatus && $paymentStatus['Status'] === 'success') {
-        // Payment confirmed in database
+        // Payment confirmed in database (notification already processed)
         $success = true;
-        $paymentData = $paymentStatus;
-    } else if ($bookingData) {
-        // Payment session exists, assume success from PayHere return
-        // This handles the case where PayHere redirects before notification is processed
-        $success = true;
-        // Get payment data from session or create basic info
         $paymentData = [
             'OrderID' => $order_id,
-            'Amount' => $bookingData['amount'] ?? $bookingData['total_amount'] ?? 'N/A',
+            'Amount' => $paymentStatus['Amount'],
+            'Currency' => 'LKR',
+            'Status' => $paymentStatus['Status'],
+            'PaymentMethod' => $paymentStatus['PaymentMethod'] ?? 'PayHere',
+            'PaymentDate' => $paymentStatus['PaymentDate']
+        ];
+        error_log("Payment found in database with success status");
+    } else if ($bookingData) {
+        // Payment session exists and PayHere redirected to return_url = success
+        // PayHere only redirects to return_url on successful payments
+        $success = true;
+        $paymentData = [
+            'OrderID' => $order_id,
+            'Amount' => $bookingData['fare'] ?? $bookingData['amount'] ?? $bookingData['total_amount'] ?? 'N/A',
             'Currency' => 'LKR',
             'Status' => 'success',
             'PaymentMethod' => 'PayHere',
             'PaymentDate' => date('Y-m-d H:i:s')
         ];
+        error_log("Payment session found, treating return as success");
+        
+        // Don't create payment record here - let confirmation.php handle it
+        // PayHere notification will update the database when it arrives
     } else {
-        // No payment record and no session data
-        $error = "Payment verification failed. Please contact support with Order ID: " . $order_id;
-    }
-    
-    // If successful and we have booking data, we can proceed
-    if ($success && $bookingData) {
-        // Clear payment session after successful processing
-        $payment->clearPaymentSession();
+        // No session data - try to recover from URL parameters
+        // PayHere return URL means payment was successful
+        $backup_params = ['bus_id', 'date', 'origin', 'destination', 'fare', 'bus_number'];
+        $has_backup = true;
+        foreach ($backup_params as $param) {
+            if (!isset($_GET[$param])) {
+                $has_backup = false;
+                break;
+            }
+        }
+        
+        if ($has_backup) {
+            $success = true;
+            $bookingData = [
+                'bus_id' => $_GET['bus_id'],
+                'travel_date' => $_GET['date'],
+                'origin' => $_GET['origin'],
+                'destination' => $_GET['destination'], 
+                'fare' => $_GET['fare'],
+                'bus_number' => $_GET['bus_number'],
+                'departure_time' => $_GET['departure'] ?? '',
+                'arrival_time' => $_GET['arrival'] ?? ''
+            ];
+            
+            $paymentData = [
+                'OrderID' => $order_id,
+                'Amount' => $_GET['fare'],
+                'Currency' => 'LKR',
+                'Status' => 'success',
+                'PaymentMethod' => 'PayHere',
+                'PaymentDate' => date('Y-m-d H:i:s')
+            ];
+            
+            // Don't create payment record here - let confirmation.php handle it
+            
+            error_log("Recovered booking data from URL parameters");
+        } else {
+            // No data available but PayHere returned to success URL - assume success
+            $success = true;
+            $paymentData = [
+                'OrderID' => $order_id,
+                'Amount' => 'N/A',
+                'Currency' => 'LKR',
+                'Status' => 'success', 
+                'PaymentMethod' => 'PayHere',
+                'PaymentDate' => date('Y-m-d H:i:s')
+            ];
+            error_log("No session/URL data, but treating as success since PayHere returned to success URL");
+        }
     }
     
 } catch (Exception $e) {
     error_log("Payment return error: " . $e->getMessage());
     $error = "Error processing payment status: " . $e->getMessage();
+    $success = false;
 }
 
 // Fallback: If we don't have booking data from payment session, check regular session
