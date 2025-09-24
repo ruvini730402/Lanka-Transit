@@ -27,19 +27,7 @@ deployment:
     # Create production environment file (copy dev .env and override production values)
     - /bin/cp .env $DEPLOYPATH/.env
     
-    # If .env.production exists, use it instead (with all production credentials)
-    - test -f .env.production && /bin/cp .env.production $DEPLOYPATH/.env || echo "Using development .env with production overrides"
     
-    # Override production-specific settings (only if using dev .env)
-    - test -f .env.production || /bin/sed -i 's/^APP_ENV=.*/APP_ENV=production/' $DEPLOYPATH/.env
-    - test -f .env.production || /bin/sed -i 's|^BASE_URL=.*|BASE_URL=https://transit.uvacell.com|' $DEPLOYPATH/.env
-    - test -f .env.production || /bin/sed -i 's/^DEBUG=.*/DEBUG=false/' $DEPLOYPATH/.env
-    # Keep PayHere in sandbox mode for production testing
-    
-    # Add production-specific values if they don't exist
-    - grep -q "^APP_ENV=" $DEPLOYPATH/.env || echo "APP_ENV=production" >> $DEPLOYPATH/.env
-    - grep -q "^BASE_URL=" $DEPLOYPATH/.env || echo "BASE_URL=https://transit.uvacell.com" >> $DEPLOYPATH/.env
-    - grep -q "^DEBUG=" $DEPLOYPATH/.env || echo "DEBUG=false" >> $DEPLOYPATH/.env
     
     # Set file permissions for security
     - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
