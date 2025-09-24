@@ -42,7 +42,7 @@ require_once __DIR__ . '/session_config.php';
 							<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
 								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../dashboard/' : 'dashboard/'; ?>"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
 								<li><hr class="dropdown-divider"></li>
-								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../auth/logout.php' : 'auth/logout.php'; ?>"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../auth/Logout.php' : 'auth/Logout.php'; ?>"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
 							</ul>
 						</li>
 					<?php else: ?>
