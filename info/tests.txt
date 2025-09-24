@@ -187,7 +187,7 @@ Test Case 3.11: Bus Search - Available Seats Calculation
 
 Test Case 3.12: Fare Range Calculation - Valid Route
 - Test: getFareRange() for existing route
-- Input: ["Colombo", "Kandy"]
+- Input: ["Badulla", "Matara"]
 - Result: ['min_fare' => minimum_fare, 'max_fare' => maximum_fare]
 - Validation: MIN and MAX fare values calculated from route options
 
