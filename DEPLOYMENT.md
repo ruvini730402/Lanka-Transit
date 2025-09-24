@@ -13,7 +13,7 @@ This project supports separate configurations for development and production env
 - Uses `.env.production` file with live credentials (if present)
 - Falls back to `.env` with production overrides
 - Database: cPanel hosting database
-- PayHere: Live mode
+- PayHere: **Sandbox mode (for testing)**
 
 ## Setup Instructions
 
@@ -24,16 +24,15 @@ This project supports separate configurations for development and production env
 ### For Production Deployment
 
 #### Option 1: Use .env.production file (Recommended)
-1. Copy `.env.production` template to your local project
-2. Update it with your actual production credentials:
-   - Database: Your cPanel hosting database credentials
-   - PayHere: Your live merchant credentials
-3. Keep this file secure and never commit it to Git
+1. Edit the `.env.production` file I created
+2. Add your actual production database credentials
+3. PayHere remains in sandbox mode for safe testing
+4. When you deploy, it will use these production settings
 
 #### Option 2: Manual Production Setup
 1. After deployment, manually edit the `.env` file on your production server
-2. Update database and PayHere credentials
-3. Set `PAYHERE_SANDBOX=false` for live payments
+2. Update database credentials for production
+3. PayHere remains in sandbox mode for safe testing
 
 ## Deployment Process
 
@@ -55,6 +54,6 @@ When you push to Git:
 
 After deployment:
 1. Check that your live site loads
-2. Test a small payment transaction
+2. Test a small payment transaction (sandbox mode - safe testing)
 3. Verify database connections work
 4. Check that debug mode is disabled

@@ -34,7 +34,7 @@ deployment:
     - test -f .env.production || /bin/sed -i 's/^APP_ENV=.*/APP_ENV=production/' $DEPLOYPATH/.env
     - test -f .env.production || /bin/sed -i 's|^BASE_URL=.*|BASE_URL=https://transit.uvacell.com|' $DEPLOYPATH/.env
     - test -f .env.production || /bin/sed -i 's/^DEBUG=.*/DEBUG=false/' $DEPLOYPATH/.env
-    - test -f .env.production || /bin/sed -i 's/^PAYHERE_SANDBOX=.*/PAYHERE_SANDBOX=false/' $DEPLOYPATH/.env
+    # Keep PayHere in sandbox mode for production testing
     
     # Add production-specific values if they don't exist
     - grep -q "^APP_ENV=" $DEPLOYPATH/.env || echo "APP_ENV=production" >> $DEPLOYPATH/.env
