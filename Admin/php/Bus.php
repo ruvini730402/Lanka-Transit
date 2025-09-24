@@ -22,14 +22,13 @@ class Bus {
             throw new Exception("Bus number already exists.");
         }
 
-        // Note: This assumes RouteId=1 and AdminId=1 as defaults since the form doesn't collect these
         $sql = "INSERT INTO Bus (RouteId, AdminId, BusNumber, Capacity, LastUpdate)
                 VALUES (:route_id, :admin_id, :bus_no, :capacity, CURDATE())";
 
         $stmt = $this->conn->prepare($sql);
         $success = $stmt->execute([
-            ':route_id' => 1, // Default route - should be updated to get from form
-            ':admin_id' => 1, // Default admin - should be updated to get from session
+            ':route_id' => $route,
+            ':admin_id' => $driver_contact,
             ':bus_no' => $bus_no,
             ':capacity' => $seat_count
         ]);

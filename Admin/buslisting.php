@@ -29,6 +29,14 @@ $buses = $busObj->getAll();
 if (!$buses) {
     $buses = [];
 }
+
+// Fetch routes for dropdown
+$routeStmt = $connection->prepare("SELECT ID, Origin, Destination FROM Route ORDER BY ID");
+$routeStmt->execute();
+$routes = $routeStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get current admin ID from session
+$currentAdminId = $_SESSION['admin_id'] ?? 1;
 ?>
 
 <!DOCTYPE html>
@@ -127,18 +135,32 @@ if (!$buses) {
                     <div class="mb-3">
                         <label for="bus_no" class="form-label">Bus Number</label>
                         <input type="text" class="form-control" name="bus_no" placeholder="Ex: NB-1234" required value="<?= htmlspecialchars($formData['bus_no']) ?>" />
+                        <div class="form-text">Format: NB-1234 (2-3 letters, dash, 4 digits)</div>
                     </div>
                     <div class="mb-3">
-                        <label for="route_id" class="form-label">Route ID</label>
-                        <input type="number" class="form-control" name="route" placeholder="Ex: 1" required value="<?= htmlspecialchars($formData['route_id']) ?>" min="1" />
+                        <label for="route_id" class="form-label">Route</label>
+                        <select class="form-select" name="route" required>
+                            <option value="">Select a route...</option>
+                            <?php foreach ($routes as $route): ?>
+                                <option value="<?= htmlspecialchars($route['ID']) ?>" 
+                                        <?= ($formData['route_id'] == $route['ID']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($route['Origin']) ?> → <?= htmlspecialchars($route['Destination']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="admin_id" class="form-label">Admin ID</label>
-                        <input type="number" class="form-control" name="driver_contact" placeholder="Ex: 1" required value="<?= htmlspecialchars($formData['admin_id']) ?>" min="1" />
+                        <label for="admin_info" class="form-label">Assigned Admin</label>
+                        <input type="text" class="form-control" value="Admin ID: <?= htmlspecialchars($currentAdminId) ?> (Current User)" readonly />
+                        <input type="hidden" name="driver_contact" value="<?= htmlspecialchars($currentAdminId) ?>" />
                     </div>
                     <div class="mb-3">
-                        <label for="capacity" class="form-label">Capacity</label>
-                        <input type="number" class="form-control" name="seat_count" min="1" placeholder="Ex: 45" required value="<?= htmlspecialchars($formData['capacity']) ?>" />
+                        <label for="capacity" class="form-label">Bus Capacity</label>
+                        <select class="form-select" name="seat_count" required>
+                            <option value="">Select capacity...</option>
+                            <option value="49" <?= ($formData['capacity'] == '49') ? 'selected' : '' ?>>49 seats (Standard Bus)</option>
+                            <option value="54" <?= ($formData['capacity'] == '54') ? 'selected' : '' ?>>54 seats (Premium Bus)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -177,9 +199,8 @@ if (!$buses) {
 <script>
 document.getElementById("addBusForm").addEventListener("submit", function(e) {
     const busNo = document.querySelector("input[name='bus_no']").value.trim();
-    const routeId = document.querySelector("input[name='route']").value.trim();
-    const adminId = document.querySelector("input[name='driver_contact']").value.trim();
-    const capacity = document.querySelector("input[name='seat_count']").value.trim();
+    const routeId = document.querySelector("select[name='route']").value;
+    const capacity = document.querySelector("select[name='seat_count']").value;
     const errorDiv = document.querySelector(".modal-body .alert-danger");
 
     const busNoPattern = /^[A-Z]{2,3}-\d{4}$/;
@@ -188,12 +209,10 @@ document.getElementById("addBusForm").addEventListener("submit", function(e) {
 
     if (!busNoPattern.test(busNo)) {
         errorMsg = "❌ Invalid Bus Number. Format should be NB-1234 or ABC-5678.";
-    } else if (!routeId || isNaN(routeId) || parseInt(routeId) <= 0) {
-        errorMsg = "❌ Invalid Route ID. Must be a number greater than 0.";
-    } else if (!adminId || isNaN(adminId) || parseInt(adminId) <= 0) {
-        errorMsg = "❌ Invalid Admin ID. Must be a number greater than 0.";
-    } else if (!capacity || isNaN(capacity) || parseInt(capacity) <= 0) {
-        errorMsg = "❌ Invalid Capacity. Must be a number greater than 0.";
+    } else if (!routeId) {
+        errorMsg = "❌ Please select a route.";
+    } else if (!capacity) {
+        errorMsg = "❌ Please select bus capacity.";
     }
 
     if (errorMsg) {
