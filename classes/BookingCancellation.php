@@ -191,7 +191,7 @@ class BookingCancellation {
             error_log("DEBUG: Looking for cancellations for phone: $userPhoneNumber, userId: $userId");
             
             // Query to get user's cancellation history with booking details
-            // Simplified query to avoid column existence check
+            // Use Origin and Destination from Booking table directly (same as cancel booking list)
             $sql = "SELECT 
                         bc.ID as cancellation_id,
                         bc.BookingID,
@@ -199,17 +199,16 @@ class BookingCancellation {
                         bc.RequestedAt,
                         bc.Status as cancellation_status,
                         bc.ProcessedAt,
-                        '' as AdminNotes,
                         b.SeatNumber,
                         b.Fare,
                         b.BookingTime,
-                        bus.BusNumber,
-                        r.Origin,
-                        r.Destination
+                        b.TravelDate,
+                        b.Origin,
+                        b.Destination,
+                        bus.BusNumber
                     FROM BookingCancellation bc
                     JOIN Booking b ON bc.BookingID = b.ID
                     LEFT JOIN Bus bus ON b.BusID = bus.ID
-                    LEFT JOIN Route r ON bus.RouteId = r.ID
                     WHERE bc.UserID = ? AND b.PhoneNumber = ?
                     ORDER BY bc.RequestedAt DESC";
                     

@@ -240,7 +240,6 @@ try {
                                     <th>Reason</th>
                                     <th>Requested Date</th>
                                     <th>Status</th>
-                                    <th>Admin Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -308,15 +307,6 @@ try {
                                                 <br><small class="text-muted">
                                                     Processed: <?= date('M j, Y', strtotime($cancellation['ProcessedAt'])) ?>
                                                 </small>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($cancellation['AdminNotes']): ?>
-                                                <div class="admin-notes">
-                                                    <?= htmlspecialchars($cancellation['AdminNotes']) ?>
-                                                </div>
-                                            <?php else: ?>
-                                                <span class="text-muted">No notes yet</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
