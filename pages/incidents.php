@@ -31,30 +31,42 @@ $userPhoneNumber = $user['PhoneNumber'] ?? null;
 $userBookings = [];
 if ($userPhoneNumber) {
     $stmt = $conn->prepare("
-        SELECT b.ID, b.BookingTime, b.SeatNumber, b.Fare, 
-               bus.BusNumber, r.Origin, r.Destination
+        SELECT b.ID, b.BookingTime, b.TravelDate, b.SeatNumber, b.Fare, b.Origin, b.Destination,
+               bus.BusNumber
         FROM Booking b
-        JOIN Bus bus ON b.BusID = bus.ID
-        LEFT JOIN Route r ON bus.RouteId = r.ID
+        LEFT JOIN Bus bus ON b.BusID = bus.ID
         WHERE b.PhoneNumber = ? 
           AND b.Status IN ('confirmed', 'completed')
-          AND b.BookingTime < NOW()
-        ORDER BY b.BookingTime DESC
+          AND b.TravelDate <= CURDATE()
+        ORDER BY b.TravelDate DESC, b.BookingTime DESC
         LIMIT 20
     ");
     $stmt->execute([$userPhoneNumber]);
     $userBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Log for debugging
-    error_log("DEBUG: Found " . count($userBookings) . " PAST bookings for phone " . $userPhoneNumber);
+    error_log("DEBUG: Found " . count($userBookings) . " PAST bookings for incidents, phone " . $userPhoneNumber);
 }
 
-// --- Fetching Incident Records ---
+// --- Fetching Incident Records for Current User ---
 $incidentRows = [];
 
-$stmt = $conn->prepare("SELECT ID, BookingId, Description, Status, ReportedDate, ResolvedDate FROM Incident ORDER BY ID DESC");
-$stmt->execute();
-$incidentRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if ($userPhoneNumber) {
+    $stmt = $conn->prepare("
+        SELECT i.ID, i.BookingId, i.Description, i.Status, i.ReportedDate, i.ResolvedDate,
+               b.TravelDate, b.Origin, b.Destination, b.SeatNumber, bus.BusNumber
+        FROM Incident i
+        JOIN Booking b ON i.BookingId = b.ID
+        LEFT JOIN Bus bus ON b.BusID = bus.ID
+        WHERE b.PhoneNumber = ?
+        ORDER BY i.ID DESC
+    ");
+    $stmt->execute([$userPhoneNumber]);
+    $incidentRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Log for debugging
+    error_log("DEBUG: Found " . count($incidentRows) . " incidents for user phone " . $userPhoneNumber);
+}
 
 // Close database connection
 $database->closeConnection();
@@ -157,10 +169,10 @@ $database->closeConnection();
               <?php if (!empty($userBookings)): ?>
                 <?php foreach ($userBookings as $booking): ?>
                   <option value="<?= htmlspecialchars($booking['ID']) ?>" style="color: #333;">
-                    🚌 Bus <?= htmlspecialchars($booking['BusNumber']) ?> | 
+                    🚌 Bus <?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?> | 
                     <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → 
                     <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?> | 
-                    <?= date('M j, Y', strtotime($booking['BookingTime'])) ?> | 
+                    <?= date('M j, Y', strtotime($booking['TravelDate'])) ?> | 
                     Seat <?= htmlspecialchars($booking['SeatNumber']) ?> | 
                     LKR <?= number_format($booking['Fare'], 2) ?>
                   </option>
@@ -190,7 +202,7 @@ $database->closeConnection();
           <tr>
             <th>#</th>
             <th>Incident ID</th>
-            <th>Booking ID</th>
+            <th>Trip Details</th>
             <th>Description</th>
             <th>Status</th>
             <th>Reported Date</th>
@@ -200,23 +212,36 @@ $database->closeConnection();
         <tbody>
           <?php
           if (count($incidentRows) === 0) {
-              echo "<tr><td colspan='7' class='text-center'>No incidents reported yet.</td></tr>";
+              echo "<tr><td colspan='7' class='text-center'>No incidents reported yet. Report an incident for any issues during your completed trips.</td></tr>";
           } else {
               $i = 1;
               foreach ($incidentRows as $incident) {
                   $statusClass = strtolower(str_replace(' ', '', htmlspecialchars($incident['Status'], ENT_QUOTES, 'UTF-8')));
-                  $resolved = $incident['ResolvedDate'] ? htmlspecialchars($incident['ResolvedDate'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                  $resolved = $incident['ResolvedDate'] ? date('M j, Y', strtotime($incident['ResolvedDate'])) : 'N/A';
                   $bookingId = $incident['BookingId'] ? htmlspecialchars($incident['BookingId'], ENT_QUOTES, 'UTF-8') : 'N/A';
                   $description = htmlspecialchars($incident['Description'], ENT_QUOTES, 'UTF-8');
                   $status = htmlspecialchars($incident['Status'], ENT_QUOTES, 'UTF-8');
-                  $reportedDate = htmlspecialchars($incident['ReportedDate'], ENT_QUOTES, 'UTF-8');
+                  $reportedDate = date('M j, Y', strtotime($incident['ReportedDate']));
                   $incidentId = htmlspecialchars($incident['ID'], ENT_QUOTES, 'UTF-8');
+                  
+                  // Trip details
+                  $busNumber = htmlspecialchars($incident['BusNumber'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
+                  $origin = htmlspecialchars($incident['Origin'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
+                  $destination = htmlspecialchars($incident['Destination'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
+                  $travelDate = $incident['TravelDate'] ? date('M j, Y', strtotime($incident['TravelDate'])) : 'N/A';
+                  $seatNumber = htmlspecialchars($incident['SeatNumber'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
                   
                   echo "<tr>
                       <td>{$i}</td>
-                      <td>INC-{$incidentId}</td>
-                      <td>{$bookingId}</td>
-                      <td>{$description}</td>
+                      <td><strong>INC-{$incidentId}</strong><br><small class='text-muted'>Booking: {$bookingId}</small></td>
+                      <td>
+                        <div class='trip-info'>
+                          <strong>Bus {$busNumber}</strong><br>
+                          <span class='text-muted'>{$origin} → {$destination}</span><br>
+                          <small class='text-muted'>Travel: {$travelDate} | Seat: {$seatNumber}</small>
+                        </div>
+                      </td>
+                      <td><div class='incident-description'>{$description}</div></td>
                       <td><span class='status-pill {$statusClass}'>{$status}</span></td>
                       <td>{$reportedDate}</td>
                       <td>{$resolved}</td>
