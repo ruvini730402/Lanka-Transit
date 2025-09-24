@@ -41,8 +41,6 @@ require_once __DIR__ . '/session_config.php';
 							</a>
 							<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
 								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../dashboard/' : 'dashboard/'; ?>"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../pages/bookings.php' : 'pages/bookings.php'; ?>"><i class="fas fa-ticket-alt me-2"></i>My Bookings</a></li>
-								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../pages/profile.php' : 'pages/profile.php'; ?>"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
 								<li><hr class="dropdown-divider"></li>
 								<li><a class="dropdown-item" href="<?php echo (strpos($_SERVER['PHP_SELF'], '/pages/') !== false) ? '../auth/logout.php' : 'auth/logout.php'; ?>"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
 							</ul>
