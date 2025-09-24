@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>🚍 Welcome to Lanka Transit!</h1>
+                        <h1>Welcome to Lanka Transit!</h1>
                     </div>
                     <div class="content">
                         <h2>Hello ' . htmlspecialchars($name) . '! 🎉</h2>
@@ -97,7 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            Email: <span class="highlight">' . htmlspecialchars($email) . '</span><br>
                            Use your password to log in.</p>
                         <p>Start exploring our services, book your next bus journey, and enjoy seamless travel across Sri Lanka! 🚌</p>
-                        <a href="https://yourwebsite.com/pages/login-form.php" class="button">Log In Now</a>
                     </div>
                     <div class="footer">
                         <p>Best regards,<br>The Lanka Transit Team 🌟</p>
