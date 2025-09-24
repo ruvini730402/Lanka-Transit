@@ -312,8 +312,8 @@ class Booking {
      */
     public function saveBooking($userId, $data) {
         $stmt = $this->pdo->prepare("
-            INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status)
-            VALUES (?, ?, ?, ?, ?, 'confirmed')
+            INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status, TravelDate, Origin, Destination)
+            VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?, ?)
         ");
         
         $busId = $data['bus_id'] ?? $data['BusID'] ?? null;
@@ -323,8 +323,13 @@ class Booking {
             $busId,
             $data['seat_number'],
             $data['phone'],
-            $data['fare']
-        ]);        return $result ? $this->pdo->lastInsertId() : false;
+            $data['fare'],
+            $data['travel_date'] ?? null,
+            $data['origin'] ?? null,
+            $data['destination'] ?? null
+        ]);
+        
+        return $result ? $this->pdo->lastInsertId() : false;
     }
     
     /**
