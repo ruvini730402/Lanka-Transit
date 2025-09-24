@@ -393,11 +393,11 @@ if ($conn) {
             </thead>
             <tbody>
               <?php 
-              // Get top 5 frequent routes based on user's phone number, ordered by booking count
+              // Get top 3 frequent routes based on user's phone number, ordered by booking count
               $frequentRoutes = [];
               if ($userPhoneNumber && $conn) {
                   try {
-                      // Query to get top 5 most frequent routes for the user
+                      // Query to get top 3 most frequent routes for the user
                       $stmt = $conn->prepare("
                           SELECT b.Origin, b.Destination, 
                                  MAX(b.TravelDate) as LastUsed, 
@@ -411,7 +411,7 @@ if ($conn) {
                             AND b.Destination IS NOT NULL
                           GROUP BY b.Origin, b.Destination
                           ORDER BY COUNT(*) DESC, MAX(b.TravelDate) DESC
-                          LIMIT 5
+                          LIMIT 3
                       ");
                       $stmt->execute([$userPhoneNumber]);
                       $frequentRoutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
