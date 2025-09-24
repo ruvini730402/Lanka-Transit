@@ -16,7 +16,7 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
-      <a class="navbar-brand fw-bold d-flex align-items-center" style="color: #800000;" href="../index.php">
+      <a class="navbar-brand fw-bold d-flex align-items-center" style="color: #800000;" href="index.php">
         <img src="images/lanka-transit-logo.png" alt="Lanka Transit Logo" style="height: 50px; margin-right: 10px;">
         Lanka Transit
       </a>
@@ -25,11 +25,10 @@
       </button>
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="../index.php">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="../pages/login-form.php">Login</a></li>
-          <li class="nav-item">
-            <a class="nav-link text-danger d-flex align-items-center" href="../auth/Logout.php">
-              <i class="fas fa-sign-out-alt me-1"></i> Logout
+          <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+
+            <a class="nav-link text-danger d-flex align-items-center" href="php/logout.php">
+              <i class="fas fa-sign-out-alt me-1"></i>Logout
             </a>
           </li>
         </ul>
@@ -53,7 +52,7 @@
           <i class="fas fa-bus"></i>
           <div>
             <div class="stat-title">Total Buses</div>
-            <div class="stat-value" id="bus-count">1</div>
+            <div class="stat-value" id="bus-count"></div>
           </div>
         </div>
       </div>
@@ -62,7 +61,7 @@
           <i class="fas fa-users"></i>
           <div>
             <div class="stat-title">Registered Users</div>
-            <div class="stat-value" id="user-count">0</div>
+            <div class="stat-value" id="user-count"></div>
           </div>
         </div>
       </div>
@@ -70,8 +69,9 @@
         <div class="stat-card bg-yellow">
           <i class="fas fa-ticket-alt"></i>
           <div>
+          
             <div class="stat-title">Total Bookings</div>
-            <div class="stat-value" id="booking-count">0</div>
+            <div class="stat-value" id="booking-count"></div>
           </div>
         </div>
       </div>
@@ -127,6 +127,16 @@
   </div>
 </div>
 
+    </div>
+
+    <div class="row g-4 mt-4">
+      <div class="col-md-4">
+            <div class="card-custom bg-routes">
+              <h5>Routes</h5>
+              <p><strong>View and manage all bus routes</strong></p>
+              <a href="route_listing.php" class="btn go-btn">Go</a>
+            </div>
+          </div>
     </div>
   </div>
 
