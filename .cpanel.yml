@@ -30,8 +30,8 @@ deployment:
     
     
     # Set file permissions for security
-    - /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
-    - /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
+    #- /bin/find $DEPLOYPATH -type f -name "*.php" -exec chmod 644 {} \;
+    #- /bin/find $DEPLOYPATH -type d -exec chmod 755 {} \;
     - /bin/chmod 600 $DEPLOYPATH/.env
     - /bin/chmod 644 $DEPLOYPATH/config/*.example.php
     
