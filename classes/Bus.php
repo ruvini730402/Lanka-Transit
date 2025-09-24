@@ -72,7 +72,7 @@ class Bus {
                       SELECT BusID, COUNT(*) as count 
                       FROM Booking 
                       WHERE Status = 'confirmed' 
-                      AND DATE(BookingTime) = :booking_date
+                      AND TravelDate = :booking_date
                       GROUP BY BusID
                   ) booked_seats ON b.ID = booked_seats.BusID
                   WHERE (
@@ -301,7 +301,7 @@ class Bus {
                   LEFT JOIN Booking b ON s.BusID = b.BusID 
                     AND s.SeatNumber = b.SeatNumber 
                     AND b.Status = 'confirmed'
-                    AND DATE(b.BookingTime) = :travel_date
+                    AND b.TravelDate = :travel_date
                   WHERE s.BusID = :bus_id
                   ORDER BY s.SeatNumber";
         
