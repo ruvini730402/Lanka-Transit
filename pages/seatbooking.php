@@ -98,13 +98,6 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
  <div class="row mb-4">
    <div class="col-12">
      <div class="card shadow-sm">
-       <div class="card-body">
-         <h5 class="card-title title-dark-blue">Choose Bus Model</h5>
-         <select id="bus-model" class="form-select">
-           <option value="49">49 Seater Model</option>
-           <option value="54">54 Seater Model</option>
-         </select>
-       </div>
      </div>
    </div>
  </div>
@@ -118,9 +111,6 @@ if (empty($bus_id) || empty($travel_date) || empty($origin) || empty($destinatio
         <div class="driver-area">🚍 Driver</div>
       </div>
       <div class="seat-grid"></div>
-      <!-- <div class="bus-rear">
-        <div class="rear-entrance">🚪 Rear Entrance</div>
-      </div> -->
     </div>
   </div>
 
