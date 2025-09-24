@@ -2,7 +2,7 @@
 /**
  * Booking Confirmation - Save to Database (Only after successful payment)
  */
-session_start();
+require_once '../includes/session_config.php';
 require_once '../classes/Database.php';
 require_once '../classes/Payment.php';
 require_once '../classes/Booking.php';
@@ -58,14 +58,8 @@ if (!empty($order_id)) {
                 $success = true;
                 $bookingReference = $result['booking_reference'];
                 
-                // Create payment record using Payment class
-                $payment->createPayment(
-                    $result['booking_id'], 
-                    $paymentStatus['PaymentMethod'] ?? 'PayHere Gateway',
-                    'success',
-                    $bookingData['fare'],
-                    $order_id
-                );
+                // Payment record will be created via PayHere notification system
+                // Don't create payment records directly here
                 
                 // Clear session data
                 clearSessionData();
@@ -93,15 +87,8 @@ if (!empty($order_id)) {
             $success = true;
             $bookingReference = $result['booking_reference'];
             
-            // Create demo payment record using Payment class
-            $payment = new Payment();
-            $payment->createPayment(
-                $result['booking_id'],
-                'Demo',
-                'success', 
-                $bookingData['fare'],
-                'DEMO-' . time()
-            );
+            // For demo mode, we don't create payment records directly
+            // Payment handling is done through PayHere notification system only
             
             // Clear session data
             clearSessionData();

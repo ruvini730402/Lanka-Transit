@@ -1,6 +1,6 @@
 <?php
 // Start session first
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 // DEBUG: Check what's in the session (remove this after testing)
 error_log("DEBUG SESSION: " . print_r($_SESSION, true));
@@ -90,32 +90,29 @@ $userPreferences = ['isReturningCustomer' => false, 'totalBookings' => 0];
 if ($userPhoneNumber && $conn) {
     try {
         // Get user's bookings using phone number from Booking table
-        // Join with Bus and Route tables to get complete booking details
+        // Use TravelDate, Origin, and Destination from Booking table directly
         $stmt = $conn->prepare("
-            SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-                   bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID,
+            SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status, b.TravelDate, b.Origin, b.Destination,
+                   bus.BusNumber, bus.ID as BusID,
                    f.ID as FeedbackID, f.Rating, f.Comment
             FROM Booking b
             JOIN Bus bus ON b.BusID = bus.ID
-            LEFT JOIN Route r ON bus.RouteId = r.ID
-            LEFT JOIN Feedback f ON f.BusId = bus.ID 
-                                  AND f.UserId = ? 
-                                  AND DATE(f.CreatedDate) = DATE(b.BookingTime)
+            LEFT JOIN Feedback f ON f.BookingId = b.ID
             WHERE b.PhoneNumber = ? AND b.Status IN ('confirmed', 'completed')
-            ORDER BY b.BookingTime ASC
+            ORDER BY b.TravelDate ASC, b.BookingTime ASC
         ");
-        $stmt->execute([$userId, $userPhoneNumber]);
+        $stmt->execute([$userPhoneNumber]);
         $allBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Separate bookings into upcoming and history based on booking time
-        $currentDateTime = date('Y-m-d H:i:s');
+        // Separate bookings into upcoming and history based on travel date
+        $currentDate = date('Y-m-d');
         
         foreach ($allBookings as $booking) {
-            $bookingDateTime = $booking['BookingTime'];
+            $travelDate = $booking['TravelDate'];
             
-            // Compare booking time with current time to determine if it's upcoming or past
-            if ($bookingDateTime > $currentDateTime) {
-                // Future bookings go to upcoming
+            // Compare travel date with current date to determine if it's upcoming or past
+            if ($travelDate >= $currentDate) {
+                // Future or today's bookings go to upcoming
                 $upcomingBookings[] = $booking;
             } else {
                 // Past bookings go to history
@@ -123,14 +120,18 @@ if ($userPhoneNumber && $conn) {
             }
         }
         
-        // Sort upcoming bookings by time (earliest first)
+        // Sort upcoming bookings by travel date (earliest first)
         usort($upcomingBookings, function($a, $b) {
-            return strtotime($a['BookingTime']) - strtotime($b['BookingTime']);
+            $dateCompare = strtotime($a['TravelDate']) - strtotime($b['TravelDate']);
+            // If travel dates are same, sort by booking time
+            return $dateCompare === 0 ? strtotime($a['BookingTime']) - strtotime($b['BookingTime']) : $dateCompare;
         });
         
-        // Sort booking history by time (latest first)
+        // Sort booking history by travel date (latest first)
         usort($bookingHistory, function($a, $b) {
-            return strtotime($b['BookingTime']) - strtotime($a['BookingTime']);
+            $dateCompare = strtotime($b['TravelDate']) - strtotime($a['TravelDate']);
+            // If travel dates are same, sort by booking time (latest first)
+            return $dateCompare === 0 ? strtotime($b['BookingTime']) - strtotime($a['BookingTime']) : $dateCompare;
         });
         
         // Set recent booking for other sections if needed
@@ -299,7 +300,7 @@ if ($conn) {
                 <?php foreach ($upcomingBookings as $booking): ?>
                 <tr>
                   <td><?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></td>
-                  <td><?= date('M j, Y \a\t g:i A', strtotime($booking['BookingTime'])) ?></td>
+                  <td><?= date('M j, Y', strtotime($booking['TravelDate'])) ?></td>
                   <td><?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
@@ -333,10 +334,10 @@ if ($conn) {
             </thead>
             <tbody>
               <?php if (!empty($bookingHistory)): ?>
-                <?php foreach (array_slice($bookingHistory, 0, 5) as $booking): ?>
-                <tr>
+                <?php foreach ($bookingHistory as $index => $booking): ?>
+                <tr <?= $index >= 5 ? 'class="booking-history-extra" style="display: none;"' : '' ?>>
                   <td><?= htmlspecialchars($booking['BusNumber'] ?? 'N/A') ?></td>
-                  <td><?= date('Y-m-d', strtotime($booking['BookingTime'])) ?></td>
+                  <td><?= date('Y-m-d', strtotime($booking['TravelDate'])) ?></td>
                   <td><?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?></td>
                   <td><?= htmlspecialchars($booking['SeatNumber']) ?></td>
@@ -367,6 +368,13 @@ if ($conn) {
             </tbody>
           </table>
         </div>
+        <?php if (!empty($bookingHistory) && count($bookingHistory) > 5): ?>
+        <div style="text-align: center; margin-top: 15px;">
+          <button id="seeMoreBookingsBtn" class="see-more-btn" onclick="toggleBookingHistory()">
+            <i class="fas fa-chevron-down"></i> See More (<?= count($bookingHistory) - 5 ?> more trips)
+          </button>
+        </div>
+        <?php endif; ?>
       </div>
 
       <div class="section">
@@ -385,26 +393,25 @@ if ($conn) {
             </thead>
             <tbody>
               <?php 
-              // Get top 5 frequent routes based on user's phone number, ordered by booking count
+              // Get top 3 frequent routes based on user's phone number, ordered by booking count
               $frequentRoutes = [];
               if ($userPhoneNumber && $conn) {
                   try {
-                      // Query to get top 5 most frequent routes for the user
+                      // Query to get top 3 most frequent routes for the user
                       $stmt = $conn->prepare("
-                          SELECT r.Origin, r.Destination, 
-                                 MAX(b.BookingTime) as LastUsed, 
+                          SELECT b.Origin, b.Destination, 
+                                 MAX(b.TravelDate) as LastUsed, 
                                  COUNT(*) as TimesBooked,
                                  AVG(b.Fare) as AvgFare
                           FROM Booking b
                           JOIN Bus bus ON b.BusID = bus.ID
-                          LEFT JOIN Route r ON bus.RouteId = r.ID
                           WHERE b.PhoneNumber = ? 
                             AND b.Status IN ('confirmed', 'completed')
-                            AND r.Origin IS NOT NULL 
-                            AND r.Destination IS NOT NULL
-                          GROUP BY r.Origin, r.Destination
-                          ORDER BY COUNT(*) DESC, MAX(b.BookingTime) DESC
-                          LIMIT 5
+                            AND b.Origin IS NOT NULL 
+                            AND b.Destination IS NOT NULL
+                          GROUP BY b.Origin, b.Destination
+                          ORDER BY COUNT(*) DESC, MAX(b.TravelDate) DESC
+                          LIMIT 3
                       ");
                       $stmt->execute([$userPhoneNumber]);
                       $frequentRoutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -441,13 +448,8 @@ if ($conn) {
                       <input type="hidden" name="travel_date" value="<?= date('Y-m-d') ?>">
                       <input type="hidden" name="max_fare" value="<?= ceil($route['AvgFare'] * 1.2) ?>">
                       <button type="submit" class="rebook-btn">
-                        <?php if ($index === 0): ?>
-                          <i class="fas fa-star icon-with-margin"></i>
-                          Book Again
-                        <?php else: ?>
-                          <i class="fas fa-redo icon-with-margin"></i>
-                          Rebook
-                        <?php endif; ?>
+                        <i class="fas fa-star icon-with-margin"></i>
+                        Book Again
                       </button>
                     </form>
                   </td>
@@ -489,14 +491,13 @@ if ($conn) {
               try {
                   // Get all confirmed/completed bookings for receipt generation
                   $stmt = $conn->prepare("
-                      SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status,
-                             bus.BusNumber, r.Origin, r.Destination, bus.ID as BusID
+                      SELECT b.ID, b.SeatNumber, b.Fare, b.BookingTime, b.Status, b.TravelDate, b.Origin, b.Destination,
+                             bus.BusNumber, bus.ID as BusID
                       FROM Booking b
                       JOIN Bus bus ON b.BusID = bus.ID
-                      LEFT JOIN Route r ON bus.RouteId = r.ID
                       WHERE b.PhoneNumber = ? 
                         AND b.Status IN ('confirmed', 'completed')
-                      ORDER BY b.BookingTime DESC
+                      ORDER BY b.TravelDate DESC, b.BookingTime DESC
                       LIMIT 10
                   ");
                   $stmt->execute([$userPhoneNumber]);
@@ -527,7 +528,7 @@ if ($conn) {
                     </p>
                     <p class="receipt-date">
                       <i class="fas fa-calendar-check" style="margin-right: 5px; color: #4a90e2;"></i>
-                      <?= date('d M Y', strtotime($booking['BookingTime'])) ?>
+                      <?= date('d M Y', strtotime($booking['TravelDate'])) ?>
                       <span style="margin: 0 8px;">•</span>
                       <?= htmlspecialchars($booking['Origin'] ?? 'N/A') ?> → <?= htmlspecialchars($booking['Destination'] ?? 'N/A') ?>
                     </p>
@@ -540,7 +541,7 @@ if ($conn) {
                     </p>
                   </div>
                 </div>
-                <a href="ticket_pdf.php?ref=LT-<?= str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=<?= urlencode($userPhoneNumber) ?>&origin=<?= urlencode($booking['Origin'] ?? '') ?>&destination=<?= urlencode($booking['Destination'] ?? '') ?>&date=<?= urlencode(date('Y-m-d', strtotime($booking['BookingTime']))) ?>&bus=<?= urlencode($booking['BusNumber'] ?? '') ?>&seat=<?= urlencode($booking['SeatNumber']) ?>&fare=<?= urlencode($booking['Fare']) ?>" 
+                <a href="ticket_pdf.php?ref=LT-<?= str_pad($booking['ID'], 6, '0', STR_PAD_LEFT) ?>&name=<?= urlencode($username) ?>&phone=<?= urlencode($userPhoneNumber) ?>&origin=<?= urlencode($booking['Origin'] ?? '') ?>&destination=<?= urlencode($booking['Destination'] ?? '') ?>&date=<?= urlencode($booking['TravelDate']) ?>&bus=<?= urlencode($booking['BusNumber'] ?? '') ?>&seat=<?= urlencode($booking['SeatNumber']) ?>&fare=<?= urlencode($booking['Fare']) ?>" 
                    class="download-btn" target="_blank">
                   <i class="fas fa-download" style="margin-right: 5px;"></i>
                   Download PDF
@@ -745,7 +746,65 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
         submitBtn.disabled = false;
     });
 });
+
+// Booking History "See More" functionality
+function toggleBookingHistory() {
+    const extraBookings = document.querySelectorAll('.booking-history-extra');
+    const seeMoreBtn = document.getElementById('seeMoreBookingsBtn');
+    const icon = seeMoreBtn.querySelector('i');
+    
+    // Check if bookings are currently hidden
+    const isHidden = extraBookings[0] && extraBookings[0].style.display === 'none';
+    
+    if (isHidden) {
+        // Show additional bookings
+        extraBookings.forEach(booking => {
+            booking.style.display = 'table-row';
+        });
+        icon.className = 'fas fa-chevron-up';
+        seeMoreBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less';
+    } else {
+        // Hide additional bookings
+        extraBookings.forEach(booking => {
+            booking.style.display = 'none';
+        });
+        icon.className = 'fas fa-chevron-down';
+        const hiddenCount = extraBookings.length;
+        seeMoreBtn.innerHTML = `<i class="fas fa-chevron-down"></i> See More (${hiddenCount} more trips)`;
+    }
+}
 </script>
+
+<!-- Add custom CSS for the see-more button -->
+<style>
+.see-more-btn {
+    background: linear-gradient(135deg, #4B0000, #6B0000);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.see-more-btn:hover {
+    background: linear-gradient(135deg, #6B0000, #8B0000);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.see-more-btn:active {
+    transform: translateY(0);
+}
+
+.see-more-btn i {
+    margin-right: 5px;
+    transition: transform 0.3s ease;
+}
+</style>
   
 </body>
 </html>

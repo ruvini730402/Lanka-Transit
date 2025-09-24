@@ -1,8 +1,36 @@
 <?php
-// Include announcement class and fetch recent announcements
+// Include session configuration
+require_once 'includes/session_config.php';
+
+// Include necessary classes
 require_once 'classes/Announcement.php';
+require_once 'classes/Route.php';
+
+// Handle error messages from redirects
+$error_message = '';
+if (isset($_GET['error'])) {
+    switch ($_GET['error']) {
+        case 'no_booking_data':
+            $error_message = 'Your booking session has expired. Please start a new search to book your ticket.';
+            break;
+        case 'missing_params':
+            $error_message = 'Some required information is missing. Please try your search again.';
+            break;
+        case 'invalid_request':
+            $error_message = 'Invalid request. Please start a new search.';
+            break;
+        default:
+            $error_message = 'An error occurred. Please try again.';
+    }
+}
+
+// Fetch recent announcements
 $announcement = new Announcement();
 $recentAnnouncements = $announcement->getRecentAnnouncements(3); // Get 3 most recent announcements
+
+// Fetch dynamic locations from Route class
+$route = new Route();
+$locationOptions = $route->getLocationsAsSelectOptions();
 
 // Include header
 include 'includes/header.php';
@@ -18,6 +46,21 @@ include 'includes/header.php';
             </div>
         </section>
 
+        <!-- Error Message Display -->
+        <?php if ($error_message): ?>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <?php echo htmlspecialchars($error_message); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Search Form -->
         <div class="container">
             <div class="row justify-content-center">
@@ -31,15 +74,7 @@ include 'includes/header.php';
                                     </label>
                                     <select class="form-select" id="origin" name="origin" required>
                                         <option value="">Select Origin</option>
-                                        <option value="Badulla">Badulla</option>
-                                        <option value="Ella">Ella</option>
-                                        <option value="Wellawaya">Wellawaya</option>
-                                        <option value="Thanamalvila">Thanamalvila</option>
-                                        <option value="Lunugamvehera">Lunugamvehera</option>
-                                        <option value="Tangalle">Tangalle</option>
-                                        <option value="Dickwella">Dickwella</option>
-                                        <option value="Devinuwara">Devinuwara</option>
-                                        <option value="Matara">Matara</option>
+                                        <?php echo $locationOptions; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6 col-lg-3">
@@ -48,15 +83,7 @@ include 'includes/header.php';
                                     </label>
                                     <select class="form-select" id="destination" name="destination" required>
                                         <option value="">Select Destination</option>
-                                        <option value="Badulla">Badulla</option>
-                                        <option value="Ella">Ella</option>
-                                        <option value="Wellawaya">Wellawaya</option>
-                                        <option value="Thanamalvila">Thanamalvila</option>
-                                        <option value="Lunugamvehera">Lunugamvehera</option>
-                                        <option value="Tangalle">Tangalle</option>
-                                        <option value="Dickwella">Dickwella</option>
-                                        <option value="Devinuwara">Devinuwara</option>
-                                        <option value="Matara">Matara</option>
+                                        <?php echo $locationOptions; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6 col-lg-2">

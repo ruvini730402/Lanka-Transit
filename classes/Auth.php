@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/User.php';
-require_once __DIR__ . '/database[WRONG].php';
+require_once __DIR__ . '/Database.php';
 
 class Auth {
     private $user;
@@ -8,7 +8,8 @@ class Auth {
     
     public function __construct() {
         $this->user = new User();
-        $this->pdo = Database::getConnection();
+        $database = new Database();
+        $this->pdo = $database->getConnection();
     }
 
     public function login($email, $password) {

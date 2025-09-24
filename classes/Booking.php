@@ -69,11 +69,8 @@ class Booking {
             // Start transaction
             $this->pdo->beginTransaction();
             
-            // Create user if needed
-            $userId = $this->createOrGetUser($data);
-            if (!$userId) {
-                throw new Exception("Failed to create or retrieve user");
-            }
+            // Skip user creation - save booking with NULL UserId
+            $userId = null;
             
             // Create booking record
             $bookingId = $this->saveBooking($userId, $data);
@@ -315,18 +312,21 @@ class Booking {
      */
     public function saveBooking($userId, $data) {
         $stmt = $this->pdo->prepare("
-            INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status) 
-            VALUES (?, ?, ?, ?, ?, 'confirmed')
+            INSERT INTO Booking (UserId, BusID, SeatNumber, PhoneNumber, Fare, Status, TravelDate, Origin, Destination)
+            VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?, ?)
         ");
         
         $busId = $data['bus_id'] ?? $data['BusID'] ?? null;
         
         $result = $stmt->execute([
-            $userId,
+            $userId, // Will be NULL - no user creation
             $busId,
             $data['seat_number'],
             $data['phone'],
-            $data['fare']
+            $data['fare'],
+            $data['travel_date'] ?? null,
+            $data['origin'] ?? null,
+            $data['destination'] ?? null
         ]);
         
         return $result ? $this->pdo->lastInsertId() : false;

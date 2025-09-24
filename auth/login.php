@@ -1,7 +1,7 @@
 
 
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);

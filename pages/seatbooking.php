@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once '../includes/session_config.php';
 
 // Get booking parameters from URL
 $bus_id = $_GET['bus_id'] ?? '';
