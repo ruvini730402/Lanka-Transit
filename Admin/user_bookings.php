@@ -63,7 +63,6 @@ try {
                     <th>Travel Date</th>
                     <th>Route</th>
                     <th>Status</th>
-                    <th>Payment</th>
                     <th>Booked At</th>
                     <th>Update</th>
                     <th>Delete</th>
@@ -99,16 +98,6 @@ try {
                             ?>">
                                 <?= htmlspecialchars($booking['Status']) ?>
                             </span>
-                        </td>
-                        <td>
-                            <?php if ($booking['PaymentAmount']): ?>
-                                <span class="badge <?= $booking['PaymentStatus'] == 'success' ? 'bg-success' : 'bg-danger' ?>">
-                                    LKR <?= number_format($booking['PaymentAmount'], 2) ?>
-                                </span>
-                                <br><small class="text-muted"><?= htmlspecialchars($booking['PaymentMethod']) ?></small>
-                            <?php else: ?>
-                                <em class="text-muted">No payment</em>
-                            <?php endif; ?>
                         </td>
                         <td>
                             <small><?= date('Y-m-d H:i', strtotime($booking['BookingTime'])) ?></small>
@@ -147,7 +136,7 @@ try {
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="13" class="text-center text-muted">No bookings found.</td>
+                    <td colspan="12" class="text-center text-muted">No bookings found.</td>
                 </tr>
             <?php endif; ?>
             </tbody>
