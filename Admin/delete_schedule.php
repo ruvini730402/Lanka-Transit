@@ -4,6 +4,7 @@
  * Handles schedule deletion with business rule enforcement
  */
 
+require_once '../classes/Database.php';
 require_once '../classes/Schedule.php';
 
 // Check if schedule ID is provided
@@ -15,7 +16,9 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $scheduleId = (int)$_GET['id'];
 
 try {
-    $schedule = new Schedule();
+    $database = new Database();
+    $connection = $database->getConnection();
+    $schedule = new Schedule($connection);
     
     // Get schedule details first for logging
     $scheduleDetails = $schedule->getScheduleById($scheduleId);

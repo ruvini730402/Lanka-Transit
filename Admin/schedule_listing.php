@@ -460,7 +460,7 @@ try {
 </div>
 
 <!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 // Auto-set arrival date when departure date changes
@@ -478,8 +478,19 @@ document.getElementById('edit_departure_date').addEventListener('change', functi
 
 // Edit schedule function
 function editSchedule(scheduleId) {
+    // Show loading indication
+    const editBtn = document.querySelector(`[onclick="editSchedule(${scheduleId})"]`);
+    const originalText = editBtn.innerHTML;
+    editBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    editBtn.disabled = true;
+    
     fetch(`get_schedule.php?id=${scheduleId}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 const schedule = data.schedule;
@@ -493,55 +504,117 @@ function editSchedule(scheduleId) {
                 
                 new bootstrap.Modal(document.getElementById('editScheduleModal')).show();
             } else {
-                alert('Error loading schedule details: ' + data.message);
+                alert('❌ Error loading schedule details: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while loading schedule details.');
+            console.error('Error fetching schedule:', error);
+            alert('❌ Failed to load schedule details. Please check your connection and try again.');
+        })
+        .finally(() => {
+            // Restore button state
+            editBtn.innerHTML = originalText;
+            editBtn.disabled = false;
         });
 }
 
 // Delete schedule function
 function deleteSchedule(scheduleId, busNumber, date) {
-    if (confirm(`Are you sure you want to delete the schedule for bus ${busNumber} on ${date}?`)) {
+    const confirmMessage = `⚠️ Are you sure you want to delete the schedule for bus ${busNumber} on ${date}?\n\nThis action cannot be undone and will affect all related bookings.`;
+    
+    if (confirm(confirmMessage)) {
+        // Show loading indication
+        const deleteBtn = document.querySelector(`[onclick="deleteSchedule(${scheduleId}, '${busNumber}', '${date}')"]`);
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        deleteBtn.disabled = true;
+        
         fetch(`delete_schedule.php?id=${scheduleId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
+                    alert('✅ ' + data.message);
                     location.reload();
                 } else {
-                    alert('Error: ' + data.message);
+                    alert('❌ Error: ' + (data.message || 'Unknown error occurred'));
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while deleting the schedule.');
+                console.error('Error deleting schedule:', error);
+                alert('❌ Failed to delete schedule. Please check your connection and try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
             });
     }
 }
 
 // View bookings function
 function viewBookings(scheduleId) {
-    window.open(`schedule_bookings.php?schedule_id=${scheduleId}`, '_blank');
+    try {
+        const bookingWindow = window.open(`schedule_bookings.php?schedule_id=${scheduleId}`, '_blank');
+        if (!bookingWindow) {
+            alert('❌ Pop-up blocked! Please allow pop-ups for this site or check your browser settings.');
+        }
+    } catch (error) {
+        console.error('Error opening bookings window:', error);
+        alert('❌ Failed to open bookings window. Please try again.');
+    }
 }
 
-// Form validation
+// Form validation with improved error handling
 document.getElementById('addScheduleForm').addEventListener('submit', function(e) {
     const departureDate = document.getElementById('departure_date').value;
     const departureTime = document.getElementById('departure_time').value;
     const arrivalDate = document.getElementById('arrival_date').value;
     const arrivalTime = document.getElementById('arrival_time').value;
+    const busId = document.getElementById('bus_id').value;
+    const fare = document.getElementById('fare').value;
     
-    const departureDateTime = new Date(departureDate + ' ' + departureTime);
-    const arrivalDateTime = new Date(arrivalDate + ' ' + arrivalTime);
+    let errors = [];
     
-    if (departureDateTime >= arrivalDateTime) {
+    // Validate required fields
+    if (!busId) errors.push('Please select a bus');
+    if (!departureDate) errors.push('Please select departure date');
+    if (!departureTime) errors.push('Please select departure time');
+    if (!arrivalDate) errors.push('Please select arrival date');
+    if (!arrivalTime) errors.push('Please select arrival time');
+    if (!fare || fare <= 0) errors.push('Please enter a valid fare amount');
+    
+    // Validate date/time logic
+    if (departureDate && departureTime && arrivalDate && arrivalTime) {
+        const departureDateTime = new Date(departureDate + ' ' + departureTime);
+        const arrivalDateTime = new Date(arrivalDate + ' ' + arrivalTime);
+        
+        if (departureDateTime >= arrivalDateTime) {
+            errors.push('Arrival time must be after departure time');
+        }
+        
+        // Check if departure is in the future
+        const now = new Date();
+        if (departureDateTime <= now) {
+            errors.push('Departure time must be in the future');
+        }
+    }
+    
+    if (errors.length > 0) {
         e.preventDefault();
-        alert('Arrival time must be after departure time.');
+        alert('❌ Please fix the following errors:\n\n• ' + errors.join('\n• '));
         return false;
     }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    submitBtn.disabled = true;
 });
 
 document.getElementById('editScheduleForm').addEventListener('submit', function(e) {
@@ -549,15 +622,40 @@ document.getElementById('editScheduleForm').addEventListener('submit', function(
     const departureTime = document.getElementById('edit_departure_time').value;
     const arrivalDate = document.getElementById('edit_arrival_date').value;
     const arrivalTime = document.getElementById('edit_arrival_time').value;
+    const busId = document.getElementById('edit_bus_id').value;
+    const fare = document.getElementById('edit_fare').value;
     
-    const departureDateTime = new Date(departureDate + ' ' + departureTime);
-    const arrivalDateTime = new Date(arrivalDate + ' ' + arrivalTime);
+    let errors = [];
     
-    if (departureDateTime >= arrivalDateTime) {
+    // Validate required fields
+    if (!busId) errors.push('Please select a bus');
+    if (!departureDate) errors.push('Please select departure date');
+    if (!departureTime) errors.push('Please select departure time');
+    if (!arrivalDate) errors.push('Please select arrival date');
+    if (!arrivalTime) errors.push('Please select arrival time');
+    if (!fare || fare <= 0) errors.push('Please enter a valid fare amount');
+    
+    // Validate date/time logic
+    if (departureDate && departureTime && arrivalDate && arrivalTime) {
+        const departureDateTime = new Date(departureDate + ' ' + departureTime);
+        const arrivalDateTime = new Date(arrivalDate + ' ' + arrivalTime);
+        
+        if (departureDateTime >= arrivalDateTime) {
+            errors.push('Arrival time must be after departure time');
+        }
+    }
+    
+    if (errors.length > 0) {
         e.preventDefault();
-        alert('Arrival time must be after departure time.');
+        alert('❌ Please fix the following errors:\n\n• ' + errors.join('\n• '));
         return false;
     }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    submitBtn.disabled = true;
 });
 </script>
 

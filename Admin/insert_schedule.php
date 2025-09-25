@@ -4,6 +4,7 @@
  * Handles new schedule creation with validation and constraint enforcement
  */
 
+require_once '../classes/Database.php';
 require_once '../classes/Schedule.php';
 
 // Process form submission
@@ -58,7 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($errors)) {
         try {
-            $schedule = new Schedule();
+            $database = new Database();
+            $connection = $database->getConnection();
+            $schedule = new Schedule($connection);
             
             // Check if bus already has a schedule on this date
             $scheduleDate = date('Y-m-d', strtotime($departureDateTime));
