@@ -7,7 +7,18 @@ class Bus {
     }
 
     public function getAll() {
-        $stmt = $this->conn->prepare("SELECT * FROM Bus");
+        $stmt = $this->conn->prepare("
+            SELECT 
+                b.ID,
+                b.BusNumber,
+                r.Origin,
+                r.Destination,
+                b.Capacity,
+                b.LastUpdate
+            FROM Bus b
+            LEFT JOIN Route r ON b.RouteId = r.ID
+            ORDER BY b.BusNumber
+        ");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

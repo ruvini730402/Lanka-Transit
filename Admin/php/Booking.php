@@ -33,13 +33,13 @@ class Booking {
                 p.PaymentMethod,
                 p.Status as PaymentStatus,
                 p.PaymentDate,
-                pg.Gender
+                b2.gender as Gender
             FROM Booking b
             LEFT JOIN User u ON b.UserId = u.ID  
             LEFT JOIN Bus bus ON b.BusID = bus.ID
             LEFT JOIN Route r ON bus.RouteId = r.ID
             LEFT JOIN Payment p ON b.ID = p.BookingId
-            LEFT JOIN PassengerGender pg ON b.ID = pg.BookingId
+            LEFT JOIN Booking_2 b2 ON b.ID = b2.booking_id
             ORDER BY b.BookingTime DESC
         ");
         $stmt->execute();
@@ -59,13 +59,13 @@ class Booking {
                 p.PaymentMethod,
                 p.Status as PaymentStatus,
                 p.PaymentDate,
-                pg.Gender
+                b2.gender
             FROM Booking b
             LEFT JOIN User u ON b.UserId = u.ID  
             LEFT JOIN Bus bus ON b.BusID = bus.ID
             LEFT JOIN Route r ON bus.RouteId = r.ID
             LEFT JOIN Payment p ON b.ID = p.BookingId
-            LEFT JOIN PassengerGender pg ON b.ID = pg.BookingId
+            LEFT JOIN Booking_2 b2 ON b.ID = b2.booking_id
             WHERE b.ID = ?
         ");
         $stmt->execute([$id]);
@@ -90,7 +90,7 @@ class Booking {
             $stmt->execute([$id]);
             
             // Delete related gender records
-            $stmt = $this->conn->prepare("DELETE FROM PassengerGender WHERE BookingId = ?");
+            $stmt = $this->conn->prepare("DELETE FROM Booking_2 WHERE booking_id = ?");
             $stmt->execute([$id]);
             
             // Delete booking
@@ -140,7 +140,7 @@ class Booking {
             
             // Insert gender if provided
             if ($gender) {
-                $stmt = $this->conn->prepare("INSERT INTO PassengerGender (BookingId, Gender) VALUES (?, ?)");
+                $stmt = $this->conn->prepare("INSERT INTO Booking_2 (booking_id, gender) VALUES (?, ?)");
                 $stmt->execute([$bookingId, $gender]);
             }
             
@@ -167,8 +167,8 @@ class Booking {
             // Update or insert gender
             if ($gender) {
                 $stmt = $this->conn->prepare("
-                    INSERT INTO PassengerGender (BookingId, Gender) VALUES (?, ?) 
-                    ON DUPLICATE KEY UPDATE Gender = ?
+                    INSERT INTO Booking_2 (booking_id, gender) VALUES (?, ?) 
+                    ON DUPLICATE KEY UPDATE gender = ?
                 ");
                 $stmt->execute([$id, $gender, $gender]);
             }

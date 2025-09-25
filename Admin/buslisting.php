@@ -46,6 +46,7 @@ $currentAdminId = $_SESSION['admin_id'] ?? 1;
     <title>All Buses</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -74,41 +75,55 @@ $currentAdminId = $_SESSION['admin_id'] ?? 1;
     <table class="table table-bordered table-hover">
         <thead class="table-dark">
         <tr>
-            <th>ID</th>
-            <th>Bus Number</th>
-            <th>Route ID</th>
-            <th>Admin ID</th>
-            <th>Capacity</th>
-            <th>Last Update</th>
-            <th>Update</th>
-            <th>Delete</th>
+            <th><i class="fas fa-bus"></i> Bus Number</th>
+            <th><i class="fas fa-map-marker-alt"></i> Origin</th>
+            <th><i class="fas fa-flag-checkered"></i> Destination</th>
+            <th><i class="fas fa-users"></i> Capacity</th>
+            <th><i class="fas fa-clock"></i> Last Update</th>
+            <th><i class="fas fa-cogs"></i> Actions</th>
         </tr>
         </thead>
         <tbody>
         <?php if (!empty($buses)): ?>
             <?php foreach ($buses as $bus): ?>
                 <tr>
-                    <td><?= htmlspecialchars($bus['ID']) ?></td>
-                    <td><?= htmlspecialchars($bus['BusNumber']) ?></td>
-                    <td><?= htmlspecialchars($bus['RouteId']) ?></td>
-                    <td><?= htmlspecialchars($bus['AdminId']) ?></td>
-                    <td><?= htmlspecialchars($bus['Capacity']) ?></td>
-                    <td><?= htmlspecialchars($bus['LastUpdate']) ?></td>
                     <td>
-                        <a href="php/update_buslist.php?bus_no=<?= urlencode($bus['BusNumber']) ?>" class="btn btn-success btn-sm">Update</a>
+                        <strong class="text-primary"><?= htmlspecialchars($bus['BusNumber']) ?></strong>
                     </td>
                     <td>
-                        <button class="btn btn-danger btn-sm delete-btn" 
-                                data-busno="<?= htmlspecialchars($bus['BusNumber']) ?>"
-                                data-bs-toggle="modal" 
-                                data-bs-target="#deleteModal">
-                            Delete
-                        </button>
+                        <span class="badge bg-info text-dark"><?= htmlspecialchars($bus['Origin'] ?? 'N/A') ?></span>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning text-dark"><?= htmlspecialchars($bus['Destination'] ?? 'N/A') ?></span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary"><?= htmlspecialchars($bus['Capacity']) ?> seats</span>
+                    </td>
+                    <td>
+                        <small class="text-muted"><?= htmlspecialchars($bus['LastUpdate']) ?></small>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="php/update_buslist.php?bus_no=<?= urlencode($bus['BusNumber']) ?>" 
+                               class="btn btn-success btn-sm" title="Update Bus">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-danger btn-sm delete-btn" 
+                                    data-busno="<?= htmlspecialchars($bus['BusNumber']) ?>"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteModal"
+                                    title="Delete Bus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
         <?php else: ?>
-            <tr><td colspan="8" class="text-center">No buses found.</td></tr>
+            <tr><td colspan="6" class="text-center">
+                <i class="fas fa-bus text-muted"></i><br>
+                <span class="text-muted">No buses found.</span>
+            </td></tr>
         <?php endif; ?>
         </tbody>
     </table>
