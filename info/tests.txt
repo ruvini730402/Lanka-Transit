@@ -121,61 +121,61 @@ Test Case 2.11: Update Password - Valid User
 
 Test Case 3.1: Bus Search - Direct Route Match
 - Test: searchBusesWithFilters() with terminal-to-terminal route
-- Input: ["Colombo", "Kandy", "2025-09-25"]
-- Result: List of buses with Origin='Colombo', Destination='Kandy'
+- Input: ["Badulla", "Matara", "2025-09-25"]
+- Result: List of buses with Origin='Badulla', Destination='Matara'
 - Validation: Only direct routes returned, available seats calculated correctly
 
 Test Case 3.2: Bus Search - Origin Terminal to Stop
 - Test: searchBusesWithFilters() with terminal to intermediate stop
-- Input: ["Colombo", "Kegalle", "2025-09-25"]
-- Result: Buses where Origin='Colombo' and 'Kegalle' in Stops
+- Input: ["Badulla", "Ella", "2025-09-25"]
+- Result: Buses where Origin='Badulla' and 'Ella' in Stops
 - Validation: Route matching logic includes intermediate stops
 
 Test Case 3.3: Bus Search - Stop to Terminal
 - Test: searchBusesWithFilters() with intermediate stop to terminal
-- Input: ["Kegalle", "Kandy", "2025-09-25"]
-- Result: Buses where 'Kegalle' in Stops and Destination='Kandy'
+- Input: ["Ella", "Matara", "2025-09-25"]
+- Result: Buses where 'Ella' in Stops and Destination='Matara'
 - Validation: Intermediate stop to terminal routes found
 
 Test Case 3.4: Bus Search - Stop to Stop Ordering
 - Test: searchBusesWithFilters() with two intermediate stops
-- Input: ["Kegalle", "Mawanella", "2025-09-25"]
+- Input: ["Ella", "Thanamalvila", "2025-09-25"]
 - Result: Buses where both stops exist and Kegalle comes before Mawanella
 - Validation: FIND_IN_SET position comparison works correctly
 
 Test Case 3.5: Bus Search - Invalid Same Origin/Destination
 - Test: searchBusesWithFilters() with same origin and destination
-- Input: ["Colombo", "Colombo", "2025-09-25"]
+- Input: ["Badulla", "Badulla", "2025-09-25"]
 - Result: ['error' => 'Origin and destination cities must be different...']
 - Validation: Validation prevents same location booking
 
 Test Case 3.6: Bus Search - Past Date Validation
 - Test: searchBusesWithFilters() with past travel date
-- Input: ["Colombo", "Kandy", "2025-09-20"]
+- Input: ["Badulla", "Matara", "2025-09-20"]
 - Expected Result: ['error' => 'Travel date must be today or a future date...']
 - Validation: Past date bookings prevented
 
 Test Case 3.7: Bus Search - Fare Range Filter
 - Test: searchBusesWithFilters() with min/max fare filters
-- Input: ["Colombo", "Kandy", "2025-09-25", ['min_fare' => 500, 'max_fare' => 1000]]
+- Input: ["Badulla", "Matara", "2025-09-25", ['min_fare' => 500, 'max_fare' => 1000]]
 - Result: Only buses with fare between 500-1000 LKR
 - Validation: Fare filtering works correctly
 
 Test Case 3.8: Bus Search - Departure Time Filter
 - Test: searchBusesWithFilters() with time window filter
-- Input: ["Colombo", "Kandy", "2025-09-25", ['departure_time_from' => '06:00', 'departure_time_to' => '12:00']]
+- Input: ["Badulla", "Matara", "2025-09-25", ['departure_time_from' => '06:00', 'departure_time_to' => '12:00']]
 - Result: Only buses departing between 6 AM and 12 PM
 - Validation: Time filtering applied correctly
 
 Test Case 3.9: Bus Search - Minimum Seats Filter
 - Test: searchBusesWithFilters() with minimum available seats
-- Input: ["Colombo", "Kandy", "2025-09-25", ['min_seats' => 10]]
+- Input: ["Badulla", "Matara", "2025-09-25", ['min_seats' => 10]]
 - Result: Only buses with 10+ available seats
 - Validation: Seat availability calculation and filtering
 
 Test Case 3.10: Bus Search - Sorting by Fare Low to High
 - Test: searchBusesWithFilters() with fare ascending sort
-- Input: ["Colombo", "Kandy", "2025-09-25", ['sort_by' => 'fare_low']]
+- Input: ["Badulla", "Matara", "2025-09-25", ['sort_by' => 'fare_low']]
 - Result: Results sorted by fare ascending, then departure time
 - Validation: Primary and secondary sort criteria applied
 
@@ -269,7 +269,7 @@ Test Case 4.12: Update Booking Status
 
 Test Case 5.1: Payment Form Generation - Valid Booking Data
 - Test: generatePaymentForm() with complete booking information
-- Input: [fare: 850.00, origin: "Colombo", destination: "Kandy", passenger_name: "John Doe", phone: "0771234567", bus_id: 1]
+- Input: [fare: 850.00, origin: "Badulla", destination: "Matara", passenger_name: "John Doe", phone: "0771234567", bus_id: 1]
 - Result: Form data array with PayHere parameters and valid hash
 - Validation: All required PayHere fields populated, hash calculated correctly
 
@@ -357,7 +357,7 @@ Test Case 6.7: Delete Announcement - Non-existent ID
 
 Test Case 7.1: Search Page - Form Submission
 - Test: pages/search.php form processing
-- Input: Form data [origin: "Colombo", destination: "Kandy", date: "2025-09-25"]
+- Input: Form data [origin: "Badulla", destination: "Matara", date: "2025-09-25"]
 - Result: Search results displayed with available buses
 - Validation: Form data passed to Bus::searchBusesWithFilters()
 
